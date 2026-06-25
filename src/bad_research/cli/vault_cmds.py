@@ -159,6 +159,10 @@ _SCRATCH_NAMES = {
     "readability-decisions.json",
     "grader-log.json",
     "clarify.json",
+    # Step-0 capability snapshot. Per-run like the rest: a stale {"fetch": false}
+    # left behind by a slim-build run would otherwise pin the NEXT run (on an
+    # upgraded CLI) to the degraded native-fetch path.
+    "cli-caps.json",
 }
 _SCRATCH_PREFIXES = (
     "critic-findings-",

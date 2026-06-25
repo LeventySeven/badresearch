@@ -108,6 +108,16 @@ sessions. Keyless by design:
 - **Retrieve** — SQLite FTS5/BM25 by default (no model required), with an optional local neural lane.
 - **Ground** — every factual sentence must carry a source citation, and a deterministic ship-gate **blocks** any uncited claim. Fabricated quotes are caught for free by a byte-identity check; the harder paraphrase-faithfulness cases are judged by the host model (an optional `[local]` cross-encoder upgrades this to NLI).
 
+## Reporting engine bugs
+
+An engine/CLI defect — a missing or broken subcommand, a crash, a slim-build capability
+gap — belongs in **this repo's** issue tracker, not in whatever downstream project
+happened to be driving the run. File a fresh issue here with the build version and the
+exact failing command; don't rely on a cross-org `gh issue transfer` to relocate it from
+a downstream repo (transfers across organizations are unreliable and lose the report).
+Keep the bug where the fix lives. This is guidance for **people**: the research agent
+itself only surfaces the defect in its final report, and never files anything on its own.
+
 ## How it works & where the patterns came from
 
 Bad Research takes hyperresearch as its base and enhances each stage with patterns

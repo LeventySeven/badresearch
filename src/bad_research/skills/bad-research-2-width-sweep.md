@@ -263,7 +263,11 @@ prompt: |
   data into the note VERBATIM (the numbers exactly as plotted/printed), citing it as a
   figure. The transcription you write into the note body becomes the claim's
   `quoted_support`, so the figure-derived number is grounded and verifiable like any
-  text claim — NEVER eyeball a number you did not Read off the saved image.
+  text claim — NEVER eyeball a number you did not Read off the saved image. (If the
+  `assets` command is absent — slim build, gate on `research/cli-caps.json` or
+  `bad assets --help >/dev/null 2>&1` — there is no saved PNG to resolve: treat it as
+  "no asset available" and ground only the text layer; a missing `assets` command must
+  NOT fail the fetch.)
 
   OUTPUT_SHAPE: for each note, emit the claims JSON the binding consumes —
   a JSON array of {claim, note_id, quoted_support, char_start, char_end,
