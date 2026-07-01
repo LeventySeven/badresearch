@@ -183,15 +183,19 @@ def _synthesize(query: str, chunks: list[dict[str, Any]], route: Route,
                 cfg: BadResearchConfig, cm: Any) -> str:
     """Single-call synthesis over the top-chunks with per-sentence [N] citations.
 
-    Degrades to an honest no-evidence report when no LLM key / no chunks — never
-    fabricates (SPEC §13). Records the synthesis call's token usage on the meter.
+    Degrades honestly, never fabricates (SPEC §13): no chunks → an honest
+    no-evidence report; chunks but no host inference (the headless, no-key case) →
+    a stitched best-effort report LED BY a keyless-skill banner pointing back to
+    `/bad-research`. Records the synthesis call's token usage on the meter.
     """
     if not chunks:
         return (
             f"# {query}\n\n"
             "No evidence was gathered for this query (no providers configured or "
             "no sources passed the funnel). This is an honest gap, not a synthesized "
-            "answer.\n"
+            "answer.\n\n"
+            "Run `/bad-research <query>` in a Claude Code session (keyless) for the "
+            "full pipeline — the `bad` CLI itself is deterministic helpers only.\n"
         )
     tier: Tier = "heavy" if route == "full" else "work"
     try:
@@ -219,9 +223,26 @@ def _synthesize(query: str, chunks: list[dict[str, Any]], route: Route,
             cm.record_response(stage="synthesize", tier=tier, usage=dict(usage))
         return text
     except Exception:
-        # No key / SDK absent: stitch the evidence into a minimal grounded report.
+        # Evidence WAS gathered but host inference is unavailable (the no-key
+        # HEADLESS case). Do NOT raise — a headless caller must never crash
+        # (SPEC §13). Lead with the keyless-skill banner so nobody mistakes this
+        # for "bad-research needs a key", then stitch the evidence honestly below
+        # it. This module is on the KEYLESS skill path, so the banner says "an API
+        # key" — never the literal provider-key token.
+        banner = (
+            "> **Bad Research runs KEYLESS as a Claude Code skill.** Run "
+            "`/bad-research <your query>` in a Claude Code session — or invoke the "
+            "`bad-research` skill from a Claude Code Task subagent — and a model "
+            "drives the whole pipeline with no API key required.\n"
+            ">\n"
+            "> You are seeing this stitched, best-effort report because the `bad` CLI "
+            "is deterministic helpers only and cannot call the host model itself. "
+            "This headless synthesis is the off-mission calibration/benchmark bridge "
+            "(`bad calibrate`) — the one path that needs an API key — and none was "
+            "configured. It is NOT how you run research; use the skill above.\n"
+        )
         body = "\n".join(f"- {c.get('text', '')[:300]} [{i + 1}]" for i, c in enumerate(chunks[:10]))
-        return f"# {query}\n\n{body}\n"
+        return f"# {query}\n\n{banner}\n{body}\n"
 
 
 # ── the entrypoint ───────────────────────────────────────────────────────────

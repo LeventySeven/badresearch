@@ -93,6 +93,19 @@ Read these inputs:
      drafting from full text produces synthesis. Use your source_budget
      to fetch additional sources beyond the width corpus if needed.
 
+     <!-- source-quality-signals -->
+     SOURCE-QUALITY NEGATIVE SIGNALS (flag, do NOT silently drop or suppress):
+     as you read each full source, judge it against the Anthropic worker-prompt
+     list and record any that apply as a `source_quality_flags` array on the
+     interim note (the lead reconciles flags downstream — flag, don't suppress):
+     `aggregator` (news aggregator, not the original), `false_authority` (cites
+     authority it lacks), `nameless_source` ("experts say"), `vague_qualifier`
+     ("many"/"often", no specifics), `unconfirmed` (unverified rumor),
+     `marketing_spin` (promotional/sales copy), `speculation` (incl. future-tense
+     "could"/"may" projections stated as things that happened), `cherry_picked`
+     (selective evidence, no counter-data). A flagged source is caveated or
+     corroborated at synthesis, never suppressed.
+
      OUTPUT: Write a single interim note via the hyperresearch CLI with
      type=interim, tags = <vault_tag> + locus-<locus-name>. The note MUST
      end with a "## Committed position" section that takes a SIDE on the

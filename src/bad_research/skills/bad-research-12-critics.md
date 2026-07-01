@@ -109,6 +109,19 @@ Read these inputs:
      - decomposition_path: research/prompt-decomposition.json   (instruction-critic only)
    ```
 
+   **SOURCE-QUALITY HONOR CHECK (width + instruction critics).** The width-sweep
+   fetchers and depth-investigators recorded a `source_quality_flags` array on
+   each note (flag, do NOT suppress — the flags survive to here). The width and
+   instruction critics MUST honor them: a source carrying any flag must NOT be
+   presented in the report as established fact without its caveat. Emit a finding
+   whenever such a flagged source is cited bare (as plain fact, with no hedge or
+   corroborating unflagged source).
+   <!-- source-quality-signals -->
+   Flags to honor: `aggregator`, `false_authority`, `nameless_source`,
+   `vague_qualifier`, `unconfirmed`, `marketing_spin`, `speculation`,
+   `cherry_picked`. Flag, don't suppress — surface the bare citation as a finding
+   for the patcher rather than dropping the source.
+
 3. **Wait for all critics.** If one fails, you can proceed with the partial set, but log the absence to the run log — the patch pass is less robust with missing critic coverage. **Do NOT skip the instruction-critic specifically** — it's the only critic measuring prompt adherence, which is the dimension with the widest variance.
 
 4. **Do not read the findings yourself and apply them.** The patcher (step 14) reads the findings. Your job is to hand them to the patcher — AFTER step 13 (gap-fetch) runs.

@@ -116,6 +116,7 @@ def doctor(
         console.print("\n[bold]local stack[/]  [dim]not installed (default: host-model rerank, FTS5/BM25 recall). `pip install 'bad-research\\[local]'` for offline neural.[/]")
 
     console.print(f"\n[bold]{data['active_count']}[/] provider(s) active. [dim]Keyless pipeline (host WebSearch + ddgs + crawl4ai + BM25 + host-model rerank) runs with zero keys.[/]")
+    console.print("[dim]run research: `/bad-research <query>` in Claude Code, or invoke the skill from a subagent — keyless. The `bad` CLI is deterministic helpers only.[/]")
 
 
 __all__ = ["doctor"]

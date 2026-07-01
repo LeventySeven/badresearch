@@ -204,6 +204,7 @@ prompt: |
   OBJECTIVE: fetch and ground every URL in your batch into vault notes tagged
   <vault_tag>, chasing 3–8 primary sources via citation chains.
 
+  <!-- source-quality-signals -->
   SOURCE-QUALITY NEGATIVE SIGNALS (down-weight or FLAG, do NOT suppress):
   As you read each source, judge it against this list (Anthropic worker-prompt
   discipline — the things a regex/domain check CANNOT see). FLAG the source; do NOT
@@ -214,7 +215,7 @@ prompt: |
   - general qualifiers without specifics ("many", "often", "significant")  -> `vague_qualifier`
   - unconfirmed reports (rumor not yet verified)        -> flag `unconfirmed`
   - marketing language / spin language (promotional, sales copy)  -> `marketing_spin`
-  - speculation presented as finding                    -> flag `speculation`
+  - speculation presented as finding, incl. future-tense predictions ("could", "may", projections) stated as things that happened  -> flag `speculation`
   - cherry-picked data (selective evidence, no counter-data)  -> `cherry_picked`
   A source with NONE of these gets no flags (it is unchanged). A primary filing or
   peer-reviewed paper is almost never flagged; a vendor "X is the best" listicle on a

@@ -55,10 +55,13 @@ class KeylessSearchConfig:
 
     # KNOWN: every value traces to dossier 13.
     rrf_k: int = 60                      # §3.2 (RRF sweet spot, Cormack 2009)
-    relevance_threshold: float = 0.70    # §3.4 (Perplexity L3 gate) — CALIBRATE §7.2
+    relevance_threshold: float = 0.70    # §3.4 — CALIBRATE §7.2; OWN default (the "Perplexity 0.70 / L3 gate" attribution was refuted, PERPLEXITY_DEEP R5 — not a copied constant)
     min_pass_fraction: float = 0.30      # §3.4 (<30% pass → re-retrieve)
     max_rounds: int = 3                  # §3.4/§6.1 (light=2, full=3)
     rerank_top_n: int = 30               # §4.1 (LLM-rerank only L1 survivors)
+    sat_tau: float = 0.20                # saturation stop: halt fan-out when a round's new-distinct-domain
+                                         # ratio < sat_tau (Perplexity PD:3849-3855). CALIBRATE; the
+                                         # evidence-based replacement for the refuted "0.85 entropy" cutoff.
 
 
 # A pluggable source of the host-tool Links array (injected for tests; in

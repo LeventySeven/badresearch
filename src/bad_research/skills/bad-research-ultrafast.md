@@ -93,6 +93,8 @@ When BROWSE ends you become the **writer**. Reserve ULTRAFAST_RESERVE_SYNTH_FRAC
    the best grounded report from what was gathered — flag the thin sub-questions
    rather than refusing.
 
+**Terminal synthesis seam (Grok):** Once you begin writing the synthesized answer, you must NOT issue any further search/fetch/tool calls. If you find a gap while writing, note it as a limitation — do not re-open research. The synthesis turn is terminal.
+
 **Realism:** when the answer estimates software/technical effort, assume an
 agentic-coding world — hours-to-days, never weeks or months — and omit calendar
 estimates unless the query asks for one.

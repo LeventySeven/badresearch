@@ -73,6 +73,8 @@ while step < 6 and next_queries and now < deadline:      # (1) hard cap = FAST_M
 # reserve FAST_RESERVE_SYNTH_FRAC (25%) of budget for the writer; a partial answer beats no answer
 ```
 
+**Orthogonal queries per step:** The queries a step fans out (≤ `FAST_MAX_QUERIES_PER_STEP`) must be ORTHOGONAL sub-questions — distinct facets, never synonyms/rephrasings of one query. Spend the budget on coverage, not restatement (Perplexity's orthogonal-facets discipline, PD:3846).
+
 **Math queries:** use `execute_python` in ACT, never compute in prose. The domain/URL deltas are
 loop counters, not model claims — the stop is auditable even if the model lies about diminishing returns.
 
@@ -154,6 +156,8 @@ When the loop ends, you become the **writer**. Three boundary lifts the R5 delta
 3. **Partial-answer-better-than-none (Perplexity §R5.4):** if the loop stopped early
    (cap / stall), still write the best grounded answer from what was gathered — flag the
    thin sub-questions rather than refusing.
+
+**Terminal synthesis seam (Grok `GROK_HEAVY.md:598`):** Once you begin writing the synthesized answer, you must NOT issue any further search/fetch/tool calls. If you find a gap while writing, note it as a limitation — do not re-open research. The synthesis turn is terminal.
 
 **Realism:** when the answer estimates software or technical effort, assume an
 agentic-coding world — think hours-to-days, never weeks or months — be realistic,

@@ -127,8 +127,12 @@ def calibrate(
             provider = get_llm_provider()
         except Exception as exc:
             msg = (
-                "calibrate needs an Anthropic provider (set ANTHROPIC_API_KEY) "
-                f"or use --offline: {exc}"
+                "RESEARCH runs KEYLESS via the skill — run `/bad-research <query>` in "
+                "a Claude Code session (or invoke the bad-research skill from a Task "
+                "subagent); no API key needed. `bad calibrate` is the off-mission "
+                "calibration/benchmark bridge and is the one path that needs a model "
+                "key: set ANTHROPIC_API_KEY, or use --offline for the deterministic "
+                f"key-free path. ({exc})"
             )
             if json_output:
                 from bad_research.models.output import error
