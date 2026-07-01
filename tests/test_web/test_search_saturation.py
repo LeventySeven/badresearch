@@ -1,9 +1,16 @@
 """Saturation stop (Task 3): retrieve_until_good halts fan-out when new results
 stop adding distinct domains — Perplexity's evidenced coverage stop (PD:3849-3855),
 a pure new-distinct-domain-ratio counter alongside (not replacing) the 0.70/<30%
-quality gate."""
+quality gate.
+
+NOTE: each round's expander returns a DISTINCT query. That isolates the saturation
+stop (which keys on result DOMAINS) from the Task-5 within-run dedup guard (which
+skips a re-issued query and would otherwise stop the loop with "exhausted" the
+moment a round re-proposes an already-issued query)."""
 
 from __future__ import annotations
+
+from collections.abc import Callable
 
 from bad_research.web.base import WebResult
 from bad_research.web.search.base import KeylessSearchConfig
@@ -14,6 +21,18 @@ def _result(domain: str, i: int, score: float = 0.1) -> WebResult:
     r = WebResult(url=f"https://{domain}/{i}", title=f"{domain}-{i}", content="c")
     r.metadata["score"] = score
     return r
+
+
+def _distinct_expander() -> Callable[..., list[str]]:
+    """expand() that yields a fresh unique query on every call (q1, q2, …) so the
+    dedup guard never short-circuits — we're testing the domain-based saturation."""
+    n = {"i": 0}
+
+    def expand(q, findings=None, gaps=None):
+        n["i"] += 1
+        return [f"q{n['i']}"]
+
+    return expand
 
 
 def test_loop_stops_when_new_domains_dry_up():
@@ -39,7 +58,7 @@ def test_loop_stops_when_new_domains_dry_up():
     out = retrieve_until_good(
         "q",
         cfg=cfg,
-        expand=lambda q, **kw: ["q"],
+        expand=_distinct_expander(),
         fan_out=fan_out,
         rerank=lambda question, pool: pool,
         trace=trace,
@@ -58,7 +77,7 @@ def test_round1_single_domain_is_not_saturated():
     out = retrieve_until_good(
         "q",
         cfg=cfg,
-        expand=lambda q, **kw: ["q"],
+        expand=_distinct_expander(),
         fan_out=lambda qs: [_result("only", 0, score=0.9)],  # clears 0.70
         rerank=lambda question, pool: pool,
         trace=trace,
@@ -84,7 +103,7 @@ def test_quality_gate_wins_over_saturation_same_round():
     out = retrieve_until_good(
         "q",
         cfg=cfg,
-        expand=lambda q, **kw: ["q"],
+        expand=_distinct_expander(),
         fan_out=fan_out,
         rerank=lambda question, pool: pool,
         trace=trace,

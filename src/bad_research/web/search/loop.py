@@ -29,6 +29,22 @@ def _infer_gaps(scored: list[WebResult]) -> list[str]:
     return [r.title for r in low[:5] if r.title]
 
 
+def _dedup_queries(queries: list[str], issued: set[str]) -> list[str]:
+    """Within-run dedup guard. A query already fanned out this run is skipped
+    rather than re-issued; new ones are recorded in `issued` (mutated in place).
+    The plan's ideal key is (provider, args), but at this seam `fan_out` is opaque
+    (`list[str] -> list[WebResult]` — provider routing happens inside it), so the
+    query string is the granularity available and IS the key. Order-preserving,
+    and it also collapses duplicates within a single round."""
+    fresh: list[str] = []
+    for q in queries:
+        if q in issued:
+            continue
+        issued.add(q)
+        fresh.append(q)
+    return fresh
+
+
 def _domain_of(url: str) -> str:
     """Lowercased host of a URL ('' when empty/unparseable) — the unit the
     saturation stop counts. Host-level, NOT PSL registrable-domain: `sub.a.com`
@@ -48,6 +64,10 @@ def retrieve_until_good(question: str, *, cfg: KeylessSearchConfig,
     """≥ min_pass_fraction clear relevance_threshold → return; else reformulate +
     re-fan, ≤ max_rounds. Returns the best-effort passing set after the cap.
 
+    A within-run dedup guard (`_dedup_queries`) skips any query already fanned out
+    this run, so a reformulation that re-proposes an earlier query is not
+    re-searched (keyless; query-string keyed at this seam).
+
     Two keyless terminators are checked each round, in order:
       1. QUALITY (unchanged): ≥ min_pass_fraction of the reranked pool clear
          relevance_threshold → return them.
@@ -59,7 +79,8 @@ def retrieve_until_good(question: str, *, cfg: KeylessSearchConfig,
          least one full round always runs.
 
     Pass a `trace` dict to record {"rounds_run", "stopped_reason"} (reason ∈
-    {"quality","empty","saturation","max_rounds"}); it never changes the return.
+    {"quality","empty","saturation","exhausted","max_rounds"}); "exhausted" means a
+    reformulation proposed only already-issued queries. It never changes the return.
     """
 
     def _record(rounds_run: int, reason: str) -> None:
@@ -70,8 +91,17 @@ def retrieve_until_good(question: str, *, cfg: KeylessSearchConfig,
     queries = expand(question)
     passing: list[WebResult] = []
     seen_domains: set[str] = set()
+    issued: set[str] = set()               # within-run dedup guard (see _dedup_queries)
     for _round in range(cfg.max_rounds):
-        pool = fan_out(queries)
+        fresh = _dedup_queries(queries, issued)
+        if not fresh:
+            # every proposed query was already issued this run — no new ground to
+            # cover. Return the best-effort set gathered so far rather than fanning
+            # out an empty list (which would rerank [] and DROP the accumulated
+            # `passing` via the not-scored branch). Best-effort > empty (docstring).
+            _record(_round + 1, "exhausted")
+            return passing
+        pool = fan_out(fresh)
         domains = {d for r in pool if (d := _domain_of(r.url))}
         new_ratio = len(domains - seen_domains) / max(1, len(domains))
         seen_domains |= domains
