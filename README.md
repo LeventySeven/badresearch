@@ -78,6 +78,24 @@ route a query takes before any long work starts.
 
 > Want the latest unreleased build? Install from source: `pipx install git+https://github.com/LeventySeven/badresearch.git`
 
+### Updating
+
+Already installed? Upgrade the CLI **and** re-register the skill so both are current:
+
+```bash
+# From PyPI (pipx or uv — whichever you installed with)
+pipx upgrade bad-research      # or: uv tool upgrade bad-research
+bad install                    # refresh the /bad-research skill + agents in ~/.claude
+
+# ...or track the latest source
+pipx install --force git+https://github.com/LeventySeven/badresearch.git
+bad install
+```
+
+`bad install` is idempotent — re-run it any time after upgrading the CLI to pull the newest
+entry skill + agents (the per-step skills refresh lazily on the next `/bad-research` run).
+Confirm with `bad --version`.
+
 ## What it does
 
 A tier-adaptive pipeline turns a question into an audited, fully-cited report, and
