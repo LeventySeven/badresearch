@@ -7,6 +7,8 @@ is pure — expand/fan_out/rerank are injected callables (no I/O here)."""
 from __future__ import annotations
 
 from collections.abc import Callable
+from typing import Any
+from urllib.parse import urlsplit
 
 from bad_research.web.base import WebResult
 from bad_research.web.search.base import KeylessSearchConfig
@@ -27,20 +29,65 @@ def _infer_gaps(scored: list[WebResult]) -> list[str]:
     return [r.title for r in low[:5] if r.title]
 
 
+def _domain_of(url: str) -> str:
+    """Lowercased host of a URL ('' when empty/unparseable) — the unit the
+    saturation stop counts. Host-level, NOT PSL registrable-domain: `sub.a.com`
+    and `a.com` count as distinct, which is the right signal here ("are results
+    still coming from anywhere new?") and needs no public-suffix dependency."""
+    if not url:
+        return ""
+    try:
+        return (urlsplit(url).hostname or "").lower()
+    except ValueError:
+        return ""
+
+
 def retrieve_until_good(question: str, *, cfg: KeylessSearchConfig,
-                        expand: Expand, fan_out: FanOut, rerank: Rerank) -> list[WebResult]:
+                        expand: Expand, fan_out: FanOut, rerank: Rerank,
+                        trace: dict[str, Any] | None = None) -> list[WebResult]:
     """≥ min_pass_fraction clear relevance_threshold → return; else reformulate +
-    re-fan, ≤ max_rounds. Returns the best-effort passing set after the cap."""
+    re-fan, ≤ max_rounds. Returns the best-effort passing set after the cap.
+
+    Two keyless terminators are checked each round, in order:
+      1. QUALITY (unchanged): ≥ min_pass_fraction of the reranked pool clear
+         relevance_threshold → return them.
+      2. SATURATION (Perplexity's evidenced coverage stop, PD:3849-3855): when a
+         round's NEW-distinct-domain ratio falls below cfg.sat_tau, further fan-out
+         is returning mostly already-seen hosts, so stop. Pure counting, no
+         scoring — the evidence-based replacement for the refuted "0.85 entropy"
+         cutoff. Round 1 is never saturated (seen is empty → ratio 1.0), so at
+         least one full round always runs.
+
+    Pass a `trace` dict to record {"rounds_run", "stopped_reason"} (reason ∈
+    {"quality","empty","saturation","max_rounds"}); it never changes the return.
+    """
+
+    def _record(rounds_run: int, reason: str) -> None:
+        if trace is not None:
+            trace["rounds_run"] = rounds_run
+            trace["stopped_reason"] = reason
+
     queries = expand(question)
     passing: list[WebResult] = []
+    seen_domains: set[str] = set()
     for _round in range(cfg.max_rounds):
         pool = fan_out(queries)
+        domains = {d for r in pool if (d := _domain_of(r.url))}
+        new_ratio = len(domains - seen_domains) / max(1, len(domains))
+        seen_domains |= domains
+
         scored = rerank(question, pool)
         passing = [r for r in scored if r.metadata.get("score", 0.0) >= cfg.relevance_threshold]
         if scored and len(passing) >= cfg.min_pass_fraction * len(scored):
+            _record(_round + 1, "quality")
             return passing                       # ≥30% cleared 0.70 → good enough
         if not scored:
+            _record(_round + 1, "empty")
             return passing                       # nothing came back; nothing to reformulate from
-        # <30% passed → reformulate and go wider (Perplexity failsafe)
+        if new_ratio < cfg.sat_tau:
+            _record(_round + 1, "saturation")
+            return passing                       # new results stopped adding distinct domains → stop
+        # <30% passed AND still finding fresh domains → reformulate and go wider.
         queries = expand(question, findings=_top(scored, 5), gaps=_infer_gaps(scored))
+    _record(cfg.max_rounds, "max_rounds")
     return passing                               # best-effort after max_rounds
