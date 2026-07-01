@@ -182,6 +182,34 @@ def test_route_unchanged_time_periods_full():
     assert classify_route(d) == "full"
 
 
+def test_bare_publication_year_time_period_does_not_force_full():
+    # Over-escalation fix: a bare publication year (a paper's year) in time_periods
+    # must NOT escalate a trivial lookup to the full ~2.5h pipeline. No other full
+    # trigger is present, so the route must be fast.
+    d = _decomp(sub_questions=["when was the transformer paper published"],
+                response_format="short", domains=["ai"], time_periods=["2017"])
+    assert classify_route(d) == "fast"
+    # the dict form explicitly typed as a publication year is likewise exempt
+    d2 = _decomp(sub_questions=["q1"], response_format="short", domains=["ai"],
+                 time_periods=[{"period": "2017", "type": "publication-year"}])
+    assert classify_route(d2) == "fast"
+
+
+def test_period_pinned_time_periods_still_force_full():
+    # Fiscal/regulatory/event windows and multi-year ranges remain HARD full triggers
+    # (Lens-D period-pinned primaries) — only a bare publication year is exempted.
+    for tp in (
+        [{"period": "Q3 2024", "type": "fiscal-quarter"}],
+        [{"period": "Q3 2024"}],   # untyped quarter (test_route_unchanged parity)
+        ["1993-2023"],             # multi-year range (golden 06_recency_temporal parity)
+        [{"period": "FY 2023", "type": "fiscal-year"}],
+        [{"period": "March 2024", "type": "event-anchored"}],
+    ):
+        d = _decomp(sub_questions=["q1"], response_format="short", domains=["fin"],
+                    time_periods=tp)
+        assert classify_route(d) == "full", tp
+
+
 def test_route_unchanged_broad_survey_light():
     # the B-5 modality down-route must still hold with shape classification present
     d = _decomp(
