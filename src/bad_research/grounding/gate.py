@@ -91,6 +91,24 @@ def _is_formatting_line(line: str) -> bool:
     return bool(_CODE_SPAN_ONLY.match(line))
 
 
+# A sentence piece that ENDS with one of these did not actually end a sentence — the
+# trailing "." is an abbreviation / initial ("Aidan N.", "F.D.A.") or an ellipsis
+# ("..."), not a terminator. split_sentences re-joins the spuriously split fragment
+# forward, so the citation-less fragment before the real [N] is not flagged uncited.
+_ABBREVIATIONS = (
+    "dr", "mr", "mrs", "ms", "prof", "sr", "jr", "st", "vs", "etc", "al", "inc",
+    "ltd", "co", "corp", "no", "nos", "fig", "eq", "vol", "pp", "ref", "cf",
+    "approx", "rev", "gen", "sen", "gov", "rep",
+)
+_NON_TERMINAL_END = re.compile(
+    r"(?:\.\.\.|…"                                        # ellipsis  ... or …
+    r"|(?<![A-Za-z])[A-Za-z]\."                                # lone initial: "Aidan N.", "F.D.A."
+    r"|(?<![A-Za-z])(?:" + "|".join(_ABBREVIATIONS) + r")\.)"  # common abbreviation
+    r"$",
+    re.IGNORECASE,
+)
+
+
 def split_sentences(text: str) -> list[str]:
     parts: list[str] = []
     in_code_fence = False
@@ -109,10 +127,20 @@ def split_sentences(text: str) -> list[str]:
         line = _LIST_MARKER.sub("", line, count=1).strip()
         if not line:
             continue
+        line_parts: list[str] = []
         for piece in re.split(r"(?<=[.!?])\s+", line):
             piece = piece.strip()
             if not piece:
                 continue
+            # The "." that split this piece off was NOT a terminator — it was an
+            # abbreviation/initial ("Aidan N.") or an ellipsis ("...") — so re-join
+            # forward rather than leaving a citation-less fragment the uncited-gate
+            # would flag as its own sentence (live-run finding).
+            if line_parts and _NON_TERMINAL_END.search(line_parts[-1]):
+                line_parts[-1] = f"{line_parts[-1]} {piece}"
+            else:
+                line_parts.append(piece)
+        for piece in line_parts:
             # A trailing citation-only fragment (`. [[note-id]]`) is split off the
             # preceding sentence by the terminal period -- re-attach it so the
             # factual sentence keeps its citation (dossier §5.1 "in/adjacent to").

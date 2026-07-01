@@ -349,7 +349,8 @@ def retrieve_cmd(
 
 # ── verify-citations (Task 8/11/12) — backward grounding ─────────────────────
 def _verify_report(
-    report_path: str, vault_tag: str, *, effort: str | None = None
+    report_path: str, vault_tag: str, *, effort: str | None = None,
+    note_bodies_path: str | None = None,
 ) -> list[dict]:
     """Adapter: load report + AnchorStore + note bodies, run CitationVerifier.
 
@@ -370,22 +371,31 @@ def _verify_report(
     # auto-initialized so a vault DB that predates the grounding tables (or a
     # fresh in-memory DB) yields "0 anchors" rather than an OperationalError
     # (no such table: claim_anchors) BEFORE the keyless degrade can run.
-    note_bodies: dict[str, str] = {}
-    try:
-        vault = Vault.discover()
-        db_path = Path(vault.root) / ".bad-research" / "anchors.db"
-        db_path.parent.mkdir(parents=True, exist_ok=True)
-        conn = sqlite3.connect(str(db_path))
-        notes_dir = Path(vault.root) / "research" / "notes"
-        if notes_dir.is_dir():
-            for f in notes_dir.glob("*.md"):
-                note_bodies[f.stem] = f.read_text(encoding="utf-8")
-    except VaultError:
-        conn = sqlite3.connect(":memory:")
-    conn.row_factory = sqlite3.Row
-    store = AnchorStore(conn)
-    # init_schema is idempotent; safe on an existing populated DB.
-    store.init_schema()
+    note_bodies: dict[str, str]
+    if note_bodies_path:
+        # Standalone [N] + sources path (mirrors _uncited_gate): seed BOTH note-id and
+        # 1-based ordinal anchors so numeric [N] resolves. Without this the store held
+        # only note-id anchors, so an inline-[N] + `## Sources` report bound nothing and
+        # returned {"results": []} (a no-op — live-run finding).
+        note_bodies = json.loads(Path(note_bodies_path).read_text(encoding="utf-8"))
+        store = _standalone_store_from_bodies(note_bodies)
+    else:
+        note_bodies = {}
+        try:
+            vault = Vault.discover()
+            db_path = Path(vault.root) / ".bad-research" / "anchors.db"
+            db_path.parent.mkdir(parents=True, exist_ok=True)
+            conn = sqlite3.connect(str(db_path))
+            notes_dir = Path(vault.root) / "research" / "notes"
+            if notes_dir.is_dir():
+                for f in notes_dir.glob("*.md"):
+                    note_bodies[f.stem] = f.read_text(encoding="utf-8")
+        except VaultError:
+            conn = sqlite3.connect(":memory:")
+        conn.row_factory = sqlite3.Row
+        store = AnchorStore(conn)
+        # init_schema is idempotent; safe on an existing populated DB.
+        store.init_schema()
 
     from bad_research.grounding.verifier import LineSpanJudge, nli_available
 
@@ -414,15 +424,22 @@ def verify_citations_cmd(
         help="minimal|low|medium|high; 'high' enables the E4 self-consistency vote on "
              "high-stakes (NLI-ambiguous) claims (N host samples; keyless).",
     ),
+    note_bodies: str = typer.Option(
+        None, "--note-bodies", "--sources",
+        help="JSON {note_id: body} map. Resolves `[[note-id]]` by id AND numeric `[N]` by "
+             "the N-th key (insertion order) — needed to verify an inline-`[N]` + "
+             "`## Sources` report with no pre-populated vault (mirrors uncited-gate).",
+    ),
     json_output: bool = typer.Option(False, "--json", "-j"),
 ) -> None:
     """Run the CitationVerifier over a report. Returns per-sentence dispositions.
 
     `--effort high` turns on the self-consistency lane (E4): the Tier-C band is decided by
     an N-sample vote (universal self-consistency) instead of the single batched judge.
-    Default effort is unchanged (no extra calls)."""
+    Default effort is unchanged (no extra calls). Pass `--note-bodies`/`--sources` to bind
+    numeric `[N]` citations standalone (no vault), mirroring `uncited-gate`."""
     typer.echo(json.dumps(
-        {"results": _verify_report(report, vault_tag, effort=effort)},
+        {"results": _verify_report(report, vault_tag, effort=effort, note_bodies_path=note_bodies)},
         default=str,
     ))
 
