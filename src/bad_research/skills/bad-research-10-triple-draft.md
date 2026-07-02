@@ -29,7 +29,7 @@ Read these inputs:
 - `research/temp/claims-*.json` (full tier) — per-note distilled claims; Step 10.0b Part 2 below BUILDS `research/temp/evidence-digest.md` (the PRIMARY EVIDENCE LAYER) from these, inline. Absent for light.
 - `research/temp/tensions.md` (full tier) — cross-locus + orphan expert disagreements (the merged step-6 artifact; replaces the former `comparisons.md` + `source-tensions.json`)
 - `research/temp/coverage-gaps.md` (if exists) — items with weak source coverage
-- Survey vault: `$HPR search "" --tag <vault_tag> -j` for the evidence landscape
+- Survey vault: `bad search "" --tag <vault_tag> -j` for the evidence landscape
 - Modality calibration (from the scaffold's `modality` field):
   - **collect** — enumerative coverage, per-entity sections with named fields
   - **synthesize** — defended thesis with evidence chains, interpretive density
@@ -68,7 +68,7 @@ cost ONCE, at draft time, and only for the `note_id`s it will actually cite.
 2. **Then batch-read the raw note bodies ONLY for the `note_id`s you will cite.**
    From the reflections' `cited_note_ids` (and the curated `must_read_note_ids`
    list in Step 10.2), read the raw bodies for just those notes
-   (`$HPR note show <id1> <id2> ... -j`) so you have the verbatim text in front of
+   (`bad note show <id1> <id2> ... -j`) so you have the verbatim text in front of
    you as you write. Do NOT batch-read notes you don't intend to cite — that
    re-introduces the quadratic-context cost the reflections discipline removed.
 
@@ -162,7 +162,7 @@ If `pipeline_tier == "light"`: SKIP step 10.1 — 10.3 below and follow this sec
 
 **Light tier writes a single draft directly to `research/notes/final_report_<vault_tag>.md`.** No subagents, no triple-draft ensemble, no synthesizer.
 
-1. **Read the vault directly.** Light tier has no `evidence-digest.md` (step 9 was skipped). Survey the vault: `$HPR search "" --tag <vault_tag> -j` and pick the 8–15 most relevant non-deprecated notes. Read each one (`$HPR note show <id1> <id2> ... -j`) before writing.
+1. **Read the vault directly.** Light tier has no `evidence-digest.md` (step 9 was skipped). Survey the vault: `bad search "" --tag <vault_tag> -j` and pick the 8–15 most relevant non-deprecated notes. Read each one (`bad note show <id1> <id2> ... -j`) before writing.
 
 2. **Honor the structural contract.**
    - Use the literal H2 headings from `required_section_headings` in `research/prompt-decomposition.json`, in order.
@@ -204,7 +204,7 @@ Write the 3 angle assignments to `research/temp/draft-angles.md` (for the run lo
 
 1. **List all substantive vault notes:**
    ```bash
-   $HPR search "" --tag <vault_tag> --json
+   bad search "" --tag <vault_tag> --json
    ```
    Filter to non-deprecated notes. You should have 50-100 candidates.
 

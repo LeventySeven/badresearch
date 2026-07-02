@@ -297,7 +297,7 @@ Skipping any of these seven in a Task prompt is a process violation.
 
 Context compaction may eat parts of this conversation. If you're unsure what step you're on:
 
-(`$HPR` in the commands below is the `hyperresearch` CLI alias — the same binary the `bad` commands invoke; `-j` is shorthand for `--json`.)
+(`-j` in the commands below is shorthand for `--json`.)
 
 1. **Check the TodoWrite list.** It carries integer step numbers and survives compaction.
 2. **Check disk artifacts.** Each step writes a canonical artifact:
@@ -305,9 +305,9 @@ Context compaction may eat parts of this conversation. If you're unsure what ste
    - Step 1: `research/scaffold.md`, `research/prompt-decomposition.json`, `research/temp/coverage-matrix.md`
    - Step 1.5: the `route` field inside `research/prompt-decomposition.json` (+ `## Route rationale` in scaffold)
    - fast: `research/temp/react-trace.md` (+ `research/notes/final_report_<vault_tag>.md`)
-   - Step 2: vault notes tagged with vault_tag (`$HPR search "" --tag <vault_tag> -j`)
+   - Step 2: vault notes tagged with vault_tag (`bad search "" --tag <vault_tag> -j`)
    - Step 4: `research/temp/contradiction-graph.json` + `research/temp/consensus-claims.json` (Step 4.0 preamble), then `research/loci.json`
-   - Step 5: vault notes with `type: interim` (`$HPR search "" --tag <vault_tag> --type interim -j`)
+   - Step 5: vault notes with `type: interim` (`bad search "" --tag <vault_tag> --type interim -j`)
    - Step 6: `research/temp/tensions.md` (cross-locus + orphan tensions; Step 6.5 merges the former step-7 source-tensions into this single artifact)
    - Step 8: `research/corpus-critic-gaps.json`, `research/temp/corpus-critic-results.md`
    - Step 10: `research/temp/evidence-digest.md` (built inline in Step 10.0b Part 2, full only — formerly step 9), then `research/temp/draft-{a,b,c}.md` (full only; the `fast` route writes `research/notes/final_report_<vault_tag>.md` directly via the bad-research-fast writer)
@@ -348,10 +348,10 @@ done
 
 Then run lint:
 ```bash
-$HPR lint --rule wrapper-report --json
-$HPR lint --rule locus-coverage --json
-$HPR lint --rule scaffold-prompt --json
-$HPR lint --rule patch-surgery --json
+bad lint --rule wrapper-report --json
+bad lint --rule locus-coverage --json
+bad lint --rule scaffold-prompt --json
+bad lint --rule patch-surgery --json
 ```
 
 If any rule returns `error` severity issues, address them before declaring complete. Then ship: the final report lives at `research/notes/final_report_<vault_tag>.md`.

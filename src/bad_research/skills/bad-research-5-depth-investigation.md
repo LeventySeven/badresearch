@@ -143,11 +143,11 @@ Read these inputs:
 
 4. **Read the interim notes.** After all return, list them:
    ```bash
-   $HPR search "" --tag <vault_tag> --type interim --json
+   bad search "" --tag <vault_tag> --type interim --json
    ```
    Then batch-read them:
    ```bash
-   $HPR note show <id1> <id2> ... -j
+   bad note show <id1> <id2> ... -j
    ```
    Hold the Committed Position sections in your context — they are the load-bearing input to step 6 (cross-locus reconciliation).
 

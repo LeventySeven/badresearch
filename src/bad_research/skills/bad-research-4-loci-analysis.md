@@ -25,7 +25,7 @@ Read these inputs:
 - All `research/temp/claims-*.json` files (one per fetched note) — Step 4.0 below pairs these into the contradiction graph
 - `research/temp/coverage-gaps.md` — which atomic items have weak coverage
 
-Survey the corpus: `$HPR search "" --tag <vault_tag> -j` to confirm width sweep is complete.
+Survey the corpus: `bad search "" --tag <vault_tag> -j` to confirm width sweep is complete.
 
 (The contradiction graph + consensus claims are no longer a separate step's input — Step 4.0 below WRITES them from the claims files, and the loci procedure that follows READS them in-context.)
 

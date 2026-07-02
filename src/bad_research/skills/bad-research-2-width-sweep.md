@@ -270,7 +270,7 @@ Append a few lines with `Edit` or `Write` every 30-60 seconds. Productive thinki
 
 **Vault count check** — once every 60 seconds max:
 ```bash
-PYTHONIOENCODING=utf-8 $HPR search "" --tag <vault_tag> --json | python -c "import sys,json; d=json.load(sys.stdin); print(f'Notes in vault: {len(d.get(\"data\",{}).get(\"results\",[]))}')"
+PYTHONIOENCODING=utf-8 bad search "" --tag <vault_tag> --json | python -c "import sys,json; d=json.load(sys.stdin); print(f'Notes in vault: {len(d.get(\"data\",{}).get(\"results\",[]))}')"
 ```
 
 The wave is done when the vault note count is ≥80% of total URLs queued.
@@ -408,7 +408,7 @@ Substantive (non-deprecated) note counts. Quality over quantity — reference re
 When a single long source (>5000 words) is load-bearing, delegate end-to-end analysis to `bad-research-source-analyst` (Sonnet, 1M context):
 
 Trigger conditions (ALL three must hold):
-1. **Length:** source's `word_count` (visible on `$HPR note show <id> -j`) exceeds ~5000 words
+1. **Length:** source's `word_count` (visible on `bad note show <id> -j`) exceeds ~5000 words
 2. **Relevance:** source is relevant to the research_query
 3. **No existing analysis:** no `type: source-analysis` note already exists for this source
 

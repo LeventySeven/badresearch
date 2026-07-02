@@ -27,7 +27,7 @@ Read these inputs:
 - `research/scaffold.md` — vault_tag
 - `research/loci.json` — scored loci
 - `research/temp/contradiction-graph.json` (built in Step 4.0, if it exists) — high-relevance fight clusters that were NOT promoted to loci are prime orphan-tension candidates for Step 6.5
-- All interim notes: `$HPR search "" --tag <vault_tag> --type interim --json` then `$HPR note show <id1> <id2> ... -j`
+- All interim notes: `bad search "" --tag <vault_tag> --type interim --json` then `bad note show <id1> <id2> ... -j`
 
 You need the `## Committed position` section from every interim note in your context.
 
@@ -97,11 +97,11 @@ Task(
 
 Read `research/temp/tensions.md` back into orchestrator context before proceeding to step 8.
 
-First survey the vault for the 15–20 highest-quality non-deprecated sources: `$HPR search "" --tag <vault_tag> -j`.
+First survey the vault for the 15–20 highest-quality non-deprecated sources: `bad search "" --tag <vault_tag> -j`.
 
 1. **Re-read the cross-locus tensions you just wrote.** Each is already a candidate tension. Extract: the two positions, the strongest evidence for each, your preliminary reading of which side has the better case.
 
-2. **Scan the width corpus for orphan tensions.** For the 15–20 highest-quality non-deprecated sources, then **read the full body** of the top 8–12 sources most likely to contain disagreements — use `$HPR note show <id1> <id2> ... -j` in batches. **Tensions hide in nuance that summaries flatten:** a source's "however" clause, a footnote caveat, a methodological critique buried in a discussion section. You cannot extract tensions you haven't read. Look for:
+2. **Scan the width corpus for orphan tensions.** For the 15–20 highest-quality non-deprecated sources, then **read the full body** of the top 8–12 sources most likely to contain disagreements — use `bad note show <id1> <id2> ... -j` in batches. **Tensions hide in nuance that summaries flatten:** a source's "however" clause, a footnote caveat, a methodological critique buried in a discussion section. You cannot extract tensions you haven't read. Look for:
    - Sources that explicitly disagree with each other (different conclusions from similar evidence)
    - Sources that use competing theoretical frameworks to explain the same phenomenon
    - Sources where one side cites data the other side ignores

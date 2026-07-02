@@ -271,7 +271,22 @@ def funnel_gather_cmd(
     ov = effort_overrides(effort)
     if ov is not None:
         eff_mode = ov["route"]
-    typer.echo(json.dumps(run_funnel(q, mode=eff_mode, vault_tag=vault_tag), default=str))
+    # A fan-out connection/DNS error (unreachable search-provider host), a
+    # provider blowup, or any unexpected funnel failure must NOT escape as an
+    # uncaught traceback: this command always speaks JSON, so an orchestrator
+    # calling it needs a parseable envelope to branch on and a clean non-zero
+    # exit — not a stack trace on stdout. (issue #24)
+    try:
+        result = run_funnel(q, mode=eff_mode, vault_tag=vault_tag)
+    except Exception as exc:
+        typer.echo(json.dumps({
+            "ok": False,
+            "error": str(exc),
+            "error_type": type(exc).__name__,
+            "stage": "funnel-gather",
+        }, default=str))
+        raise typer.Exit(1) from exc
+    typer.echo(json.dumps(result, default=str))
 
 
 # ── retrieve (Task 9/12) — hybrid retrieval top-chunks ───────────────────────

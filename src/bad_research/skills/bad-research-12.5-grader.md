@@ -57,7 +57,7 @@ The grader needs the evidence as a JSON list of `{note_id, url, text}`. Convert
 the evidence-digest into that shape (one entry per cited note):
 
 ```bash
-PYTHONIOENCODING=utf-8 $HPR search "" --tag <vault_tag> --json \
+PYTHONIOENCODING=utf-8 bad search "" --tag <vault_tag> --json \
   | python -c "
 import sys, json
 d = json.load(sys.stdin)

@@ -287,6 +287,28 @@ def test_funnel_gather_cmd_has_only_effort_not_reasoning_effort_alias():
     assert "--reasoning-effort" not in r.stdout
 
 
+def test_funnel_gather_json_emits_error_envelope_not_traceback(monkeypatch):
+    # issue #24: a connection/DNS error inside run_funnel (e.g. an unreachable
+    # search-provider host on the fan-out) must NOT propagate as an uncaught
+    # traceback. Under --json the caller gets a parseable {"ok": false, ...}
+    # envelope and a clean non-zero exit, so an orchestrator can branch on it.
+    import bad_research.cli.research as research_mod
+
+    def _boom(*a, **k):
+        raise ConnectionError("[Errno 8] nodename nor servname provided, or not known")
+
+    monkeypatch.setattr(research_mod, "run_funnel", _boom)
+
+    res = runner.invoke(app, ["funnel-gather", "some query", "--mode", "full", "--json"])
+    assert res.exit_code != 0                      # non-zero, but CLEAN
+    assert res.exception is None or isinstance(res.exception, SystemExit)
+    env = json.loads(res.stdout)                   # parseable, not a stack trace
+    assert env["ok"] is False
+    assert env["stage"] == "funnel-gather"
+    assert "nodename nor servname" in env["error"]
+    assert env["error_type"] == "ConnectionError"
+
+
 def test_verify_report_threads_effort_into_verifier(tmp_path, monkeypatch):
     # The --effort value reaches CitationVerifier.effort (so the high-effort vote
     # actually fires on a real run, not just when constructed directly in a test).

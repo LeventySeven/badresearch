@@ -119,10 +119,10 @@ If any artifact is missing, the responsible step failed silently. Re-spawn the r
 
 2. **Run the lint gate:**
    ```bash
-   $HPR lint --rule wrapper-report --json
-   $HPR lint --rule locus-coverage --json
-   $HPR lint --rule scaffold-prompt --json
-   $HPR lint --rule patch-surgery --json
+   bad lint --rule wrapper-report --json
+   bad lint --rule locus-coverage --json
+   bad lint --rule scaffold-prompt --json
+   bad lint --rule patch-surgery --json
    ```
 
    If any rule returns `error` severity issues, address them before declaring complete:

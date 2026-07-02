@@ -180,7 +180,7 @@ quality/legal smell, not a correctness failure) — so it never blocks ship.
 First build the note-bodies JSON (note_id → body) the gate needs:
 
 ```bash
-PYTHONIOENCODING=utf-8 $HPR search "" --tag <vault_tag> --json \
+PYTHONIOENCODING=utf-8 bad search "" --tag <vault_tag> --json \
   | python -c "
 import sys, json
 d = json.load(sys.stdin)

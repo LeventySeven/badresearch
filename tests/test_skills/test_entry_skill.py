@@ -36,6 +36,20 @@ def test_entry_skill_bootstrap_uses_bad_not_bare_hyperresearch(skills_dir):
     assert "bad vault-tag" in body
 
 
+def test_no_skill_doc_invokes_undefined_HPR_variable(skills_dir):
+    # issue #25: step skills invoked `$HPR …` (e.g. `$HPR lint`, `$HPR note show`)
+    # across 11 files, but $HPR is never exported — only `bad` is on PATH, so the
+    # var expands to "" and the command silently runs as `lint …` and fails. Every
+    # skill doc must invoke the CLI as `bad …` (the absolute-path fallback for the
+    # not-on-PATH case is documented separately in the entry skill).
+    offenders = {
+        p.name: p.read_text().count("$HPR")
+        for p in skills_dir.glob("*.md")
+        if "$HPR" in p.read_text()
+    }
+    assert offenders == {}, f"skill docs still invoke undefined $HPR: {offenders}"
+
+
 def test_entry_skill_documents_unknown_skill_read_fallback(skills_dir):
     # The step skills are installed mid-session by `bad install --steps-only`; the host's
     # Skill registry is loaded at session start, so `Skill(skill: "bad-research-0.5-clarify")`
