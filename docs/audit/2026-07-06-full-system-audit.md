@@ -135,12 +135,23 @@ dead legacy path.
 
 ## Part 4 — Enhancement roadmap (tiered by risk × value)
 
-### Tier 0 — correctness / security / reliability (implement now; TDD; keyless-safe)
-1. Fix the `postfetch_reject_reason` import → the real post-fetch content filter runs again.
-2. Wire the injection preamble at the untrusted-body boundary; collapse the 3 divergent
-   `INJECTION_PREAMBLE` constants to one canonical source.
-3. `PRAGMA busy_timeout=5000` + bounded retry around `execute_sync`.
-4. Wrap the v7/v8 migration rebuilds in a single transaction.
+### Tier 0 — correctness / security / reliability
+1. ✅ **DONE** — Fix the `postfetch_reject_reason` import → the real post-fetch content filter runs again.
+2. ✅ **DONE (defense-in-depth layer)** — untrusted-content policy added to the universal
+   subagent **spawn contract** (covers every body-reading subagent + the Codex port) and
+   **baked into the fetcher's system prompt** (guaranteed at the #1 lethal-trifecta node);
+   both regression-locked. The *authoritative* control is the existing deterministic SSRF
+   egress allowlist (`core/fetcher.is_blocked_url`) + the host's Bash-permission gating —
+   this adds the model-side warning that was absent. The 3 `INJECTION_PREAMBLE` strings were
+   **left as-is on purpose**: they are purpose-fit variants (reranker=scoring,
+   fetch_clean=cleaning, injection.py=extraction), not divergent copies — forcing one
+   would degrade context-fit. *Deeper structural follow-ups (tracked): bake the warning into
+   every body-reading agent constant (not just the fetcher); optionally fence `bad note show`
+   body output with `wrap_untrusted` at the CLI layer; minimize per-agent tool grants.*
+3. ✅ **DONE** — `PRAGMA busy_timeout=5000` (SQLite now blocks-and-retries the lock; the
+   explicit Python-level retry around `execute_sync` remains a cheap follow-up).
+4. **TODO** — Wrap the v7/v8 migration rebuilds in a single transaction (low probability,
+   high blast radius).
 
 ### Tier 1 — dead-code & honesty (implement now; safe; net deletion; tests green)
 Cut `shape_fanout`, `ROUTER_AGENTIC_MAX_ATOMIC` (+ its test assertion), the `max_tokens`
