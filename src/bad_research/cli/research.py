@@ -169,12 +169,25 @@ def _build_tiered_fetcher(cfg: object) -> object | None:
 
 
 def _build_postfetch(cfg: object) -> object:
-    """Post-fetch junk/language filter (Plan 05). Default: keep everything."""
+    """Post-fetch junk/login/paywall/language filter (Plan 05).
+
+    Returns a ``reject_reason`` callable (``str`` cause to drop, ``None`` to keep) —
+    the contract ``funnel/filter.py`` consumes. ``content_filter`` is a core (non-optional)
+    dependency, so the import must succeed; if it ever doesn't we log LOUDLY and fall back
+    to keep-everything rather than silently shipping an unfiltered corpus (the prior bare
+    ``except`` swallowed a real ImportError for a full release — regression-locked by
+    ``test_build_postfetch_wires_the_real_filter_not_keep_everything``)."""
     try:
         from bad_research.quality.content_filter import postfetch_reject_reason
 
         return postfetch_reject_reason
-    except Exception:
+    except Exception as e:  # pragma: no cover - core dep, should never trigger
+        import logging
+
+        logging.getLogger("bad_research.cli.research").error(
+            "post-fetch content filter unavailable (%s); corpus will NOT be junk-filtered "
+            "this run — this is a wiring break, not normal degradation.", e, exc_info=True,
+        )
         return lambda r: None
 
 
@@ -254,8 +267,10 @@ def funnel_gather_cmd(
     """Run the scraper funnel: fan-out->dedup->rank->read(rung0-3)->filter->chunk->rerank.
 
     --effort (minimal|low|medium|high) nudges the route + per-stage fan-out
-    via skills/router.effort_overrides; --max-tokens sets the per-run ceiling the
-    orchestrator degrades against. Both default to the config's tier behaviour.
+    via skills/router.effort_overrides. --max-tokens is accepted for orchestrator-level
+    compatibility but is NOT enforced here — this deterministic funnel does not meter
+    tokens; the orchestrator tracks the ceiling in prose (entry skill). Defaults to the
+    config's tier behaviour.
     """
     from bad_research.skills.router import effort_overrides
 
@@ -348,7 +363,9 @@ def retrieve_cmd(
     top_k: int = typer.Option(20, "--top-k"),
     json_output: bool = typer.Option(False, "--json", "-j"),
 ) -> None:
-    """Hybrid retrieval: vector+BM25 fuse (alpha=0.7) -> rerank -> 0.70 gate. Returns top_k Chunks."""
+    """Keyless retrieval: min-max BM25 recall -> host-model rerank -> 0.70 relevance gate.
+    Returns top_k Chunks. (An optional [local] dense lane adds RRF vector+BM25 fusion when
+    neural_recall is enabled; the default keyless path is BM25 + rerank, no vector fuse.)"""
     from dataclasses import asdict
 
     from bad_research.config import BadResearchConfig

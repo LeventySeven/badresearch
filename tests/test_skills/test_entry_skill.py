@@ -36,6 +36,25 @@ def test_entry_skill_bootstrap_uses_bad_not_bare_hyperresearch(skills_dir):
     assert "bad vault-tag" in body
 
 
+def test_no_step_skill_leaks_stale_cli_name_or_template_var(skills_dir):
+    """Every step-skill .md is installed VERBATIM (hooks._install_bad_research_step_skills
+    write_texts the raw source — no .format/.replace). So a bare `hyperresearch <cmd>` or an
+    un-substituted `{hpr_path}` in ANY step skill reaches the model literally: a subagent that
+    copies it runs a nonexistent binary. The entry-skill-only guard (issue #12) missed leaks
+    in depth-investigation / corpus-critic — this covers the whole skill set."""
+    import re
+
+    offenders: dict[str, list[str]] = {}
+    for p in sorted(skills_dir.glob("bad-research*.md")):
+        body = p.read_text(encoding="utf-8")
+        bad = re.findall(r"hyperresearch [a-z][a-z-]+", body)
+        if "{hpr_path}" in body:
+            bad.append("{hpr_path}")
+        if bad:
+            offenders[p.name] = bad
+    assert offenders == {}, f"step skills leak stale CLI name / template var (use `bad`): {offenders}"
+
+
 def test_no_skill_doc_invokes_undefined_HPR_variable(skills_dir):
     # issue #25: step skills invoked `$HPR …` (e.g. `$HPR lint`, `$HPR note show`)
     # across 11 files, but $HPR is never exported — only `bad` is on PATH, so the

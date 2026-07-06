@@ -146,6 +146,12 @@ def get_connection(db_path: Path) -> sqlite3.Connection:
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA journal_mode=WAL")
     conn.execute("PRAGMA foreign_keys=ON")
+    # The pipeline fans out 10-12 fetcher subagents in one wave, each shelling
+    # `bad fetch` -> execute_sync -> BEGIN IMMEDIATE (an instant write-lock). Without
+    # this, a second concurrent writer gets an immediate `database is locked` and no
+    # retry (WAL prevents corruption, not lock contention). busy_timeout makes SQLite
+    # block-and-retry the lock internally for up to 5s before erroring.
+    conn.execute("PRAGMA busy_timeout=5000")
     return conn
 
 

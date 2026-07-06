@@ -9,8 +9,6 @@ regardless of any env key.
 from __future__ import annotations
 
 from bad_research.calibrate.baselines import (
-    BaselineUnavailable,
-    HyperresearchBaseline,
     available_baselines,
 )
 
@@ -32,19 +30,5 @@ def test_available_baselines_keyless_clean(monkeypatch):
     names = {b.name for b in available_baselines()}
     assert "perplexity" not in names
     assert "grok" not in names
-    # Only the keyless hyperresearch comparator may appear (and only if importable).
-    assert names <= {"hyperresearch"}
-
-
-def test_hyperresearch_baseline_is_structural_only():
-    """The hyperresearch baseline needs a Claude Code host; offline it's unavailable
-    or raises BaselineUnavailable on run (never crashes)."""
-    b = HyperresearchBaseline()
-    if b.available():
-        try:
-            b.run("any query")
-        except BaselineUnavailable:
-            pass  # expected: needs a Claude Code host for real LLM comparison
-    else:
-        # upstream package not importable in this env — that's the common case
-        assert b.name == "hyperresearch"
+    # No keyless baseline currently ships under the keyless architecture.
+    assert names == set()

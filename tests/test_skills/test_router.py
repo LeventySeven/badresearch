@@ -15,7 +15,7 @@ def test_constants_match_interfaces():
     assert R.SUBAGENT_FANOUT_DEFAULT == 3 and R.SUBAGENT_FANOUT_MAX == 20
     assert R.CLARIFY_MAX_QUESTIONS == 3
     assert R.READ_TOP_K_CEILING == 80
-    assert R.ROUTER_AGENTIC_MAX_ATOMIC == 2 and R.ROUTER_LIGHT_MAX_ATOMIC == 6
+    assert R.ROUTER_LIGHT_MAX_ATOMIC == 6
 
 
 def test_trivial_single_domain_routes_fast():

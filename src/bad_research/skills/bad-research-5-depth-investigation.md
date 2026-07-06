@@ -88,7 +88,7 @@ Read these inputs:
      and what was abandoned. Do NOT silently iterate on a dead query line.
 
      CRITICAL: Read the full source text of relevant vault notes (via
-     `hyperresearch note show <id1> <id2> ... -j`) BEFORE writing your
+     `bad note show <id1> <id2> ... -j`) BEFORE writing your
      interim note. Drafting from summaries alone produces paraphrase;
      drafting from full text produces synthesis. Use your source_budget
      to fetch additional sources beyond the width corpus if needed.
@@ -106,7 +106,7 @@ Read these inputs:
      (selective evidence, no counter-data). A flagged source is caveated or
      corroborated at synthesis, never suppressed.
 
-     OUTPUT: Write a single interim note via the hyperresearch CLI with
+     OUTPUT: Write a single interim note via the bad CLI with
      type=interim, tags = <vault_tag> + locus-<locus-name>. The note MUST
      end with a "## Committed position" section that takes a SIDE on the
      dialectical question (or a synthesis verdict for non-dialectical

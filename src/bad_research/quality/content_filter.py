@@ -12,7 +12,13 @@ from bad_research.web.base import WebResult
 
 # Re-export the verbatim hyperresearch gates so callers import one module (dossier 07 §8).
 # (They live as WebResult methods; we expose function aliases for symmetry.)
-__all__ = ["looks_like_junk", "looks_like_login_wall", "looks_like_paywall", "postfetch_filter"]
+__all__ = [
+    "looks_like_junk",
+    "looks_like_login_wall",
+    "looks_like_paywall",
+    "postfetch_filter",
+    "postfetch_reject_reason",
+]
 
 
 def looks_like_login_wall(result: WebResult, original_url: str | None = None) -> bool:
@@ -83,3 +89,25 @@ def postfetch_filter(result: WebResult, *, query_lang: str | None = None,
         if detected is not None and detected != query_lang:
             return None
     return result
+
+
+def postfetch_reject_reason(result: WebResult, *, query_lang: str | None = None,
+                            original_url: str | None = None) -> str | None:
+    """Stage 2 keep/drop as a REASON: a short cause string to DROP, ``None`` to KEEP.
+
+    This is the contract the funnel relies on (``funnel/filter.py``:
+    ``[p for p in pages if postfetch_reject_reason(p) is None]`` — ``None`` keeps).
+    It mirrors :func:`postfetch_filter`'s order (login wall -> junk -> paywall ->
+    language) but names the cause so the drop is observable, not silent.
+    """
+    if result.looks_like_login_wall(original_url or result.url):
+        return "login_wall"
+    if result.looks_like_junk() is not None:
+        return "junk"
+    if looks_like_paywall(result):
+        return "paywall"
+    if query_lang:
+        detected = _detect_lang(result.content)
+        if detected is not None and detected != query_lang:
+            return "language"
+    return None

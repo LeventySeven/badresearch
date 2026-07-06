@@ -444,7 +444,9 @@ def funnel_gather(query: str, mode: str = "light", vault_tag: str = "") -> str:
 
 @server.tool()
 def retrieve_chunks(query: str, mode: str = "full", top_k: int = 20) -> str:
-    """Hybrid retrieval: vector+BM25 fuse (alpha=0.7) -> rerank -> 0.70 gate. Returns top_k Chunks.
+    """Keyless retrieval: min-max BM25 recall -> host-model rerank -> 0.70 relevance gate.
+    Returns top_k Chunks. (Optional [local] dense lane adds RRF vector+BM25 fusion; the
+    default keyless path is BM25 + rerank, no vector fuse.)
 
     Args:
         query: the query to retrieve against

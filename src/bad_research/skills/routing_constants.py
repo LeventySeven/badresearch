@@ -47,7 +47,6 @@ READ_TOP_K_CEILING = 80
 RELEVANCE_GATE = 0.70
 
 # Router heuristic boundaries — DR-loops §9.2 (the verbatim decision tree)
-ROUTER_AGENTIC_MAX_ATOMIC = 2
 ROUTER_LIGHT_MAX_ATOMIC = 6
 
 

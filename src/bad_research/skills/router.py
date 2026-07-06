@@ -394,17 +394,6 @@ def shape_reason(decomp: dict[str, Any]) -> str:
             "(1 investigator)")
 
 
-def shape_fanout(decomp: dict[str, Any]) -> dict[str, Any]:
-    """Resolve SHAPE_FANOUT for this decomposition: the arrangement + the concrete
-    investigator count K. For breadth_first, K = min(n_independent_subq, cap)."""
-    shape = classify_query_shape(decomp)
-    spec = dict(R.SHAPE_FANOUT[shape])
-    if shape == "breadth_first":
-        spec["k"] = min(_n_independent_subq(decomp), R.SHAPE_BREADTH_K_CAP)
-    spec["shape"] = shape
-    return spec
-
-
 def effort_overrides(effort: str | None) -> dict[str, Any] | None:
     """Translate the `--effort` dial (minimal/low/medium/high) into the
     router overrides the orchestrator applies on top of the auto-classified route.
