@@ -169,8 +169,12 @@ behind a real `--schema` entrypoint or cut them.
   exempt) BEFORE the pool cap, so garbage never spends one of the ≤80 reads; `canonicalize_url`
   now strips utm_*/fbclid/gclid/AMP twins so they dedup to one candidate. This turns the dead
   `is_blocklisted`/`seo_farm_score`/`canonical` logic live. TDD (18 new/extended tests), full
-  suite green. *(Follow-up: the still-dead `quality/dedup.py` + `quality/rank.py::authority_rank`
-  twins can now be cut or wired in a focused pass.)*
+  suite green. ✅ **Follow-up DONE** — the now-redundant dead twins were cut: `quality/dedup.py`,
+  `quality/rank.py` (`authority_rank`), `quality/relevance.py` (`score_and_filter`), and the dead
+  `prefetch_filter`/`passes_engagement_floor` inside the now-live `prefilter.py`; plus the dead
+  588-line `serve/server.py` HTTP server (kept the live `renderer.py`). Net −1,135 lines.
+  *(Still deferred as a product decision, not cleanup: the `mcp/server.py` face — a shipped `[mcp]`
+  extra.)*
 - **Wire the scholarly verticals** into fan-out (the keyless system's actual academic
   differentiator) — or delete them and stop advertising them in `doctor`/`decompose`.
 - **Collapse the content stacks** — route `bad fetch` through the browse ladder; amputate
