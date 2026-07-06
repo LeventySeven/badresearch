@@ -206,8 +206,15 @@ behind a real `--schema` entrypoint or cut them.
 These change what Bad Research *is*, so they are recommendations, not unilateral edits:
 - **Add distilled-reflections / inter-round memory** (the #1 underkill; unlocks cutting the
   stage count without losing rigor).
-- **Gut the grader loop on the keyless default** (it becomes the author grading itself);
-  keep only the deterministic step-16 gates as the floor + one guaranteed critic-apply pass.
+- ✅ **DONE — Gut the grader loop on the keyless default.** Flipped step-12.5's keyless
+  branch to DEFAULT to the clean skip instead of the inline self-grade: on keyless the grader
+  is the author grading its own output, adding no independent signal over the 5 fresh-context
+  critics + the fresh-review that already ran, while the deterministic uncited gate at step 16
+  stays the hard floor. Removes up to 3 judge passes + 3 patcher spawns per keyless run — the
+  audit's #1 cost sink — with provably zero quality loss (there was no independent signal to
+  lose). Both options stay documented (inline grade is now the exception); `grader-log.json`
+  still written either way, so the integrity gate + step-15 dependency are intact. Skill-prose
+  change (verified by skill-structure tests, not a research-quality eval — see below).
 - **Cut Draft C → 2 drafts** (thesis + steelman) into the reconciling synthesizer; add a
   divergence gate so the ensemble can't silently degrade to expensive triplication.
 - **Merge polish (15) into readability-audit (16)** — they duplicate paragraph/run-on surgery.
