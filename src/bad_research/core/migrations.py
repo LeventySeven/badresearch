@@ -50,7 +50,10 @@ def _migrate_v7_interim_note_type(conn: sqlite3.Connection) -> None:
         pass
 
     # Rebuild the table with the expanded CHECK. Preserve all data.
+    # DROP IF EXISTS: a crash mid-rebuild on a PRIOR run can leave an orphan notes_v7;
+    # without this guard the re-run's CREATE fails "table already exists".
     conn.executescript("""
+        DROP TABLE IF EXISTS notes_v7;
         CREATE TABLE notes_v7 (
             id           TEXT PRIMARY KEY,
             title        TEXT NOT NULL,
@@ -86,9 +89,15 @@ def _migrate_v7_interim_note_type(conn: sqlite3.Connection) -> None:
     conn.execute(
         f"INSERT INTO notes_v7 ({col_list}) SELECT {col_list} FROM notes"
     )
+    # The fatal pair, wrapped in one transaction: a crash between DROP and RENAME would
+    # otherwise leave the vault with NO `notes` table (executescript auto-commits between
+    # statements). SQLite supports transactional DDL, so BEGIN..COMMIT makes this atomic —
+    # a crash rolls the journal back to the intact pre-DROP state.
     conn.executescript("""
+        BEGIN;
         DROP TABLE notes;
         ALTER TABLE notes_v7 RENAME TO notes;
+        COMMIT;
     """)
 
 
@@ -119,6 +128,7 @@ def _migrate_v8_source_analysis_note_type(conn: sqlite3.Connection) -> None:
         pass
 
     conn.executescript("""
+        DROP TABLE IF EXISTS notes_v8;
         CREATE TABLE notes_v8 (
             id           TEXT PRIMARY KEY,
             title        TEXT NOT NULL,
@@ -152,9 +162,13 @@ def _migrate_v8_source_analysis_note_type(conn: sqlite3.Connection) -> None:
     conn.execute(
         f"INSERT INTO notes_v8 ({col_list}) SELECT {col_list} FROM notes"
     )
+    # Atomic fatal pair (see v7): a crash between DROP and RENAME must not leave the vault
+    # with no `notes` table. Transactional DDL rolls back to the intact pre-DROP state.
     conn.executescript("""
+        BEGIN;
         DROP TABLE notes;
         ALTER TABLE notes_v8 RENAME TO notes;
+        COMMIT;
     """)
 
 
