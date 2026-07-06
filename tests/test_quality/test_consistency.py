@@ -2,7 +2,7 @@
 
 Denny Zhou: self-consistency lifts accuracy 58→75% by sampling N answers and
 selecting the most cross-supported one (universal self-consistency for open-ended).
-DISTINCT from triple-draft (which MERGES 3 angle drafts; this VOTES).
+DISTINCT from the draft ensemble (which MERGES 2 angle drafts; this VOTES).
 
 The high-effort lane only: for `effort=high` (or an explicitly contested claim),
 sample N host-model judgments on a high-stakes (claim, quote) pair and apply

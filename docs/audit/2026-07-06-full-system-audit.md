@@ -221,8 +221,15 @@ These change what Bad Research *is*, so they are recommendations, not unilateral
   lose). Both options stay documented (inline grade is now the exception); `grader-log.json`
   still written either way, so the integrity gate + step-15 dependency are intact. Skill-prose
   change (verified by skill-structure tests, not a research-quality eval — see below).
-- **Cut Draft C → 2 drafts** (thesis + steelman) into the reconciling synthesizer; add a
-  divergence gate so the ensemble can't silently degrade to expensive triplication.
+- ✅ **DONE — Cut Draft C → 2 drafts.** Full-tier ensemble reduced from 3 parallel Opus drafts
+  to 2 (tension: strongest-thesis + steelman; survey: breadth + depth), dropping the
+  synthesis-reconciler draft whose job the step-11 synthesizer already does — so reconciliation
+  no longer happens twice. ~¼ off the most expensive stage. Kept the `bad-research-10-triple-draft`
+  filename as a legacy identifier (avoids an install-migration rename) with notes in the skill +
+  invariant #10. Updated the entry invariants (#10 spawn 2, #11 synthesize from 2), the
+  DRAFT_ORCHESTRATOR/SYNTHESIZER/READABILITY agent constants, and added 5 regression assertions
+  pinning the 2-draft contract. Full suite 1260 passed, 0 failures. *(Reasoning-grounded + SOTA-
+  aligned; quality delta not benchmarked — reversible.)*
 - **Merge polish (15) into readability-audit (16)** — they duplicate paragraph/run-on surgery.
 - ✅ **DONE — Folded `ultrafast` out** (3 routes → 2). It was never auto-selected (classifier
   only ever emits fast/full) and was `fast`'s breadth branch with the caps turned up — so the
