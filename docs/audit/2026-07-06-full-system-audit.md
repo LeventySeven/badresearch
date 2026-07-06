@@ -186,9 +186,19 @@ behind a real `--schema` entrypoint or cut them.
   so verticals fire on ≤2 seed queries rather than all funnel queries.)*
 - **Collapse the content stacks** — route `bad fetch` through the browse ladder; amputate
   `fetch_clean`'s dead `llm_clean`/`highlights` tails; wire or cut `sources.py`.
-- **Make grounding bind, not count** — wire `build_from_claims` (a `bad bind-anchors` step
-  over `claims-*.json`), stop stamping `verified=1` on whole-body seeds, let an unverified
-  cite block ship. Fixes the gap between the "bound to a source" promise and the code.
+- **Make grounding bind, not count** — phased warn→block:
+  - ✅ **Phase 1 DONE (warn)** — a non-blocking `citation-drift` finding: when a factual claim's
+    content tokens barely appear in the cited note body (the keyless whole-body `verified=1`
+    seed the old gate waved through), the gate emits a `minor` warning. `bad uncited-gate` now
+    splits output into blocking `uncited` (critical+major, unchanged) + non-blocking `warnings`
+    (minor) — a drift-only report still ships (exit 0). The tool now *sees* citation drift for
+    the first time without changing what ships. TDD (4 tests); a caught-and-fixed block-flip bug
+    (the CLI blocked on any finding, not just critical). Conservative thresholds (< 20% overlap,
+    ≥ 200-char body, ≥ 4-token claim) keep false positives low.
+  - **Phase 2 TODO (block)** — wire `build_from_claims` (a `bad bind-anchors` step over
+    `claims-*.json`) so anchors are located spans not whole-body seeds, stop stamping
+    `verified=1`, and flip drift/unverified to blocking — after the `claims-*.json` seam is fixed
+    and the Phase-1 warn's real-run false-positive rate is validated.
 - **Fix the `claims-*.json` seam** — the funnel must emit per-note claims, or the
   contradiction-graph/loci chain must stop depending on an artifact the default path lacks.
 

@@ -630,7 +630,8 @@ def _uncited_gate(report_path: str, vault_tag: str, note_bodies_path: str | None
 
     findings = no_uncited_claim_gate(report_md, store)
     return [
-        {"sentence": getattr(f, "location", ""), "reason": getattr(f, "failure_mode", "uncited")}
+        {"sentence": getattr(f, "location", ""), "reason": getattr(f, "failure_mode", "uncited"),
+         "severity": getattr(f, "severity", "critical")}
         for f in findings
     ]
 
@@ -652,9 +653,16 @@ def uncited_gate_cmd(
     pre-populated vault — mirrors recitation-gate. Numeric `[N]` resolves
     positionally ([1] = first key in the map). With neither a vault nor
     --note-bodies, the gate auto-inits an empty store (clean "0 anchors")."""
-    uncited = _uncited_gate(report, vault_tag, note_bodies)
-    typer.echo(json.dumps({"uncited": uncited}))
-    if uncited:
+    all_findings = _uncited_gate(report, vault_tag, note_bodies)
+    # Blocking = critical + major (the exact set that blocked before this split).
+    # `minor` (e.g. the phase-1 non-blocking citation-drift WARNING) is surfaced under
+    # `warnings` so it is VISIBLE to the orchestrator/polish but never fails the gate.
+    blocking = [f for f in all_findings if f.get("severity") != "minor"]
+    warnings = [f for f in all_findings if f.get("severity") == "minor"]
+    # `uncited` stays the blocking list (the skill parses it as "things that block");
+    # `warnings` is additive and non-blocking.
+    typer.echo(json.dumps({"uncited": blocking, "warnings": warnings}))
+    if blocking:
         raise typer.Exit(1)
 
 

@@ -199,7 +199,8 @@ def no_uncited_claim_gate(report_md: str, anchors: AnchorStore) -> list[Finding]
                 findings.append(Finding(
                     "dangling-cite", "critical", sent,
                     f"Citation {c} resolves to no claim_anchor -- remove or repoint."))
-            elif anchor.verified != 1:
+                continue
+            if anchor.verified != 1:
                 # Severity depends on the recorded verify_score. A span that
                 # explicitly does NOT support the claim (score < PARTIAL_LOW)
                 # blocks ship as critical (G4 gate tightening, round2-citation
@@ -216,6 +217,11 @@ def no_uncited_claim_gate(report_md: str, anchors: AnchorStore) -> list[Finding]
                     rec = (
                         f"Citation {c} was not confirmed by the CitationVerifier -- re-run Tier B or hedge.")
                 findings.append(Finding("unverified-cite", severity, sent, rec))
+            # Citation-drift WARN (non-blocking) — applies to ANY resolved anchor,
+            # incl. the keyless whole-body verified=1 seed the older logic waves through.
+            drift = _citation_drift_finding(sent, c, anchor)
+            if drift is not None:
+                findings.append(drift)
     return findings
 
 
@@ -272,6 +278,41 @@ def claim_quote_overlap(claim: str, quote: str) -> float:
         return 1.0
     q = _content_tokens(quote)
     return len(c & q) / len(c)
+
+
+# ── Citation-drift WARN — phase 1 of "bind, not count" ────────────────────────
+# The keyless gate seeds whole-body anchors verified=1, so today a cite passes as
+# long as the note FILE exists — it never checks the note is ON-TOPIC. This adds a
+# NON-BLOCKING signal: when a factual claim's content tokens barely appear anywhere
+# in the cited note body, the cite is probably pointing at the wrong source (drift).
+# It is `minor` on purpose — it must NOT block ship (a block-flip is phase 2, after
+# located-span binding via build_from_claims + real-run validation of the false-
+# positive rate). Conservative thresholds keep noise low: only egregious drift, on a
+# substantial cited body, for a claim with enough content to judge.
+CITATION_DRIFT_WARN_THRESHOLD = 0.2   # < 20% of the claim's content tokens in the cited note
+_DRIFT_MIN_CLAIM_TOKENS = 4           # skip trivial/short claims
+_DRIFT_MIN_SPAN_CHARS = 200           # only when the cited span is a substantial body
+
+
+def _citation_drift_finding(sentence: str, cite: str, anchor: object) -> Finding | None:
+    """Non-blocking drift signal: the cited note shares almost none of the claim's
+    content tokens — probably the wrong source. Returns a `minor` Finding or None.
+
+    Deliberately does not depend on the CitationVerifier having run, so it catches drift
+    on the keyless whole-body-seed path where every anchor is stamped verified=1."""
+    quote = getattr(anchor, "quoted_support", "") or ""
+    if len(quote) < _DRIFT_MIN_SPAN_CHARS:
+        return None
+    if len(_content_tokens(sentence)) < _DRIFT_MIN_CLAIM_TOKENS:
+        return None
+    if claim_quote_overlap(sentence, quote) >= CITATION_DRIFT_WARN_THRESHOLD:
+        return None
+    pct = int(CITATION_DRIFT_WARN_THRESHOLD * 100)
+    return Finding(
+        "citation-drift", "minor", sentence,
+        f"Citation {cite} note shares <{pct}% of this claim's content words -- likely "
+        f"citation drift (wrong source). Verify the note actually supports the claim, or "
+        f"repoint the cite. (Non-blocking warning.)")
 
 
 # ── Numeric / negation / directional divergence guard (audit 2026-06-01 row 6;
