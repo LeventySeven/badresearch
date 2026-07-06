@@ -13,7 +13,7 @@ funnel._async.acall inside fan_out / read_top_k.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import date, datetime
 from typing import Any, Literal
 
@@ -42,6 +42,10 @@ class FunnelDeps:
     postfetch_filter: callable(WebResult) -> str | None  (Plan 05)
     vault:            obj with store_note(*, title, body, url, provider) -> note_id
     retrieval:        RetrievalEngine (Plan 02) - .index(notes), .search(q, mode, top_k)
+    vertical_providers: intent-routed keyless scholarly APIs (arXiv/OpenAlex/…) that
+        fire ALONGSIDE the capped base `providers`, bypassing the p_providers breadth cap
+        because they are already intent-curated (KR-2 §3.3). Default empty → byte-identical
+        when unused; the CLI wires them per-query via detect_intent (see cli/research.py).
     """
 
     providers: list[Any]      # list[WebSearchProvider]
@@ -49,6 +53,7 @@ class FunnelDeps:
     postfetch_filter: object  # callable(WebResult) -> str | None
     vault: object             # has: store_note(*, title, body, url, provider) -> note_id
     retrieval: object         # RetrievalEngine: .index(notes), .search(q, *, mode, top_k)
+    vertical_providers: list[Any] = field(default_factory=list)  # intent-routed scholarly APIs
 
 
 def recency_gate(candidates: list[Any], *, max_age_days: int | None) -> list[Any]:
@@ -130,7 +135,9 @@ async def gather(
     # ── Stage A — FAN-OUT (parallel, cheap, never near the model) ──────────
     if queries is None:
         queries = plan_queries(query, m_queries=cfg.m_queries, k_per_query=cfg.k_per_query)
-    active_providers = deps.providers[: cfg.p_providers]
+    # Base providers obey the p_providers breadth cap; intent-routed verticals fire
+    # ALONGSIDE them (they are already curated, so they don't compete for the cap).
+    active_providers = deps.providers[: cfg.p_providers] + list(deps.vertical_providers)
     raw_hits = await fan_out(queries, active_providers)
 
     # ── Stage B — DEDUP (URL-canonical + content-hash, free) ───────────────

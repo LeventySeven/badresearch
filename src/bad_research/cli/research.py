@@ -191,6 +191,38 @@ def _build_postfetch(cfg: object) -> object:
         return lambda r: None
 
 
+# Base-provider names already covered by _build_providers — never re-add them as a
+# "vertical" (ddgs is in the technical route but is already an always-on base provider).
+_BASE_PROVIDER_NAMES = frozenset({"ddgs", "searxng", "websearch"})
+
+
+def _build_vertical_providers(query: str) -> list:
+    """Intent-routed keyless scholarly providers for a query (KR-2 §3.3).
+
+    The keyless system's academic edge: an academic/medical/technical query gets the
+    matching free scholarly APIs (arXiv/OpenAlex/Crossref/Semantic Scholar/PubMed/Europe
+    PMC) fanned ALONGSIDE the generic web providers, instead of silently degrading to
+    DuckDuckGo scraping. `detect_intent` is the deterministic regex fallback (the host
+    model normally tags intent upstream); `VERTICAL_ROUTES` maps intent → provider names.
+    A general-intent query gets no verticals (empty list → funnel behaves exactly as
+    before — byte-identical when unused). Each provider is built keyless via get_provider;
+    a build failure is skipped, never fatal (the base web providers still carry the run).
+    """
+    from bad_research.web.base import get_provider
+    from bad_research.web.search.route import VERTICAL_ROUTES, detect_intent
+
+    intent = detect_intent(query)
+    out: list = []
+    for name in VERTICAL_ROUTES.get(intent, []):
+        if name in _BASE_PROVIDER_NAMES:
+            continue  # already an always-on base provider; don't double-fan it
+        try:
+            out.append(get_provider(name))
+        except Exception:
+            continue  # keyless-safe: a provider that can't build never aborts the funnel
+    return out
+
+
 def run_funnel(query: str, *, mode: str, vault_tag: str) -> dict:
     """Build FunnelDeps from config + run the FROZEN async gather(), then collapse
     the returned list[Chunk] into a FunnelEnvelope dict. Shared by CLI + MCP.
@@ -212,6 +244,9 @@ def run_funnel(query: str, *, mode: str, vault_tag: str) -> dict:
     store = VaultStore(vault, tags=[vault_tag] if vault_tag else [])
     deps = FunnelDeps(
         providers=_build_providers(cfg),
+        # Intent-routed scholarly verticals fire alongside the base providers (they
+        # bypass the p_providers breadth cap); a general query gets an empty list.
+        vertical_providers=_build_vertical_providers(query),
         fetcher=_build_tiered_fetcher(cfg),
         postfetch_filter=_build_postfetch(cfg),
         # Tag every stored note with the run's vault_tag so the corpus survey

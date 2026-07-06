@@ -175,8 +175,15 @@ behind a real `--schema` entrypoint or cut them.
   588-line `serve/server.py` HTTP server (kept the live `renderer.py`). Net −1,135 lines.
   *(Still deferred as a product decision, not cleanup: the `mcp/server.py` face — a shipped `[mcp]`
   extra.)*
-- **Wire the scholarly verticals** into fan-out (the keyless system's actual academic
-  differentiator) — or delete them and stop advertising them in `doctor`/`decompose`.
+- ✅ **DONE — Wire the scholarly verticals** into fan-out. `run_funnel` now detects query
+  intent (`detect_intent`) and builds the matched keyless scholarly providers
+  (`VERTICAL_ROUTES` → arXiv/OpenAlex/Crossref/Semantic Scholar/PubMed/Europe PMC) into a new
+  `FunnelDeps.vertical_providers` lane that fires ALONGSIDE the base web providers, bypassing
+  the `p_providers` breadth cap (they're already intent-curated). A general query gets an empty
+  lane → byte-identical to before. Academic/medical/technical queries stop degrading to DDG
+  scraping — and `bad doctor`'s "verticals active" claim is now true. TDD (5 tests), keyless
+  (build failures skipped, never fatal), full suite green. *(Follow-up: a politeness seed-limit
+  so verticals fire on ≤2 seed queries rather than all funnel queries.)*
 - **Collapse the content stacks** — route `bad fetch` through the browse ladder; amputate
   `fetch_clean`'s dead `llm_clean`/`highlights` tails; wire or cut `sources.py`.
 - **Make grounding bind, not count** — wire `build_from_claims` (a `bad bind-anchors` step
