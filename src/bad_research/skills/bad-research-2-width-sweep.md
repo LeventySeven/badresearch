@@ -340,10 +340,12 @@ each re-retrieve round makes inter-round token growth *quadratic*
 (`n·m·(m+1)/2`); carrying a compact distilled memory keeps it **linear** (`n·m`) —
 a ~−66% token win (Tavily). The raw bodies stay on disk in the vault, retrievable
 by `note_id`; they are NOT re-injected until synthesis (step 10/11), and even then
-only for the `note_id`s a section will cite. The data to do this already exists —
-each fetcher emits `research/temp/claims-<note-id>.json` of shape
-`{claim, note_id, quoted_support, char_start, char_end}`, i.e. the distilled
-claims are already separated from the raw note body.
+only for the `note_id`s a section will cite. On the legacy hand-dispatched fetcher path
+the distilled memory is `research/temp/claims-<note-id>.json` of shape
+`{claim, note_id, quoted_support, char_start, char_end}` (claims already separated from
+the raw body); on the **preferred `funnel-gather` path there are no per-note claims files** —
+the funnel's reranked `top_chunks` ARE the distilled, separated-from-raw-body memory that
+plays the same role. Either way, the raw bodies are not re-injected until synthesis.
 
 After each fetch wave (the funnel return in Step 2.2, and again after each gap
 fetch in Step 2.5), **distill, then drop the raw body from working context**:

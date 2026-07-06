@@ -515,3 +515,15 @@ def test_step16_surfaces_citation_drift_warnings(skills_dir):
     assert "repoint" in body or "re-point" in body        # the primary remedy
     # it must stay non-blocking (the hard block stays on `uncited`, not warnings)
     assert "does **not** block" in body or "does not block" in body or "non-blocking" in body
+
+
+def test_claims_seam_is_documented_honestly_not_silent(skills_dir):
+    """The preferred funnel-gather path has no model to distill per-note claims, so
+    claims-*.json is ABSENT by default and the contradiction graph prose-scans. Step 4.0
+    must frame the prose-scan as the first-class default (not a rare 'fetchers didn't
+    produce them' edge case), so the loci chain isn't silently resting on an artifact the
+    default path lacks."""
+    loci = (skills_dir / "bad-research-4-loci-analysis.md").read_text().lower()
+    assert "funnel-gather" in loci or "funnel path" in loci
+    assert "expected, not a failure" in loci or "not a failure" in loci
+    assert "first-class" in loci or "default, not a fallback" in loci
