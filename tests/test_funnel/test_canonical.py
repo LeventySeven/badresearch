@@ -37,3 +37,41 @@ def test_preserves_query_string():
 
 def test_distinct_paths_stay_distinct():
     assert canonicalize_url("https://a.com/p") != canonicalize_url("https://a.com/q")
+
+
+# ---- tracking-param stripping (utm_*/fbclid/gclid/… twins collapse) --------
+
+def test_strips_utm_tracking_params():
+    assert canonicalize_url("https://a.com/p?utm_source=x") == canonicalize_url("https://a.com/p")
+
+
+def test_strips_click_id_tracking_params():
+    assert canonicalize_url("https://a.com/p?fbclid=abc&gclid=def") == canonicalize_url("https://a.com/p")
+
+
+def test_strips_mailchimp_and_instagram_tracking_params():
+    assert canonicalize_url("https://a.com/p?mc_eid=1&mc_cid=2&igshid=z") == canonicalize_url("https://a.com/p")
+
+
+def test_keeps_semantic_params_drops_tracking():
+    out = canonicalize_url("https://a.com/p?id=5&utm_campaign=spring")
+    assert "id=5" in out
+    assert "utm_campaign" not in out
+
+
+# ---- AMP / mobile twin stripping -------------------------------------------
+
+def test_strips_amp_subdomain():
+    assert canonicalize_url("https://amp.a.com/p") == canonicalize_url("https://a.com/p")
+
+
+def test_strips_mobile_subdomain():
+    assert canonicalize_url("https://m.a.com/p") == canonicalize_url("https://a.com/p")
+
+
+def test_strips_trailing_amp_path_segment():
+    assert canonicalize_url("https://a.com/story/amp") == canonicalize_url("https://a.com/story")
+
+
+def test_strips_leading_amp_path_segment():
+    assert canonicalize_url("https://a.com/amp/story") == canonicalize_url("https://a.com/story")

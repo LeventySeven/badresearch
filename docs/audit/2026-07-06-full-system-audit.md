@@ -164,9 +164,13 @@ contradiction and the plan-gate `light`/`fast` exit routing. Gate `aql.py`/`extr
 behind a real `--schema` entrypoint or cut them.
 
 ### Tier 2 — reconcile the parallel implementations (high value; medium risk; staged, tested)
-- **Funnel → quality/prefilter.** Wire `canonical_url`, `seo_farm_score`, `is_blocklisted`
-  before the read stage; delete `funnel/canonical.py` + the dead `quality` twins. (Closes ~4
-  findings; rejects garbage before spending a read.)
+- ✅ **DONE — Funnel → quality/prefilter.** New Stage B.6 `prefetch_garbage_gate` in
+  `gather()` rejects blocklisted domains + SEO-farm listicles (primary/docs/reference tiers
+  exempt) BEFORE the pool cap, so garbage never spends one of the ≤80 reads; `canonicalize_url`
+  now strips utm_*/fbclid/gclid/AMP twins so they dedup to one candidate. This turns the dead
+  `is_blocklisted`/`seo_farm_score`/`canonical` logic live. TDD (18 new/extended tests), full
+  suite green. *(Follow-up: the still-dead `quality/dedup.py` + `quality/rank.py::authority_rank`
+  twins can now be cut or wired in a focused pass.)*
 - **Wire the scholarly verticals** into fan-out (the keyless system's actual academic
   differentiator) — or delete them and stop advertising them in `doctor`/`decompose`.
 - **Collapse the content stacks** — route `bad fetch` through the browse ladder; amputate

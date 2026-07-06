@@ -23,7 +23,14 @@ from bad_research.funnel.fanout import fan_out, plan_queries
 from bad_research.funnel.filter import filter_and_store
 from bad_research.funnel.rank import rank_candidates
 from bad_research.funnel.read import read_top_k
-from bad_research.quality.prefilter import domain_tier, passes_recency_gate
+from bad_research.quality.prefilter import (
+    SEO_FARM_BLOCK_THRESHOLD,
+    _SEO_EXEMPT_TIERS,
+    domain_tier,
+    is_blocklisted,
+    passes_recency_gate,
+    seo_farm_score,
+)
 
 
 @dataclass
@@ -65,6 +72,39 @@ def recency_gate(candidates: list[Any], *, max_age_days: int | None) -> list[Any
     return kept
 
 
+def prefetch_garbage_gate(candidates: list[Any], query: str) -> list[Any]:
+    """Stage B.6 — drop garbage sources BEFORE they can spend a read.
+
+    Wires the previously-orphaned quality/prefilter pre-fetch machinery into the
+    funnel: a candidate is dropped when its URL is blocklisted (Pinterest/Quora/
+    Scribd/… + tag/category/page paths) OR — for non-authority tiers only — its
+    SERP snippet trips the deterministic SEO-farm classifier
+    (`seo_farm_score >= SEO_FARM_BLOCK_THRESHOLD`, i.e. listicle + clickbait +
+    money-page + thin/stuffed signals). Primary/docs/reference tiers are exempt
+    from the SEO gate exactly as `prefetch_filter` does, so a spammy-looking
+    headline on a .gov/docs page never gets a real source rejected.
+
+    The snippet comes from the un-read WebResult's SERP body (`result.content`),
+    falling back to its title when the provider returned no snippet. Pure and
+    deterministic (regex + set membership); no network, microseconds/candidate.
+    Runs after the recency gate and before the pool cap so garbage never even
+    fills the candidate pool.
+    """
+    kept: list[Any] = []
+    for c in candidates:
+        if is_blocklisted(c.url):
+            continue
+        tier = domain_tier(c.url)
+        if tier.name not in _SEO_EXEMPT_TIERS:
+            r = getattr(c, "result", None)
+            snippet = (getattr(r, "content", "") or "").strip() or (
+                getattr(r, "title", "") or "")
+            if seo_farm_score(c.url, snippet, query) >= SEO_FARM_BLOCK_THRESHOLD:
+                continue
+        kept.append(c)
+    return kept
+
+
 async def gather(
     query: str,
     *,
@@ -99,6 +139,12 @@ async def gather(
 
     # ── Stage B.5 — RECENCY GATE (drop stale sources per the query window) ──
     candidates = recency_gate(candidates, max_age_days=recency_max_age_days)
+
+    # ── Stage B.6 — GARBAGE GATE (blocklist + SEO farm; primaries exempt) ───
+    # Reject blocklisted domains + SEO listicles BEFORE the pool cap so garbage
+    # never fills the pool or spends one of the ≤80 reads.
+    candidates = prefetch_garbage_gate(candidates, query)
+
     candidates = candidates[: cfg.candidate_pool]   # cap the pool
 
     # ── Stage C — RANK un-read candidates (RRF k=60 + utility) ─────────────
