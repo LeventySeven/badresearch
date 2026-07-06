@@ -230,7 +230,16 @@ These change what Bad Research *is*, so they are recommendations, not unilateral
   DRAFT_ORCHESTRATOR/SYNTHESIZER/READABILITY agent constants, and added 5 regression assertions
   pinning the 2-draft contract. Full suite 1260 passed, 0 failures. *(Reasoning-grounded + SOTA-
   aligned; quality delta not benchmarked — reversible.)*
-- **Merge polish (15) into readability-audit (16)** — they duplicate paragraph/run-on surgery.
+- ✅ **DONE (as a dedup, NOT a full merge — corrected by critical-thinking).** Close reading
+  showed 15 and 16 are NOT duplicates to merge: they use intentionally-different mechanisms
+  (polish = direct-Edit hygiene + the final integrity gate + the all-tier `polish-log.json`
+  artifact; 16 = deliberately *recommend-then-apply* because a blind reformatter "sometimes
+  hurts the argument"). A full merge would collapse two clean single-responsibility steps + move
+  the integrity gate + risk the load-bearing leak-strip. The audit's *concrete* finding was
+  narrower — the paragraph/run-on surgery was done twice — so the right fix is a **dedup**:
+  removed the risky direct-Edit paragraph reformatting from polish (deferring structural
+  readability to step 16's judgment-safe mechanism), keeping polish's unique leak-strip + gate.
+  Regression-locked. This *also* removes a hazard 16's own design warns against.
 - ✅ **DONE — Folded `ultrafast` out** (3 routes → 2). It was never auto-selected (classifier
   only ever emits fast/full) and was `fast`'s breadth branch with the caps turned up — so the
   capability isn't lost: `fast`'s breadth branch already spawns K parallel researchers for the

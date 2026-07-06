@@ -488,3 +488,19 @@ def test_depth_investigation_direction_switch_rule(skills_dir):
     # the pivot must be announced explicitly (written to notes)
     assert "switching direction" in low or "pivot" in low
     assert "orchestrator-notes" in body or "orchestrator_notes" in body or "orchestrator-notes.md" in body
+
+
+def test_polish_defers_structural_readability_to_step16(skills_dir):
+    """Dedup: paragraph/run-on/list surgery was done in BOTH step 15 (polish, blind Edit)
+    and step 16 (readability, judgment-safe recommend-then-apply). Step 16 owns structure on
+    purpose (a blind reformatter 'sometimes makes changes that hurt the argument'), so polish
+    must NOT reformat structure — only hygiene + filler + redundancy. Locks the dedup in."""
+    polish = (skills_dir / "bad-research-15-polish.md").read_text()
+    low = polish.lower()
+    # polish keeps its unique, load-bearing hygiene/leak-strip + filler + redundancy
+    assert "pipeline reference leaks" in low and "filler" in low
+    # ...but must explicitly defer structural reformatting to step 16
+    assert "step 16" in low and ("do not reformat structure" in low or "structural readability is\nstep 16" in low
+                                 or "structural readability is step 16" in low or "that is step 16's job" in low)
+    # and must NOT re-introduce the blind run-on/paragraph Edit surgery
+    assert "breaks into smaller units via edit" not in low
