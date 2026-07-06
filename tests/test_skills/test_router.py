@@ -73,9 +73,14 @@ def test_route_reason_mentions_full_trigger():
     assert "time_period" in route_reason(d).lower() or "full" in route_reason(d).lower()
 
 
-def test_classify_route_never_auto_emits_ultrafast():
-    # ultrafast is an explicit-only override (--ultrafast / "ultrafast mode"); the
-    # auto-classifier only ever returns fast/full, so the golden corpus is unaffected.
+def test_classify_route_only_emits_fast_or_full():
+    # The pipeline is a clean 2-route system (fast / full) since the `ultrafast`
+    # route was folded away 2026-07-06 — classify_route must only ever emit those two.
+    from typing import get_args
+
+    from bad_research.skills.router import Route
+
+    assert set(get_args(Route)) == {"fast", "full"}
     cases = [
         _decomp(sub_questions=["what is the capital of France"], response_format="short"),
         _decomp(sub_questions=["q1", "q2", "q3"], domains=["a", "b", "c"],

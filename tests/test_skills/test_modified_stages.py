@@ -395,7 +395,6 @@ def test_grader_skill_handles_keyless_null_verdict(skills_dir):
     [
         "bad-research-11.5-citation-verifier.md",
         "bad-research-fast.md",
-        "bad-research-ultrafast.md",
     ],
 )
 def test_grounding_skills_consume_needs_host_judgment(skills_dir, skill_file):

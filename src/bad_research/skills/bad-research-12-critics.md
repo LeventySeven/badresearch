@@ -21,7 +21,7 @@ different adversarial angle. Critics complement rather than duplicate.
 
 ---
 
-## Light-tier slim critic (`fast` / `ultrafast` routes)
+## Light-tier slim critic (`fast` route)
 
 On the `fast` route there is no 4-critic fan-out and no patcher
 (step 14). Instead, spawn ONE slim critic — the `bad-research-light-critic` agent — that

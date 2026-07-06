@@ -3767,7 +3767,6 @@ _BAD_RESEARCH_STEP_SKILLS = [
     "bad-research-15-polish",
     "bad-research-16-readability-audit",
     "bad-research-fast",
-    "bad-research-ultrafast",
 ]
 
 

@@ -28,13 +28,9 @@ def route_cmd(
     auto: bool = typer.Option(False, "--auto"),
     fast: bool = typer.Option(False, "--fast", help="Force the fast route (override auto)."),
     full: bool = typer.Option(False, "--full", help="Force the full route (override auto)."),
-    ultrafast: bool = typer.Option(
-        False, "--ultrafast",
-        help="Force the ultrafast route (commercial-DR middle tier; override auto).",
-    ),
     json_output: bool = typer.Option(False, "--json", "-j"),
 ) -> None:
-    """Classify a Step-1 decomposition into a pipeline route (fast|full|ultrafast).
+    """Classify a Step-1 decomposition into a pipeline route (fast|full).
 
     Also emits `query_shape` (E12, Claude Research) — the fan-out SHAPE
     (straightforward|breadth_first|depth_first), ORTHOGONAL to the route. The
@@ -58,14 +54,12 @@ def route_cmd(
     path = Path(decomposition)
     decomp = json.loads(path.read_text(encoding="utf-8"))
     route = classify_route(decomp)
-    if sum([fast, full, ultrafast]) > 1:
-        raise typer.BadParameter("--fast, --full, and --ultrafast are mutually exclusive")
+    if sum([fast, full]) > 1:
+        raise typer.BadParameter("--fast and --full are mutually exclusive")
     if fast:
         route, reason = "fast", "fast: forced by --fast override"
     elif full:
         route, reason = "full", "full: forced by --full override"
-    elif ultrafast:
-        route, reason = "ultrafast", "ultrafast: forced by --ultrafast override (commercial-DR middle tier)"
     else:
         reason = route_reason(decomp)
     shape = classify_query_shape(decomp)
@@ -471,7 +465,7 @@ def _verify_report(
     # byte-identity + the keyless Tier-B lexical/numeric-negation router (LineSpanJudge)
     # run deterministically; the verifier emits the NEUTRAL band as a
     # `needs_host_judgment` worklist the orchestrator (host model) judges inline (the
-    # 11.5 / fast / ultrafast skills apply those dispositions by hand). When the
+    # 11.5 / fast skills apply those dispositions by hand). When the
     # [local] cross-encoder extra is installed, that lane is used instead — still no key.
     nli = default_nli(llm=None) if nli_available() else LineSpanJudge(None)
     verifier = CitationVerifier(nli=nli, llm=None, effort=effort)

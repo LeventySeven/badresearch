@@ -224,8 +224,13 @@ These change what Bad Research *is*, so they are recommendations, not unilateral
 - **Cut Draft C → 2 drafts** (thesis + steelman) into the reconciling synthesizer; add a
   divergence gate so the ensemble can't silently degrade to expensive triplication.
 - **Merge polish (15) into readability-audit (16)** — they duplicate paragraph/run-on surgery.
-- **Collapse `ultrafast` into a `fast` effort rung**, or gate it behind a behavioral eval
-  proving it beats `fast`-breadth. Two honest routes.
+- ✅ **DONE — Folded `ultrafast` out** (3 routes → 2). It was never auto-selected (classifier
+  only ever emits fast/full) and was `fast`'s breadth branch with the caps turned up — so the
+  capability isn't lost: `fast`'s breadth branch already spawns K parallel researchers for the
+  mid-tier need. Deleted the skill + all `ULTRAFAST_*` constants + the `--ultrafast` flag;
+  `Route = Literal["fast","full"]` (the narrowing cast in pipeline.py went away, mypy-clean);
+  converted the guard test into a stronger `Route == {fast,full}` invariant; README now points
+  to `fast` as the sweet spot. Net −251 lines. Structural regression net (shape tests) green.
 - **Move `calibrate/` behind a `[dev]`/`[eval]` extra** (extract the shared rubric first).
 - **Build a real eval set** and run genuine competitor comparisons before making any
   "better than SOTA" claim.
