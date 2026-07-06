@@ -94,34 +94,6 @@ def test_route_fast_and_full_mutually_exclusive(tmp_path):
     assert result.exit_code != 0
 
 
-def test_route_ultrafast_flag_overrides(tmp_path):
-    # A decomposition the router would call "full" (multi-domain), forced to ultrafast.
-    decomp = tmp_path / "decomp.json"
-    decomp.write_text(json.dumps({
-        "sub_questions": ["a", "b"], "entities": [], "time_periods": [],
-        "response_format": "structured", "contradiction_terms": [],
-        "domains": ["a", "b", "c"],
-    }))
-    result = runner.invoke(
-        app, ["route", "--decomposition", str(decomp), "--ultrafast", "--apply", "--json"]
-    )
-    assert result.exit_code == 0
-    out = json.loads(result.stdout)
-    assert out["route"] == "ultrafast"
-    assert "ultrafast" in out["reason"]
-    assert json.loads(decomp.read_text())["route"] == "ultrafast"
-
-
-def test_route_ultrafast_mutually_exclusive_with_fast_and_full(tmp_path):
-    decomp = tmp_path / "decomp.json"
-    decomp.write_text(json.dumps({"sub_questions": ["a"], "entities": [], "domains": ["x"],
-                                  "response_format": "short"}))
-    r1 = runner.invoke(app, ["route", "--decomposition", str(decomp), "--ultrafast", "--fast"])
-    assert r1.exit_code != 0
-    r2 = runner.invoke(app, ["route", "--decomposition", str(decomp), "--ultrafast", "--full"])
-    assert r2.exit_code != 0
-
-
 # ── E11 plan-gate: route CLI reports the gate decision (default = no gate) ─────
 
 def test_route_plan_gate_default_is_false(tmp_path):

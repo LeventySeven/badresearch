@@ -224,7 +224,7 @@ def test_cli_single_pair_offline_emits_scorecard(tmp_path: Path):
             "--query-id", "h2h_02_comparison",
             "--bad-report", str(bad_md),
             "--competitor-report", str(comp_md),
-            "--bad-name", "bad-research-ultrafast",
+            "--bad-name", "bad-research-fast",
             "--competitor-name", "gemini-deep-research",
             "--out", str(tmp_path),
         ],
@@ -234,7 +234,7 @@ def test_cli_single_pair_offline_emits_scorecard(tmp_path: Path):
     sc_md = tmp_path / "headtohead-scorecard.md"
     assert sc_json.exists() and sc_md.exists()
     data = json.loads(sc_json.read_text())
-    assert data["bad_entrant"] == "bad-research-ultrafast"
+    assert data["bad_entrant"] == "bad-research-fast"
     assert data["competitor_entrant"] == "gemini-deep-research"
     assert data["blinded"] is True
     assert data["llm_judged"] is False

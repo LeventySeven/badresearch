@@ -7,7 +7,7 @@ from bad_research.skills import routing_constants as R
 def test_grader_and_cap_constants_present_and_frozen():
     # dossier 16 §3.2 / §4.1 / INTERFACES_KEYLESS §8 frozen table
     assert R.MAX_GRADER_REVISIONS == 3
-    assert R.FETCHER_TOOLCALL_CAP == {"light": 10, "ultrafast": 15, "full": 20}
+    assert R.FETCHER_TOOLCALL_CAP == {"light": 10, "full": 20}
     assert R.FETCHER_TIMEOUT_S == 300
     assert R.INVESTIGATOR_TIMEOUT_S == 900
     assert R.SUBAGENT_SOURCE_KILL == 100
@@ -129,16 +129,11 @@ def test_short_circuit_inert_when_no_ceiling():
     assert should_short_circuit(999_999, 0) is False
 
 
-def test_ultrafast_loop_constants_present_and_between_fast_and_full():
-    # The ultrafast middle tier: caps sit strictly between FAST_* and the full-tier caps.
-    assert R.ULTRAFAST_MAX_SUBQUESTIONS == 8
-    assert R.ULTRAFAST_SUBRESEARCHER_K == 6
-    assert R.ULTRAFAST_MIN_SOURCES_PER_SUBQ == 4
-    assert R.ULTRAFAST_FETCHER_TIMEOUT_S == 360
-    assert R.ULTRAFAST_RESERVE_SYNTH_FRAC == 0.30
-    assert R.ULTRAFAST_TIMEOUT_S == 900
-    assert R.FAST_SUBRESEARCHER_K < R.ULTRAFAST_SUBRESEARCHER_K
-    assert R.FAST_MIN_SOURCES_PER_SUBQ < R.ULTRAFAST_MIN_SOURCES_PER_SUBQ
-    assert (R.FETCHER_TOOLCALL_CAP["light"]
-            < R.FETCHER_TOOLCALL_CAP["ultrafast"]
-            < R.FETCHER_TOOLCALL_CAP["full"])
+def test_fetcher_toolcall_cap_is_two_route_light_and_full():
+    # The `ultrafast` route was folded away 2026-07-06; the fetcher tool-call cap is
+    # now a 2-key dial — light (the fast route) and full — with no middle tier.
+    assert set(R.FETCHER_TOOLCALL_CAP) == {"light", "full"}
+    assert R.FETCHER_TOOLCALL_CAP["light"] < R.FETCHER_TOOLCALL_CAP["full"]
+    # the ULTRAFAST_* loop constants are gone with the route
+    assert not hasattr(R, "ULTRAFAST_SUBRESEARCHER_K")
+    assert not hasattr(R, "ULTRAFAST_TIMEOUT_S")

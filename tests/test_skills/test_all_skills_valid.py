@@ -19,18 +19,20 @@ def test_every_step_skill_in_roster_has_a_file(skills_dir):
 
 def test_step_skill_roster_is_exactly_19_full_tier_stages():
     """The full-tier stage roster must contain exactly 19 invocable stages (excludes
-    bad-research-fast AND bad-research-ultrafast, each its own route, not a full-tier
-    step). The real roster is 21 entries; 21 - fast - ultrafast = 19.
+    bad-research-fast, which is its own route, not a full-tier step). The real roster
+    is 20 entries; 20 - fast = 19.
 
-    History: after the C-1/C-2/C-3 merges this was 18 (roster of 20). The
-    audit (2026-06-01) found bad-research-12.5-grader was invoked by the entry skill
-    on every full run but missing from the install roster, so the grader loop never
-    ran — adding it brings the roster to 21 and the full-tier count to 19.
+    History: after the C-1/C-2/C-3 merges this was 18 (roster of 20 incl. ultrafast).
+    The audit (2026-06-01) found bad-research-12.5-grader was invoked by the entry
+    skill on every full run but missing from the install roster, so the grader loop
+    never ran — adding it brought the full-tier count to 19. The `ultrafast` route
+    skill was folded away 2026-07-06 (its breadth need lands on the `fast` route),
+    dropping the roster from 21 to 20 while the full-tier count stays 19.
     """
     from bad_research.core.hooks import _BAD_RESEARCH_STEP_SKILLS
 
     full_tier_steps = [s for s in _BAD_RESEARCH_STEP_SKILLS
-                       if s not in ("bad-research-fast", "bad-research-ultrafast")]
+                       if s != "bad-research-fast"]
     removed = {
         "bad-research-3-contradiction-graph",
         "bad-research-7-source-tensions",

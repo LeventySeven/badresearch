@@ -320,7 +320,7 @@ class CitationFinding:
     confidence_band: str | None = None
     # audit 2026-06-01 (row 7): set on the keyless path when no host judge is wired
     # into the CLI. The pair passed Tier-A but lands in the Tier-B NEUTRAL band, so
-    # the orchestrator (host model) must judge it inline (the fast/ultrafast/11.5
+    # the orchestrator (host model) must judge it inline (the fast/11.5
     # skills already apply ACCEPT/TIGHTEN/FLAG/DROP-CITE dispositions by hand).
     needs_host_judgment: bool = False
 
