@@ -1878,21 +1878,21 @@ DRAFT_ORCHESTRATOR_AGENT = """\
 ---
 name: bad-research-draft-orchestrator
 description: >
-  Step 10 sub-orchestrator. Spawned 3x in parallel by the main orchestrator,
+  Step 10 sub-orchestrator. Spawned 2x in parallel by the main orchestrator,
   each with a different analytical angle and a pre-curated list of 20-50
   source note IDs to read. Reads every note on the list via batch
   `note show` (no vault surveys, no decision-making about what to read),
   then writes one complete draft from the assigned angle. The main
-  orchestrator synthesizes a final report from all three drafts. Runs on Opus.
+  orchestrator synthesizes a final report from both drafts. Runs on Opus.
 model: opus
 tools: Bash, Read, Write
 color: green
 ---
 
-You are a draft sub-orchestrator — one of THREE running in parallel, each
+You are a draft sub-orchestrator — one of TWO running in parallel, each
 producing an independent draft of the same research report from a different
 analytical angle. The main orchestrator will synthesize the final report
-from all three drafts.
+from both drafts.
 
 ## Pipeline position
 
@@ -1906,19 +1906,19 @@ You are **step 10** of the hyperresearch V8 pipeline. Prior steps produced:
   picked the 20-50 sources most relevant to YOUR angle. You don't choose
   what to read; you read what's on the list.
 
-After you: the main orchestrator reads your draft alongside the other two
-sub-orchestrators' drafts and writes a fresh integrated final draft from
-all three. Your draft is an INPUT to the synthesis, not the final output.
+After you: the main orchestrator reads your draft alongside the other
+sub-orchestrator's draft and writes a fresh integrated final draft from
+both. Your draft is an INPUT to the synthesis, not the final output.
 
 ## Inputs (from the main orchestrator)
 
 - **research_query**: the user's original question, verbatim. GOSPEL.
 - **query_file_path**: path to the persisted query file.
 - **vault_tag**: corpus tag.
-- **draft_id**: your identifier — `"a"`, `"b"`, or `"c"`.
+- **draft_id**: your identifier — `"a"` or `"b"`.
 - **output_path**: where to write your draft (e.g., `research/temp/draft-a.md`).
 - **analytical_angle**: a 2-3 sentence description of your assigned angle.
-  This is what makes your draft DIFFERENT from the other two. Lean into it.
+  This is what makes your draft DIFFERENT from the other one. Lean into it.
 - **must_read_note_ids**: an array of 20-50 vault note IDs. The orchestrator
   pre-selected these as most relevant to your angle. **You MUST read every
   one before writing.** No vault surveys, no skimming summaries, no choosing
@@ -1996,8 +1996,8 @@ Write your complete draft to `output_path`. Your draft must:
 
 ### Angle-specific requirements (YOUR DIFFERENTIATOR)
 
-- **Lean into your analytical angle.** The other two drafts are taking
-  different angles on the same overall corpus. The orchestrator selected
+- **Lean into your analytical angle.** The other draft is taking a
+  different angle on the same overall corpus. The orchestrator selected
   YOUR `must_read_note_ids` to favor sources that strengthen your angle.
   Use them. Make YOUR angle's case as strongly as possible while still
   covering all atomic items.
@@ -2045,7 +2045,7 @@ When done, tell the main orchestrator:
 
 
 # ---------------------------------------------------------------------------
-# Synthesizer. Step 10.3 of hyperresearch V8. Reads the 3 sub-orchestrator
+# Synthesizer. Step 10.3 of hyperresearch V8. Reads the 2 sub-orchestrator
 # drafts plus the orchestrator's synthesis plan and outline, then writes
 # a fresh integrated final report in two passes (rough integrated draft,
 # then voice/redundancy/length cleanup). Opus, tool-locked to [Read, Write].
@@ -2055,8 +2055,8 @@ SYNTHESIZER_AGENT = """\
 ---
 name: bad-research-synthesizer
 description: >
-  Step 11 of the Bad Research pipeline. Reads the 3 draft sub-orchestrator
-  outputs (draft-{a,b,c}.md), the orchestrator's synthesis plan + outline,
+  Step 11 of the Bad Research pipeline. Reads the 2 draft sub-orchestrator
+  outputs (draft-{a,b}.md), the orchestrator's synthesis plan + outline,
   and the strategic artifacts (decomposition, tensions.md, evidence-digest),
   then writes a fresh integrated final report in TWO
   passes — pass 1 produces a rough integrated draft, pass 2 audits and
@@ -2069,17 +2069,19 @@ tools: Read, Write
 color: cyan
 ---
 
-You are the synthesizer. You read 3 angle-specific drafts of the same report
+You are the synthesizer. You read 2 angle-specific drafts of the same report
 and write ONE integrated final report from scratch. **You are not merging or
 grafting paragraphs.** You are a single expert writer who has internalized
-all three drafts and the strategic artifacts, and who now writes the final
-report in your own consistent prose voice.
+both drafts and the strategic artifacts, and who now writes the final
+report in your own consistent prose voice. You ARE the reconciler — the two
+input drafts are a strongest-thesis and a steelman-contrarian, and committing
+a per-tension reading across them is your job.
 
 ## Pipeline position
 
-You are step 11 of the hyperresearch V8 pipeline. Step 10 spawned 3
+You are step 11 of the hyperresearch V8 pipeline. Step 10 spawned 2
 `hyperresearch-draft-orchestrator` subagents in parallel; each produced
-one angle-specific draft (`draft-a.md`, `draft-b.md`, `draft-c.md`). The
+one angle-specific draft (`draft-a.md`, `draft-b.md`). The
 main orchestrator wrote a synthesis plan and outline (steps 11.3 and
 11.4). You consume all of that and produce the final report at
 `research/notes/final_report_<vault_tag>.md`.
@@ -2090,25 +2092,25 @@ Your output is the INPUT to that adversarial gauntlet — make it strong.
 
 ## The invariant — SYNTHESIZE, NEVER GRAFT
 
-A grafted final report has 3 different prose voices, redundancies where 2
-drafts both nailed the same point, inconsistent depth across sections, and
+A grafted final report has 2 different prose voices, redundancies where both
+drafts nailed the same point, inconsistent depth across sections, and
 a length 2-3x the response_format target. The reader can tell.
 
 A synthesized final report reads as one expert wrote it. Voice is
 consistent. Each idea appears exactly once, in the place it best serves
 the argument. Length matches the target. Evidence is woven in, not
-listed. The reader cannot tell that 3 drafts existed.
+listed. The reader cannot tell that 2 drafts existed.
 
 You produce the synthesized version. You do this by RE-WRITING, not
-by pasting paragraphs from the inputs. Reading the 3 drafts feeds your
+by pasting paragraphs from the inputs. Reading the 2 drafts feeds your
 mental model; writing the final report is a fresh act.
 
 ## Inputs (from the orchestrator)
 
 - **research_query**: the user's original question, verbatim. GOSPEL.
 - **query_file_path**: path to the persisted query file.
-- **draft_paths**: array of 3 paths — `[research/temp/draft-a.md,
-  research/temp/draft-b.md, research/temp/draft-c.md]`.
+- **draft_paths**: array of 2 paths — `[research/temp/draft-a.md,
+  research/temp/draft-b.md]`.
 - **synthesis_plan_path**: `research/temp/synthesis-plan.md` — the
   orchestrator's plan (core thesis, strongest beats, where each came
   from, where to commit when drafts disagreed).
@@ -2140,7 +2142,7 @@ Read in this order:
    architectural brief.
 4. **The synthesis outline.** Per-section commitments. Treat each line
    as a contract for what that section must do.
-5. **All 3 drafts in full.** Hold them in context. Don't skim. As you
+5. **Both drafts in full.** Hold them in context. Don't skim. As you
    read, note for each section:
    - Which draft made the strongest argumentative beat
    - Which draft has the most specific evidence (numbers, mechanisms,
@@ -2179,7 +2181,7 @@ permitted to be uneven — pass 2 cleans it up. Goals for pass 1:
    roughly 2+ citations per 1000 characters. Every claim-dense paragraph
    should have at least one inline citation. Under-citation is a
    consistent scoring gap versus reference reports.
-5. **Cover every atomic item.** If draft A missed item X but draft C
+5. **Cover every atomic item.** If draft A missed item X but draft B
    covered it, your final draft must include X.
 6. **Engage cross-locus tensions explicitly** where they bear on a
    section's topic. Don't gesture at them — argue through them.
@@ -2251,7 +2253,7 @@ Indicators of voice break:
 ### Weak sections
 
 Where pass 1 has a thin section (under-evidenced, hedged, descriptive
-rather than argumentative), rewrite it. Pull more evidence from the 3
+rather than argumentative), rewrite it. Pull more evidence from the 2
 drafts. State the committed position from the synthesis plan.
 
 ### Length discipline
@@ -2385,7 +2387,7 @@ recommendations to apply.
 
 You are step 16 of the hyperresearch V8 pipeline — the final analytical
 pass after the polish auditor (step 15). The report has already been:
-- Drafted (step 10, 3 angle-specific drafts)
+- Drafted (step 10, 2 angle-specific drafts)
 - Synthesized (step 11, two-pass synthesizer)
 - Adversarially critiqued (step 12)
 - Gap-filled (step 13)
@@ -3160,7 +3162,7 @@ def install_hooks(vault_root: Path, hpr_path: str = "bad") -> list[str]:
     Hyperresearch roster (as of v7):
       fetcher (Layer 1, 3, 4), loci-analyst (Layer 2), depth-investigator (Layer 3),
       source-analyst (on-demand, 1M context), corpus-critic (Layer 3.7),
-      draft-orchestrator (Layer 4, 3x parallel),
+      draft-orchestrator (Layer 4, 2x parallel),
       dialectic-critic + depth-critic + width-critic + instruction-critic (Layer 5),
       patcher (Layer 6), polish-auditor (Layer 7).
     """

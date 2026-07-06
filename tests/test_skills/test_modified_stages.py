@@ -167,6 +167,60 @@ def test_width_sweep_token_growth_is_linear(skills_dir):
     assert "linear" in low
 
 
+# ── Draft ensemble reduced 3→2 (strongest-thesis + steelman-contrarian); the
+# synthesizer is the reconciler, so a 3rd reconciling draft is no longer spawned.
+# The skill filename `bad-research-10-triple-draft` stays as a LEGACY IDENTIFIER. ──
+
+
+def test_step10_spawns_two_draft_orchestrators_not_three(skills_dir):
+    body = (skills_dir / "bad-research-10-triple-draft.md").read_text()
+    low = body.lower()
+    # spawns TWO draft sub-orchestrators
+    assert "spawn 2" in low, "step 10 must spawn 2 draft sub-orchestrators"
+    assert "spawn 3" not in low, "step 10 must not spawn 3 draft sub-orchestrators"
+    # the dropped third angle has no bold "Draft C" assignment label
+    assert "**draft c" not in low, "no third draft angle assignment"
+    # produced artifacts are draft-a/b only (no draft-c on disk)
+    assert "draft-c" not in low, "no draft-c artifact/id"
+    assert "draft-c.md" not in body and "draft-c-source-list" not in body
+    # the legacy-filename note must be present (the name: frontmatter is unchanged)
+    assert "legacy identifier" in low, "must note the filename is a legacy identifier"
+
+
+def test_step10_frontmatter_name_unchanged_legacy_identifier(skills_dir):
+    """The behavior dropped to 2 drafts, but the skill `name:` frontmatter stays
+    `bad-research-10-triple-draft` (a legacy identifier) to avoid churning the
+    step-skill roster / hooks / installers."""
+    body = (skills_dir / "bad-research-10-triple-draft.md").read_text()
+    assert "name: bad-research-10-triple-draft" in body
+
+
+def test_step11_synthesizer_reads_two_drafts_not_three(skills_dir):
+    body = (skills_dir / "bad-research-11-synthesize.md").read_text()
+    low = body.lower()
+    assert "draft-c" not in low, "synthesizer must not read a third draft"
+    # draft_paths handed to the synthesizer are draft-a + draft-b only
+    assert "draft-a.md, research/temp/draft-b.md]" in body
+    assert "draft-c.md]" not in body
+
+
+def test_entry_skill_invariant10_spawns_two_orchestrators(skills_dir):
+    body = (skills_dir / "bad-research.md").read_text()
+    # invariant #10: MUST spawn 2 draft-orchestrators (not 3)
+    assert "spawn 2 `bad-research-draft-orchestrator`" in body
+    assert "spawn 3 `bad-research-draft-orchestrator`" not in body
+
+
+def test_draft_and_synthesizer_agent_constants_reference_two_drafts():
+    from bad_research.core import hooks
+
+    for const in (hooks.DRAFT_ORCHESTRATOR_AGENT, hooks.SYNTHESIZER_AGENT):
+        low = const.lower()
+        assert "draft-c" not in low, "agent constants must not reference a third draft"
+        assert "from all three drafts" not in low
+        assert "one of three" not in low
+
+
 def test_triple_draft_plans_from_reflections_reinjects_raw_for_cited(skills_dir):
     body = (skills_dir / "bad-research-10-triple-draft.md").read_text()
     low = body.lower()

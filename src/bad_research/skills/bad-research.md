@@ -46,7 +46,7 @@ When you invoke a Skill, that skill's full procedure is loaded into your context
 | 5 | `bad-research-5-depth-investigation` | K depth-investigators in parallel → interim notes with committed positions | full |
 | 6→7* (merged) | `bad-research-6-cross-locus-reconcile` | Reconcile committed positions into cross-locus tensions; Step 6.5: scan source bodies for orphan tensions → single richer `research/temp/tensions.md` | full |
 | 8 | `bad-research-8-corpus-critic` | "What source would overturn this?" + targeted gap-fill fetch | full |
-| 9→10* (merged) | `bad-research-10-triple-draft` | Step 10.0b Part 2 builds the evidence digest inline (top claims + verbatim quotes → evidence-digest.md, formerly step 9); then per-angle source curation + 3 parallel draft-orchestrators (3 angle-specific drafts) | all |
+| 9→10* (merged) | `bad-research-10-triple-draft` | Step 10.0b Part 2 builds the evidence digest inline (top claims + verbatim quotes → evidence-digest.md, formerly step 9); then per-angle source curation + 2 parallel draft-orchestrators (2 angle-specific drafts; filename `triple-draft` is a legacy identifier) | all |
 | 11 | `bad-research-11-synthesize` | Synthesis plan + outline + spawn synthesizer subagent (two-pass write) → final_report.md | full |
 | 12 | `bad-research-12-critics` | 5 adversarial critics in parallel (dialectic, depth, width, instruction, assumption) → findings JSONs | full |
 | 13 | `bad-research-13-gap-fetch` | Fetch sources for critic-identified vault gaps | full |
@@ -84,7 +84,7 @@ decomposition into a `route` (`fast` / `full`) written to
 `research/prompt-decomposition.json`. The **fast route** is the bounded
 planner→writer loop (shape-aware, ± breadth fan-out, slim citation-grounding,
 one adversarial pass); the **full tier** is the
-deep path (triple-draft ensemble + synthesis + adversarial critics + grader loop
+deep path (two-draft ensemble + synthesis + adversarial critics + grader loop
 + fresh review). After step 1.5, **read that file** for the
 `route`, then sequence steps according to this mode table:
 
@@ -294,7 +294,7 @@ Context compaction may eat parts of this conversation. If you're unsure what ste
    - Step 5: vault notes with `type: interim` (`bad search "" --tag <vault_tag> --type interim -j`)
    - Step 6: `research/temp/tensions.md` (cross-locus + orphan tensions; Step 6.5 merges the former step-7 source-tensions into this single artifact)
    - Step 8: `research/corpus-critic-gaps.json`, `research/temp/corpus-critic-results.md`
-   - Step 10: `research/temp/evidence-digest.md` (built inline in Step 10.0b Part 2, full only — formerly step 9), then `research/temp/draft-{a,b,c}.md` (full only; the `fast` route writes `research/notes/final_report_<vault_tag>.md` directly via the bad-research-fast writer)
+   - Step 10: `research/temp/evidence-digest.md` (built inline in Step 10.0b Part 2, full only — formerly step 9), then `research/temp/draft-{a,b}.md` (full only; the `fast` route writes `research/notes/final_report_<vault_tag>.md` directly via the bad-research-fast writer)
    - Step 11: `research/temp/synthesis-plan.md`, `research/temp/synthesis-outline.md`, `research/temp/synthesis-evidence.md`, `research/temp/synthesis-pass1.md`, `research/notes/final_report_<vault_tag>.md`
    - Step 11.5: `research/temp/citation-verify-actions.json` (citation-verifier dispositions; full only)
    - Step 12: `research/critic-findings-{dialectic,depth,width,instruction,assumption}.json`
@@ -353,8 +353,8 @@ If any rule returns `error` severity issues, address them before declaring compl
 7. **Canonical research query is gospel everywhere.** Every subagent gets the verbatim query.
 8. **Hygiene rules apply to the final report only.** Workspace artifacts (scaffold, loci JSONs, interim notes, comparisons.md, patch log) can look however they need to look.
 9. **RESPECT THE TIER GATE — never skip or add a step.** For `full`, the entire full-tier stage sequence runs (the "Complete pipeline order (full tier)" block above, half-steps included); for `fast`, the prescribed bounded-loop sequence runs (loop → slim grounding → slim critic → polish → gate). Don't add steps "for thoroughness"; don't drop steps "for budget." The route is a binding contract.
-10. **Step 10 triple-draft ensemble is MANDATORY for `full` tier.** You MUST spawn 3 `bad-research-draft-orchestrator` subagents. Writing `research/notes/final_report_<vault_tag>.md` directly in step 10 (instead of going through the synthesizer in step 11) is a PIPELINE VIOLATION for these tiers.
-11. **Step 11 synthesis is MANDATORY for `full` tier.** The synthesizer subagent (Read+Write tool-locked) writes the final report from the 3 drafts. The orchestrator does NOT write the final report itself for these tiers.
+10. **Step 10 draft ensemble is MANDATORY for `full` tier.** You MUST spawn 2 `bad-research-draft-orchestrator` subagents (the skill filename `bad-research-10-triple-draft` is a legacy identifier from when the ensemble was three). Writing `research/notes/final_report_<vault_tag>.md` directly in step 10 (instead of going through the synthesizer in step 11) is a PIPELINE VIOLATION for these tiers.
+11. **Step 11 synthesis is MANDATORY for `full` tier.** The synthesizer subagent (Read+Write tool-locked) writes the final report from the 2 drafts. The orchestrator does NOT write the final report itself for these tiers.
 12. **Subagents read full source text.** Draft sub-orchestrators MUST batch-read every note in their `must_read_note_ids` list before writing. Fetchers MUST chase 3-8 primary sources via citation chains.
 13. **ARGUE, DON'T JUST REPORT** (full force for `argumentative` response_format; relaxed for `structured` and `short`). The pipeline pushes the final report toward argumentative density: loci must include ≥1 dialectical locus, depth investigators must commit to a position, step 6 forces cross-locus reconciliation, and step 11's synthesizer requires every body section that touches a tension to engage it explicitly.
 14. **NEVER EMIT BARE TEXT WHILE TASKS ARE RUNNING.** In non-interactive (`-p`) mode, a text-only response (no tool call) triggers `end_turn` — the process exits and the pipeline dies. Every response while subagent tasks are in flight MUST include a tool call; the best one is appending analytical thoughts to `research/temp/orchestrator-notes.md`. Vault count checks at most once per minute.
