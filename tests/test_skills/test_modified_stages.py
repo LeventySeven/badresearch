@@ -504,3 +504,14 @@ def test_polish_defers_structural_readability_to_step16(skills_dir):
                                  or "structural readability is step 16" in low or "that is step 16's job" in low)
     # and must NOT re-introduce the blind run-on/paragraph Edit surgery
     assert "breaks into smaller units via edit" not in low
+
+
+def test_step16_surfaces_citation_drift_warnings(skills_dir):
+    """Grounding phase-1.5: `bad uncited-gate` now returns non-blocking `warnings`
+    (citation-drift). Step 16 must surface + act on them (repoint/hedge), not ship
+    them silently — the cheap, non-blocking half of 'bind, not count'."""
+    body = (skills_dir / "bad-research-16-readability-audit.md").read_text().lower()
+    assert "citation-drift" in body and "warnings" in body
+    assert "repoint" in body or "re-point" in body        # the primary remedy
+    # it must stay non-blocking (the hard block stays on `uncited`, not warnings)
+    assert "does **not** block" in body or "does not block" in body or "non-blocking" in body
