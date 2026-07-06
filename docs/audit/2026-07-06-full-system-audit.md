@@ -150,8 +150,10 @@ dead legacy path.
    body output with `wrap_untrusted` at the CLI layer; minimize per-agent tool grants.*
 3. ✅ **DONE** — `PRAGMA busy_timeout=5000` (SQLite now blocks-and-retries the lock; the
    explicit Python-level retry around `execute_sync` remains a cheap follow-up).
-4. **TODO** — Wrap the v7/v8 migration rebuilds in a single transaction (low probability,
-   high blast radius).
+4. ✅ **DONE** — Made the v7/v8 migration rebuilds atomic (`DROP IF EXISTS` guard + a
+   `BEGIN..COMMIT` around the fatal `DROP notes; RENAME` pair) AND added the previously
+   *nonexistent* migration-test harness (v6→current upgrade preserves data + adds the new
+   types; idempotent; crash-recovery stale-`notes_v7` survives). Closed two findings at once.
 
 ### Tier 1 — dead-code & honesty (implement now; safe; net deletion; tests green)
 Cut `shape_fanout`, `ROUTER_AGENTIC_MAX_ATOMIC` (+ its test assertion), the `max_tokens`
@@ -201,11 +203,22 @@ behind a real `--schema` entrypoint or cut them.
     the first time without changing what ships. TDD (4 tests); a caught-and-fixed block-flip bug
     (the CLI blocked on any finding, not just critical). Conservative thresholds (< 20% overlap,
     ≥ 200-char body, ≥ 4-token claim) keep false positives low.
+  - ✅ **Phase 1.5 DONE (actionable)** — step 16.6b now surfaces the gate's non-blocking
+    `warnings` array so the orchestrator repoints the drifting cite (or hedges) before ship,
+    instead of shipping drift silently. The claim ends up bound to a source that *supports* it.
   - **Phase 2 TODO (block)** — wire `build_from_claims` (a `bad bind-anchors` step over
     `claims-*.json`) so anchors are located spans not whole-body seeds, stop stamping
     `verified=1`, and flip drift/unverified to blocking — after the `claims-*.json` seam is fixed
     and the Phase-1 warn's real-run false-positive rate is validated.
-- **Fix the `claims-*.json` seam** — the funnel must emit per-note claims, or the
+- ✅ **DONE (as an honesty/robustness fix, not a speculative feature).** The deterministic
+  funnel genuinely can't extract semantic claims, and the loci chain already prose-scans when
+  claims are absent — the real problem was that this was *silent*. Reframed step 4.0 so the
+  prose-scan is the documented **first-class default** on the funnel path (the funnel's
+  `top_chunks` play the claims role), not a rare "fetchers didn't produce them" edge case; and
+  corrected width-sweep's false "the data already exists" assertion. Deliberately did NOT bolt
+  on a claim-extraction pass — its quality benefit over prose-scan is unmeasured (adding an
+  unmeasured cost is the anti-pattern). Regression-locked.
+- *(superseded)* Original TODO — "the funnel must emit per-note claims, or the
   contradiction-graph/loci chain must stop depending on an artifact the default path lacks.
 
 ### Tier 3 — right-size the pipeline (highest value; changes research behaviour → needs an explicit product call)
