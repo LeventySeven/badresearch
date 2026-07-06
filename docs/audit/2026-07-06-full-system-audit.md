@@ -184,8 +184,14 @@ behind a real `--schema` entrypoint or cut them.
   scraping — and `bad doctor`'s "verticals active" claim is now true. TDD (5 tests), keyless
   (build failures skipped, never fatal), full suite green. *(Follow-up: a politeness seed-limit
   so verticals fire on ≤2 seed queries rather than all funnel queries.)*
-- **Collapse the content stacks** — route `bad fetch` through the browse ladder; amputate
-  `fetch_clean`'s dead `llm_clean`/`highlights` tails; wire or cut `sources.py`.
+- ⚠️ **Partially DONE — content stacks.** Amputated `fetch_clean`'s dead tails: `llm_clean`/
+  `looks_dirty`/`_host_model` (always a no-op; the docstring lied about a KR-6 monkeypatch that
+  never ships) + `highlights`/`_cap_passage`/`_stem_tokens` (live callers always pass no query)
+  + the unused `want_llm_clean` param; dropped the now-dead `rank-bm25` + `snowballstemmer` deps
+  (retrieval ranks via SQLite FTS5's native `bm25()`, not the pip package). Kept
+  `FIRECRAWL_CLEAN_PROMPT` (a contract-mandated, guard-tested export). ~200 lines cut. *(Still
+  open: routing `bad fetch` through the browse ladder to retire the parallel stack; wire-or-cut
+  `sources.py`'s 6 non-HTML extractors.)*
 - **Make grounding bind, not count** — phased warn→block:
   - ✅ **Phase 1 DONE (warn)** — a non-blocking `citation-drift` finding: when a factual claim's
     content tokens barely appear in the cited note body (the keyless whole-body `verified=1`
