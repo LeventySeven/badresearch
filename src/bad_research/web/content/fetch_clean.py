@@ -1,8 +1,8 @@
 """Keyless URL -> model-ready markdown (dossier 12 §0-§11).
 
 The deterministic pipeline that replaces Firecrawl's paid `URL -> clean markdown`.
-Every stage is local Python + OSS; the only model touch is the optional host-model
-`llm_clean`. The SSRF guard (`core/fetcher.assert_url_safe`) is applied before any
+Every stage is local Python + OSS and fully deterministic — no model call.
+The SSRF guard (`core/fetcher.assert_url_safe`) is applied before any
 network call. KNOWN = verbatim from a dossier 12 source-read; DESIGNED = the keyless
 reimplementation; CALIBRATE = needs the KR-7 eval.
 """
@@ -29,8 +29,6 @@ PRUNING_THRESHOLD = 0.48        # PruningContentFilter dynamic threshold (dossie
 NEEDS_JS_FLOOR = 200            # visible-text char floor to escalate to JS render (§1.1)
 MAIN_CONTENT_FLOOR = 200        # trafilatura fallback when pruning yields < this (§3.5)
 STATIC_GET_TIMEOUT = 15.0       # static GET timeout, Firecrawl MRT (§1.2)
-HL_WINDOW, HL_STEP, HL_TOPK = 120, 60, 3   # highlights window/step/top-k (§7)
-HL_CHAR_CAP = 500               # highlights passage char cap (§7)
 
 # 14-day sqlite content cache, key = sha256(url) (dossier 12 §0 rung 0 / §9 step 9)
 CACHE_DB_PATH = Path(platformdirs.user_cache_dir("bad-research")) / "content_cache.sqlite"
@@ -333,64 +331,6 @@ def extract_published_date(html: str) -> str | None:
     return None
 
 
-def _stem_tokens(text: str) -> list[str]:
-    """Lowercase word tokens, Snowball-stemmed (dossier 12 §7 / §3.4). DESIGNED."""
-    from snowballstemmer import stemmer  # type: ignore[import-untyped]
-
-    st = stemmer("english")
-    return [st.stemWord(w) for w in re.findall(r"[a-z0-9]+", text.lower())]
-
-
-def highlights(markdown: str, query: str, k: int = HL_TOPK) -> list[dict[str, Any]]:
-    """Query-biased top-k passages via BM25 over sliding windows (dossier 12 §7). DESIGNED.
-
-    Windows of HL_WINDOW (120) words, step HL_STEP (60); BM25Okapi over Snowball-stemmed
-    windows scored against the stemmed query; top-k returned, each capped at HL_CHAR_CAP
-    (500) chars. The keyless analogue of Exa Highlights (no cross-encoder, no key).
-    """
-    from rank_bm25 import BM25Okapi  # type: ignore[import-untyped]
-
-    words = markdown.split()
-    if not words:
-        return []
-    starts = list(range(0, max(1, len(words) - HL_WINDOW + 1), HL_STEP))
-    # ensure the trailing words are covered: if the last window stops short of the
-    # document end, anchor a final window at the end (no tail content is ever dropped).
-    if starts[-1] + HL_WINDOW < len(words):
-        starts.append(len(words) - HL_WINDOW)
-    wins = [" ".join(words[i:i + HL_WINDOW]) for i in starts] or [markdown]
-    tokenized = [_stem_tokens(w) or ["_"] for w in wins]
-    bm25 = BM25Okapi(tokenized)
-    q_stems = _stem_tokens(query) or ["_"]
-    scores = bm25.get_scores(q_stems)
-    ranked = sorted(zip(wins, scores, strict=True), key=lambda x: -x[1])[:k]
-    return [{"text": _cap_passage(w, q_stems), "score": float(s)} for w, s in ranked]
-
-
-def _cap_passage(window: str, q_stems: list[str]) -> str:
-    """Clip a window to <= HL_CHAR_CAP (500) chars around the query match (dossier 12 §7).
-
-    A 120-word window exceeds 500 chars; clipping the head would drop a tail match that
-    drove the score. Anchor the slice on the first query-term hit so the returned passage
-    actually contains the matched content. DESIGNED.
-    """
-    if len(window) <= HL_CHAR_CAP:
-        return window
-    qset = set(q_stems)
-    # locate the first word whose stem is a query term
-    words = window.split()
-    hit = 0
-    for i, w in enumerate(words):
-        toks = _stem_tokens(w)
-        if any(t in qset for t in toks):
-            hit = i
-            break
-    # char offset of that word, then back up a little for context
-    prefix = " ".join(words[:hit])
-    start = max(0, len(prefix) - 120)
-    return window[start:start + HL_CHAR_CAP]
-
-
 def pdf_to_markdown(pdf_bytes: bytes) -> str:
     """PDF bytes -> markdown via pymupdf4llm (dossier 12 §5). KNOWN.
 
@@ -492,66 +432,6 @@ def render_pdf_pages(
         except Exception:
             pass
     return out
-
-
-def _host_model(system: str, user: str) -> str:
-    """Host-model dispatch seam (dossier 12 §6 / INTERFACES_KEYLESS §9 ambiguity-1).
-
-    DEFAULT = passthrough (returns the user content unchanged) so the deterministic
-    pipeline never blocks on a model and unit tests need no network. The orchestrator
-    (KR-6) monkeypatches this to the real Claude Code Skill/Task dispatch — the HOST
-    supplies inference, no ANTHROPIC_API_KEY. Keyless.
-    """
-    return user
-
-
-# Identity sentinel: lets llm_clean detect the unwired (passthrough) default and
-# short-circuit so the <UNTRUSTED_PAGE> scaffolding never leaks into the output.
-_DEFAULT_HOST_MODEL = _host_model
-
-
-_DIRTY_SIGNALS = (
-    "subscribe to our newsletter", "we use cookies", "cookie policy",
-    "accept cookies", "skip to content", "sign up for our",
-)
-
-
-def looks_dirty(md: str) -> bool:
-    """Heuristic gate for when llm_clean is worth invoking (dossier 12 §6). DESIGNED.
-
-    True if residual chrome signals survive the deterministic strip — newsletter CTAs,
-    cookie text, a copyright line, or >3 consecutive link-only lines.
-    """
-    low = md.lower()
-    if any(s in low for s in _DIRTY_SIGNALS):
-        return True
-    if re.search(r"©\s*20\d\d", md):
-        return True
-    link_only_run = 0
-    for line in md.splitlines():
-        if re.fullmatch(r"\s*\[[^\]]+\]\([^)]+\)\s*", line):
-            link_only_run += 1
-            if link_only_run > 3:
-                return True
-        else:
-            link_only_run = 0
-    return False
-
-
-def llm_clean(markdown: str) -> str:
-    """Host-model content clean with the verbatim Firecrawl prompt (dossier 12 §6).
-
-    The page content is delimited as UNTRUSTED data (§6.2). Dispatches via the
-    _host_model seam (keyless). If the seam is the default passthrough (no model wired),
-    returns the input unchanged — the deterministic markdown is already good enough by
-    default, and we never leak the <UNTRUSTED_PAGE> scaffolding into the result.
-    """
-    if _host_model is _DEFAULT_HOST_MODEL:
-        return markdown
-    return _host_model(
-        system=FIRECRAWL_CLEAN_PROMPT,
-        user=f"Clean this page content:\n<UNTRUSTED_PAGE>\n{markdown}\n</UNTRUSTED_PAGE>",
-    )
 
 
 _INDEX_FILES = ("index.html", "index.htm", "index.php", "index.asp", "index.aspx",
@@ -744,14 +624,14 @@ def _project(result: dict[str, Any], formats: tuple[str, ...]) -> dict[str, Any]
     return {k: v for k, v in result.items() if k in keep}
 
 
-def fetch_clean(url: str, query: str | None = None, *, want_llm_clean: bool = False,
+def fetch_clean(url: str, query: str | None = None, *,
                 formats: tuple[str, ...] = ("markdown", "metadata", "links")
                 ) -> dict[str, Any]:
     """Keyless URL -> model-ready markdown (dossier 12 §0, §11). The deliverable.
 
     Pipeline: cache -> SSRF guard -> tiered fetch -> charset -> (PDF branch) -> strip ->
-    main_content -> markdown -> postclean -> (opt llm_clean) -> (opt highlights) ->
-    metadata+date -> cache -> project. Every network call passes the SSRF guard. Keyless.
+    main_content -> markdown -> postclean -> metadata+date -> cache -> project.
+    Every network call passes the SSRF guard. Keyless.
     Never raises on fetch failure — a 403/timeout/paywall returns an empty result.
     """
     from bad_research.core.fetcher import SSRFError, assert_url_safe
@@ -799,14 +679,9 @@ def fetch_clean(url: str, query: str | None = None, *, want_llm_clean: bool = Fa
     content_html = main_content(stripped, query)                  # §3
     md = postclean(html_to_markdown(content_html, base_url=url))   # §4 + §7
 
-    if want_llm_clean and looks_dirty(md):                        # §6 gated
-        md = llm_clean(md)
-
-    hl = highlights(md, query) if query else None                 # §7
-
     result = {
         "markdown": md, "metadata": meta, "published_date": pubdate,
-        "links": links, "highlights": hl, "url": url,
+        "links": links, "highlights": None, "url": url,
         "fetched_at": datetime.now(UTC).isoformat(),
     }
     cache_put(url, result)                                        # §9 step 9

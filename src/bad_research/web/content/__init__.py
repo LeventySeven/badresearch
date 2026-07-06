@@ -2,7 +2,7 @@
 
 KR-3. Replaces the paid Firecrawl/Exa/Tavily `URL -> clean markdown` primitive with
 a deterministic local pipeline (dossier 12) + the 6 keyless non-HTML source tiers.
-Zero third-party API key; the only model touch is the optional host-model `llm_clean`.
+Zero third-party API key; the pipeline is fully deterministic (no model touch).
 """
 
 from __future__ import annotations
@@ -16,8 +16,6 @@ from bad_research.web.content.fetch_clean import (
     FIRECRAWL_CLEAN_PROMPT,
     extract_metadata,
     extract_published_date,
-    highlights,
-    llm_clean,
     main_content,
     pdf_to_markdown,
     strip_boilerplate,
@@ -44,8 +42,6 @@ __all__ = [
     "feed_notes",
     "github_clone_notes",
     "github_file",
-    "highlights",
-    "llm_clean",
     "llms_txt_notes",
     "main_content",
     "pdf_to_markdown",
