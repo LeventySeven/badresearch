@@ -193,6 +193,29 @@ def test_uncited_gate_standalone_with_note_bodies_resolves_cites(tmp_path, monke
     assert json.loads(res.stdout)["uncited"] == []
 
 
+def test_uncited_gate_citation_drift_warns_but_ships(tmp_path, monkeypatch):
+    # A factual claim cites a note whose body is about something else entirely.
+    # Phase-1 'bind, not count': this is a NON-BLOCKING drift warning — the report
+    # ships (exit 0), the drift lands under `warnings`, and `uncited` stays empty.
+    monkeypatch.chdir(tmp_path)
+    report = tmp_path / "r.md"
+    report.write_text(
+        "Southeast Asian e-commerce GMV grew 12.4% in 2024 [1].\n", encoding="utf-8")
+    off_topic = (
+        "Arctic terns undertake the longest annual migration of any bird, flying from "
+        "their Arctic breeding grounds to the Antarctic and back, a round trip that can "
+        "exceed ninety thousand kilometres over a lifetime spanning three decades.")
+    notes = tmp_path / "notes.json"
+    notes.write_text(json.dumps({"src1": off_topic}), encoding="utf-8")
+    res = runner.invoke(app, ["uncited-gate", "--report", str(report),
+                              "--note-bodies", str(notes), "--vault-tag", "x", "--json"])
+    assert res.exit_code == 0, res.stdout + (res.stderr or "")   # SHIPS — drift never blocks
+    out = json.loads(res.stdout)
+    assert out["uncited"] == []
+    assert len(out["warnings"]) == 1
+    assert out["warnings"][0]["reason"] == "citation-drift"
+
+
 def test_uncited_gate_standalone_flags_uncited_factual_sentence(tmp_path, monkeypatch):
     monkeypatch.chdir(tmp_path)
     report = tmp_path / "r.md"

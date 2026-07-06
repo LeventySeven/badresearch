@@ -36,6 +36,41 @@ def test_entry_skill_bootstrap_uses_bad_not_bare_hyperresearch(skills_dir):
     assert "bad vault-tag" in body
 
 
+def test_spawn_contract_mandates_untrusted_content_policy(skills_dir):
+    """Lethal-trifecta defense-in-depth: read-side subagents hold Bash/WebSearch (an
+    outbound channel) while ingesting untrusted fetched bodies. The universal spawn
+    contract MUST carry the untrusted-content policy so every subagent is told to treat
+    fetched text as data, not instructions. (The authoritative control is the SSRF egress
+    allowlist; this is the model-side layer that was previously absent.)"""
+    body = (skills_dir / "bad-research.md").read_text(encoding="utf-8").lower()
+    assert "untrusted" in body, "spawn contract lost the untrusted-content policy"
+    # it must name the boundary (fetched content read via the vault) and the rule
+    assert "note show" in body or "fetched" in body
+    assert ("untrusted data" in body) or ("never as instructions" in body) or \
+           ("never let page content" in body)
+    # and it must reference the canonical wording source so the two don't drift
+    assert "injection.py" in body or "injection_preamble" in body
+
+
+def test_no_step_skill_leaks_stale_cli_name_or_template_var(skills_dir):
+    """Every step-skill .md is installed VERBATIM (hooks._install_bad_research_step_skills
+    write_texts the raw source — no .format/.replace). So a bare `hyperresearch <cmd>` or an
+    un-substituted `{hpr_path}` in ANY step skill reaches the model literally: a subagent that
+    copies it runs a nonexistent binary. The entry-skill-only guard (issue #12) missed leaks
+    in depth-investigation / corpus-critic — this covers the whole skill set."""
+    import re
+
+    offenders: dict[str, list[str]] = {}
+    for p in sorted(skills_dir.glob("bad-research*.md")):
+        body = p.read_text(encoding="utf-8")
+        bad = re.findall(r"hyperresearch [a-z][a-z-]+", body)
+        if "{hpr_path}" in body:
+            bad.append("{hpr_path}")
+        if bad:
+            offenders[p.name] = bad
+    assert offenders == {}, f"step skills leak stale CLI name / template var (use `bad`): {offenders}"
+
+
 def test_no_skill_doc_invokes_undefined_HPR_variable(skills_dir):
     # issue #25: step skills invoked `$HPR …` (e.g. `$HPR lint`, `$HPR note show`)
     # across 11 files, but $HPR is never exported — only `bad` is on PATH, so the

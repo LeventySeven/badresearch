@@ -169,13 +169,58 @@ def _build_tiered_fetcher(cfg: object) -> object | None:
 
 
 def _build_postfetch(cfg: object) -> object:
-    """Post-fetch junk/language filter (Plan 05). Default: keep everything."""
+    """Post-fetch junk/login/paywall/language filter (Plan 05).
+
+    Returns a ``reject_reason`` callable (``str`` cause to drop, ``None`` to keep) —
+    the contract ``funnel/filter.py`` consumes. ``content_filter`` is a core (non-optional)
+    dependency, so the import must succeed; if it ever doesn't we log LOUDLY and fall back
+    to keep-everything rather than silently shipping an unfiltered corpus (the prior bare
+    ``except`` swallowed a real ImportError for a full release — regression-locked by
+    ``test_build_postfetch_wires_the_real_filter_not_keep_everything``)."""
     try:
         from bad_research.quality.content_filter import postfetch_reject_reason
 
         return postfetch_reject_reason
-    except Exception:
+    except Exception as e:  # pragma: no cover - core dep, should never trigger
+        import logging
+
+        logging.getLogger("bad_research.cli.research").error(
+            "post-fetch content filter unavailable (%s); corpus will NOT be junk-filtered "
+            "this run — this is a wiring break, not normal degradation.", e, exc_info=True,
+        )
         return lambda r: None
+
+
+# Base-provider names already covered by _build_providers — never re-add them as a
+# "vertical" (ddgs is in the technical route but is already an always-on base provider).
+_BASE_PROVIDER_NAMES = frozenset({"ddgs", "searxng", "websearch"})
+
+
+def _build_vertical_providers(query: str) -> list:
+    """Intent-routed keyless scholarly providers for a query (KR-2 §3.3).
+
+    The keyless system's academic edge: an academic/medical/technical query gets the
+    matching free scholarly APIs (arXiv/OpenAlex/Crossref/Semantic Scholar/PubMed/Europe
+    PMC) fanned ALONGSIDE the generic web providers, instead of silently degrading to
+    DuckDuckGo scraping. `detect_intent` is the deterministic regex fallback (the host
+    model normally tags intent upstream); `VERTICAL_ROUTES` maps intent → provider names.
+    A general-intent query gets no verticals (empty list → funnel behaves exactly as
+    before — byte-identical when unused). Each provider is built keyless via get_provider;
+    a build failure is skipped, never fatal (the base web providers still carry the run).
+    """
+    from bad_research.web.base import get_provider
+    from bad_research.web.search.route import VERTICAL_ROUTES, detect_intent
+
+    intent = detect_intent(query)
+    out: list = []
+    for name in VERTICAL_ROUTES.get(intent, []):
+        if name in _BASE_PROVIDER_NAMES:
+            continue  # already an always-on base provider; don't double-fan it
+        try:
+            out.append(get_provider(name))
+        except Exception:
+            continue  # keyless-safe: a provider that can't build never aborts the funnel
+    return out
 
 
 def run_funnel(query: str, *, mode: str, vault_tag: str) -> dict:
@@ -199,6 +244,9 @@ def run_funnel(query: str, *, mode: str, vault_tag: str) -> dict:
     store = VaultStore(vault, tags=[vault_tag] if vault_tag else [])
     deps = FunnelDeps(
         providers=_build_providers(cfg),
+        # Intent-routed scholarly verticals fire alongside the base providers (they
+        # bypass the p_providers breadth cap); a general query gets an empty list.
+        vertical_providers=_build_vertical_providers(query),
         fetcher=_build_tiered_fetcher(cfg),
         postfetch_filter=_build_postfetch(cfg),
         # Tag every stored note with the run's vault_tag so the corpus survey
@@ -254,8 +302,10 @@ def funnel_gather_cmd(
     """Run the scraper funnel: fan-out->dedup->rank->read(rung0-3)->filter->chunk->rerank.
 
     --effort (minimal|low|medium|high) nudges the route + per-stage fan-out
-    via skills/router.effort_overrides; --max-tokens sets the per-run ceiling the
-    orchestrator degrades against. Both default to the config's tier behaviour.
+    via skills/router.effort_overrides. --max-tokens is accepted for orchestrator-level
+    compatibility but is NOT enforced here — this deterministic funnel does not meter
+    tokens; the orchestrator tracks the ceiling in prose (entry skill). Defaults to the
+    config's tier behaviour.
     """
     from bad_research.skills.router import effort_overrides
 
@@ -348,7 +398,9 @@ def retrieve_cmd(
     top_k: int = typer.Option(20, "--top-k"),
     json_output: bool = typer.Option(False, "--json", "-j"),
 ) -> None:
-    """Hybrid retrieval: vector+BM25 fuse (alpha=0.7) -> rerank -> 0.70 gate. Returns top_k Chunks."""
+    """Keyless retrieval: min-max BM25 recall -> host-model rerank -> 0.70 relevance gate.
+    Returns top_k Chunks. (An optional [local] dense lane adds RRF vector+BM25 fusion when
+    neural_recall is enabled; the default keyless path is BM25 + rerank, no vector fuse.)"""
     from dataclasses import asdict
 
     from bad_research.config import BadResearchConfig
@@ -578,7 +630,8 @@ def _uncited_gate(report_path: str, vault_tag: str, note_bodies_path: str | None
 
     findings = no_uncited_claim_gate(report_md, store)
     return [
-        {"sentence": getattr(f, "location", ""), "reason": getattr(f, "failure_mode", "uncited")}
+        {"sentence": getattr(f, "location", ""), "reason": getattr(f, "failure_mode", "uncited"),
+         "severity": getattr(f, "severity", "critical")}
         for f in findings
     ]
 
@@ -600,9 +653,16 @@ def uncited_gate_cmd(
     pre-populated vault — mirrors recitation-gate. Numeric `[N]` resolves
     positionally ([1] = first key in the map). With neither a vault nor
     --note-bodies, the gate auto-inits an empty store (clean "0 anchors")."""
-    uncited = _uncited_gate(report, vault_tag, note_bodies)
-    typer.echo(json.dumps({"uncited": uncited}))
-    if uncited:
+    all_findings = _uncited_gate(report, vault_tag, note_bodies)
+    # Blocking = critical + major (the exact set that blocked before this split).
+    # `minor` (e.g. the phase-1 non-blocking citation-drift WARNING) is surfaced under
+    # `warnings` so it is VISIBLE to the orchestrator/polish but never fails the gate.
+    blocking = [f for f in all_findings if f.get("severity") != "minor"]
+    warnings = [f for f in all_findings if f.get("severity") == "minor"]
+    # `uncited` stays the blocking list (the skill parses it as "things that block");
+    # `warnings` is additive and non-blocking.
+    typer.echo(json.dumps({"uncited": blocking, "warnings": warnings}))
+    if blocking:
         raise typer.Exit(1)
 
 

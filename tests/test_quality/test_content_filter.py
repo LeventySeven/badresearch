@@ -7,6 +7,7 @@ from datetime import UTC, datetime
 from bad_research.quality.content_filter import (
     looks_like_paywall,
     postfetch_filter,
+    postfetch_reject_reason,
 )
 from bad_research.web.base import WebResult
 
@@ -49,6 +50,32 @@ def test_postfetch_filter_drops_junk_empty():
 def test_postfetch_filter_drops_paywall():
     short = "Subscribers only. Unlock this article. " * 3
     assert postfetch_filter(_wr(short)) is None
+
+
+def test_postfetch_reject_reason_keeps_good_article():
+    # None == keep (the contract funnel/filter.py:38 relies on: `is None` -> keep).
+    assert postfetch_reject_reason(_wr(_GOOD_BODY)) is None
+
+
+def test_postfetch_reject_reason_names_the_drop_cause():
+    wall = _wr("Please sign in to your account to view this page.",
+               url="https://app.example/login", title="Sign in")
+    assert postfetch_reject_reason(wall) == "login_wall"
+    assert postfetch_reject_reason(_wr("tiny")) == "junk"
+    # >300 chars (clears the junk floor) but <1500 with a paywall marker -> paywall.
+    paywall = "To continue reading, subscribe to read the full article. " * 8
+    assert postfetch_reject_reason(_wr(paywall)) == "paywall"
+
+
+def test_build_postfetch_wires_the_real_filter_not_keep_everything():
+    # Regression lock for the silent bug: cli._build_postfetch imported a
+    # nonexistent symbol, a bare except swallowed the ImportError, and the funnel
+    # kept EVERY page. The callable it returns must actually reject junk.
+    from bad_research.cli.research import _build_postfetch
+
+    reject = _build_postfetch(object())
+    assert reject(_wr("tiny")) is not None          # junk -> a reason (dropped)
+    assert reject(_wr(_GOOD_BODY)) is None           # good  -> None (kept)
 
 
 def test_postfetch_filter_language_gate_drops_off_language():
