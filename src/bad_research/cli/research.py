@@ -217,11 +217,123 @@ def _build_vertical_providers(query: str) -> list:
     return out
 
 
-def run_funnel(query: str, *, mode: str, vault_tag: str) -> dict:
+def parse_search_plan(path: str | Path, *, k_per_query: int,
+                      max_queries: int | None = None) -> list:
+    """Parse the width-sweep skill's search-plan table into SearchQuery seeds.
+
+    Step 2.1 of `bad-research-2-width-sweep.md` has the model hand-write a
+    markdown table — `| Atomic item | Search query | Type | Lens | Target |` —
+    typically 40-100 rows carrying the lens split (breadth / depth / adversarial /
+    period-pinned), the mandated >=5 adversarial searches, and the per-item
+    reformulations.
+
+    The query column is located by HEADER NAME, never by a fixed index. Step 2.5
+    tells the model to write `research/temp/gap-search-plan.md` with no column
+    schema at all, so a hardcoded index 1 read the wrong column and fired the
+    literal words "Lens" and "breadth" as searches. A plan with no locatable
+    query column yields [] — the caller reports that rather than searching
+    garbage.
+
+    This exists because that plan was previously parsed by nobody: the CLI
+    declared `--search-plan` and dropped it, so the funnel always fell back to
+    `plan_queries`' generic suffix expansion and the model's planning work was
+    discarded (issue #35 §4). Malformed rows are skipped rather than fatal — a
+    partially-readable plan is still worth more than the fallback.
+    """
+    from bad_research.web.search.base import SearchQuery
+
+    def _cells(row: str) -> list[str]:
+        # Split on UNESCAPED pipes only. A query legitimately containing a pipe
+        # (boolean search syntax) is written `\|` per the markdown table
+        # convention; a naive split truncated "solar \| wind" to "solar \" and
+        # fired that as a real search — silent query corruption.
+        return [c.replace("\x00", "|").strip()
+                for c in row.strip("|").replace("\\|", "\x00").split("|")]
+
+    def _norm(cell: str) -> str:
+        """Header text stripped to bare letters — `**Search query**` -> `searchquery`."""
+        return "".join(ch for ch in cell.lower() if ch.isalnum())
+
+    def _is_separator(cells: list[str]) -> bool:
+        return all(set(c) <= {"-", ":", " "} and c for c in cells)
+
+    text = Path(path).read_text(encoding="utf-8")
+    rows = [_cells(ln.strip()) for ln in text.splitlines() if ln.strip().startswith("|")]
+
+    # Locate the query column from the first row that names it.
+    q_idx: int | None = None
+    n_cols = 0
+    for cells in rows:
+        for i, cell in enumerate(cells):
+            if _norm(cell) in {"searchquery", "query"}:
+                q_idx, n_cols = i, len(cells)
+                break
+        if q_idx is not None:
+            break
+    if q_idx is None:
+        return []  # no locatable query column — say so, don't guess a column
+
+    out: list = []
+    seen: set[str] = set()
+    for cells in rows:
+        if len(cells) <= q_idx or _is_separator(cells):
+            continue
+        # A row with MORE cells than the header means an unescaped `|` inside a
+        # value split one cell into several; re-join the surplus back into the
+        # query cell instead of silently truncating the query at the pipe.
+        if n_cols and len(cells) > n_cols and q_idx == n_cols - 1:
+            q = " | ".join(cells[q_idx:])
+        elif n_cols and len(cells) > n_cols:
+            surplus = len(cells) - n_cols
+            q = " | ".join(cells[q_idx:q_idx + surplus + 1])
+        else:
+            q = cells[q_idx]
+        q = q.strip().strip('"').strip("'").strip()
+        if not q or _norm(q) in {"searchquery", "query"} or q in seen:
+            continue
+        if max_queries is not None and len(out) >= max_queries:
+            break
+        seen.add(q)
+        out.append(SearchQuery(query=q, max_results=k_per_query))
+    return out
+
+
+def run_funnel(query: str, *, mode: str, vault_tag: str,
+               search_plan: str | None = None, max_queries: int | None = None,
+               read_top_k: int | None = None, concurrency: int | None = None) -> dict:
     """Build FunnelDeps from config + run the FROZEN async gather(), then collapse
     the returned list[Chunk] into a FunnelEnvelope dict. Shared by CLI + MCP.
 
-    Returns {"note_ids", "top_chunks", "n_read"}. The model reads top_chunks only.
+    `search_plan` (optional): path to the width-sweep skill's plan table. When
+    given, its rows become the fan-out seeds verbatim and the deterministic
+    `plan_queries` expansion is bypassed entirely — the model's lens plan is
+    strictly richer than 16 generic suffixes. `max_queries` caps the plan;
+    `read_top_k` overrides the mode's read budget.
+
+    Returns {"note_ids", "top_chunks", "n_read", "n_stored", "ok", "degraded",
+    "degraded_reasons", "provider_outcomes"}. The model reads top_chunks only.
+
+    `degraded` is the honest-failure seam — True when the run could not do its
+    job. Two reasons, both exit 3:
+
+    - `no_search_provider_available` — every lane refused to run (raised).
+      Unambiguous infrastructure failure.
+    - `no_search_results_from_any_provider` — every lane RAN and returned zero
+      hits across the whole plan (12 queries in light, up to 100 in full).
+
+    The second is deliberately treated as degraded even though it *could* be a
+    genuinely sourceless topic. We cannot tell the two apart here, because the
+    keyless providers swallow transport errors into [] — so a dead network is
+    indistinguishable from a clean empty SERP at this layer. The asymmetry
+    decides it: a false "degraded" costs one honest "couldn't build the corpus"
+    message, while a false "healthy" ships a report asserting a research gap
+    that is really an outage. Zero hits across every lane and every query is
+    near-impossible for a well-formed query, so the false-positive rate is low
+    and the failure it prevents is the one that silently corrupts output.
+
+    `warnings` is ORTHOGONAL to `degraded`: an `ok: True` run can still carry a
+    warning that it did not do what the caller asked (e.g. a supplied search
+    plan that could not be parsed, so the deterministic fallback ran instead).
     """
     import asyncio
     from dataclasses import asdict, is_dataclass
@@ -249,7 +361,39 @@ def run_funnel(query: str, *, mode: str, vault_tag: str) -> dict:
         retrieval=engine,
     )
     norm_mode = "full" if mode == "full" else "light"
-    chunks = asyncio.run(gather(query, mode=norm_mode, deps=deps))
+    from bad_research.funnel.config import FunnelConfig
+
+    fcfg = FunnelConfig.for_mode(norm_mode)
+    # The skill's hand-written lens plan wins over deterministic expansion when
+    # present (it carries the adversarial/period-pinned lenses the suffix table
+    # cannot express); plan_queries stays the fallback for programmatic callers.
+    queries = None
+    warnings: list[str] = []
+    if search_plan:
+        queries = parse_search_plan(
+            search_plan,
+            k_per_query=fcfg.k_per_query,
+            # `or` would silently reinterpret an explicit --max-queries 0 as the
+            # mode default; only an ABSENT flag falls back.
+            max_queries=fcfg.m_queries if max_queries is None else max(1, max_queries),
+        ) or None
+        if queries is None:
+            # A plan was SUPPLIED but yielded nothing parseable. Falling back to
+            # the deterministic expansion without saying so would re-create the
+            # exact defect this seam exists to remove: the caller believes its
+            # 40-100 lens queries ran when 16 generic suffixes did. The run
+            # continues (a lost plan shouldn't kill a long job) but the envelope
+            # says the plan did not apply, so the orchestrator can fix and retry.
+            warnings.append("search_plan_empty_or_unparseable")
+    elif max_queries:
+        from bad_research.funnel.fanout import plan_queries
+
+        queries = plan_queries(query, m_queries=max_queries, k_per_query=fcfg.k_per_query)
+
+    stats: dict = {}
+    chunks = asyncio.run(gather(query, mode=norm_mode, deps=deps, queries=queries,
+                                read_budget=read_top_k, stats=stats,
+                                concurrency=concurrency))
 
     note_ids: list[str] = []
     seen: set[str] = set()
@@ -273,11 +417,29 @@ def run_funnel(query: str, *, mode: str, vault_tag: str) -> dict:
         if nid not in seen:
             seen.add(nid)
             note_ids.append(nid)
+    # A run is DEGRADED when the machinery failed. `gather` only records a
+    # reason when NO lane returned a hit — and with no hits there are no
+    # candidates, no pages and no stored notes — so a non-empty corpus and a
+    # degraded reason are mutually exclusive by construction. (An earlier
+    # `if stored_ids: degraded_reasons = []` override was dead code that would
+    # have silently erased a real infrastructure failure had that ever changed.)
+    degraded_reasons: list[str] = list(stats.get("degraded_reasons") or [])
+    degraded = bool(degraded_reasons)
     return {
         "note_ids": note_ids,
         "top_chunks": top_chunks,
         "n_read": len(note_ids),
         "n_stored": len(stored_ids),
+        "ok": not degraded,
+        "degraded": degraded,
+        "degraded_reasons": degraded_reasons,
+        # `warnings` is ORTHOGONAL to `degraded`: a run can succeed (ok:true)
+        # while still having silently not done what the caller asked. Folding
+        # these into `degraded` would either kill healthy runs or, worse, get
+        # cleared the moment sources were found — hiding the very thing the
+        # caller needs to know.
+        "warnings": warnings,
+        "provider_outcomes": stats.get("provider_outcomes", {}),
     }
 
 
@@ -289,6 +451,11 @@ def funnel_gather_cmd(
     vault_tag: str = typer.Option("", "--vault-tag"),
     max_queries: int = typer.Option(None, "--max-queries"),
     read_top_k: int = typer.Option(None, "--read-top-k"),
+    concurrency: int = typer.Option(
+        None, "--concurrency",
+        help="Max simultaneous provider searches (1-16, default 8). The bounded "
+             "answer to issue #36: an uncapped fan-out self-DoSes a keyless scraper.",
+    ),
     effort: str = typer.Option(None, "--effort"),
     max_tokens: int = typer.Option(None, "--max-tokens"),
     json_output: bool = typer.Option(False, "--json", "-j"),
@@ -320,9 +487,27 @@ def funnel_gather_cmd(
     # uncaught traceback: this command always speaks JSON, so an orchestrator
     # calling it needs a parseable envelope to branch on and a clean non-zero
     # exit — not a stack trace on stdout. (issue #24)
+    # STDOUT IS THE MACHINE CONTRACT — keep it JSON-only.
+    # crawl4ai's browse rung prints progress to stdout mid-run ("[INIT].... →
+    # Crawl4AI 0.8.6", "[FETCH]... ↓ https://…"), so roughly every other real
+    # invocation emitted a stream `json.loads` rejects. The skills parse this
+    # envelope to branch — and now to read `degraded` — so that chatter was an
+    # intermittent hard failure of the whole pipeline. Capture anything a
+    # backend writes to stdout and replay it on stderr, where it stays visible
+    # for debugging without corrupting the contract.
+    import contextlib
+    import io
+    import sys
+
+    noise = io.StringIO()
     try:
-        result = run_funnel(q, mode=eff_mode, vault_tag=vault_tag)
+        with contextlib.redirect_stdout(noise):
+            result = run_funnel(q, mode=eff_mode, vault_tag=vault_tag,
+                                search_plan=search_plan, max_queries=max_queries,
+                                read_top_k=read_top_k, concurrency=concurrency)
     except Exception as exc:
+        if noise.getvalue():
+            print(noise.getvalue(), file=sys.stderr, end="")
         typer.echo(json.dumps({
             "ok": False,
             "error": str(exc),
@@ -330,7 +515,15 @@ def funnel_gather_cmd(
             "stage": "funnel-gather",
         }, default=str))
         raise typer.Exit(1) from exc
+    if noise.getvalue():
+        print(noise.getvalue(), file=sys.stderr, end="")
     typer.echo(json.dumps(result, default=str))
+    # A degraded run must not look like success to a shell caller. The envelope
+    # still prints (the orchestrator reads `degraded_reasons` to decide whether
+    # to stop or retry), but the exit code makes the failure impossible to miss
+    # for a plain `&&`-chained script. An honest empty result stays exit 0.
+    if result.get("degraded"):
+        raise typer.Exit(3)
 
 
 # ── retrieve (Task 9/12) — hybrid retrieval top-chunks ───────────────────────

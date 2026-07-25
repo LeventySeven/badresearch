@@ -105,12 +105,46 @@ bad funnel-gather --query-file research/query-<vault_tag>.md \
     --effort <minimal|low|medium|high> --json
 ```
 
-Returns `FunnelEnvelope` JSON: `{note_ids, top_chunks, n_read}`.
+Returns `FunnelEnvelope` JSON:
+`{note_ids, top_chunks, n_read, n_stored, ok, degraded, degraded_reasons, warnings, provider_outcomes}`.
 - `note_ids` — sources written to the vault this run.
 - `top_chunks` — the reranked chunks (≤ TOP_CHUNKS for the mode) the model may
   read. Read these; do NOT re-read full pages.
 - `n_read` ≤ 80 (the load-bearing read ceiling — the funnel enforces it
   internally; reading past it degrades synthesis).
+
+**CHECK `degraded` BEFORE READING ANYTHING ELSE.** The envelope distinguishes a
+run that found nothing from a run that *could not search*:
+
+| Envelope | Meaning | What you do |
+|---|---|---|
+| `ok:true, degraded:false`, `note_ids` non-empty | normal | proceed to Step 2.5 |
+| `ok:false, degraded:true` (exit 3), reason `no_search_provider_available` | every search lane refused to run | **STOP. Do NOT gap-fetch, do NOT draft.** |
+| `ok:false, degraded:true` (exit 3), reason `no_search_results_from_any_provider` | every lane ran and returned zero hits across the entire plan | **STOP.** Almost always an outage, not an empty topic — see below |
+
+There is deliberately **no** "ran fine, found nothing" success row. Zero hits
+across every lane and every query (12 in light, up to 100 in full) is
+near-impossible for a well-formed query, and the keyless providers swallow
+transport errors into empty results — so this layer cannot tell a dead network
+from a sourceless topic. It is reported as degraded on purpose: a false alarm
+costs one honest message, whereas proceeding would ship a report asserting a
+research gap that is really an outage.
+
+When `degraded` is true, report the `degraded_reasons` and `provider_outcomes`
+to the user, say plainly that the corpus could not be built, and stop.
+
+**Also check `warnings` even when `ok:true`.** It is orthogonal to `degraded`: a
+run can succeed while not doing what you asked. `search_plan_empty_or_unparseable`
+means your plan did not apply and the generic fallback expansion ran instead —
+the corpus is NOT plan-driven, so regenerate the plan table and re-run rather
+than treating the coverage as if your lenses had fired.
+
+When `degraded` is true, a gap-fetch retry hits the same dead providers and
+returns empty again, and the run then reports a *content* gap that is really an
+*infrastructure* failure — a fabricated research finding. Instead: report the
+`degraded_reasons` and `provider_outcomes` to the user, say plainly that the
+corpus could not be built and why, and stop. A thin corpus is recoverable; a
+report that claims "no sources exist" when the search stack was down is not.
 
 **Fan-out constants are indexed by mode** (the funnel applies them internally
 via its `FunnelConfig`): `light` = 12–20 queries / 1–2 providers / read top
