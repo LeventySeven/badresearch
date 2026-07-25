@@ -201,7 +201,14 @@ class Crawl4AIProvider:
         profile: str | None = None,
         cookies: list[dict] | None = None,
         magic: bool = False,
-        ssrf_guard: bool = False,
+        # SECURE BY DEFAULT. This used to default False, so the only caller that
+        # got the guard was the one that remembered to ask (fetch_clean.py); the
+        # general factory in web/base.py built the provider unguarded, and on
+        # that path Chromium followed redirects and loaded subresources with no
+        # route handler at all. A security control that is off unless requested
+        # is a footgun — the entry URL was checked, then the browser was free to
+        # be redirected anywhere, including link-local metadata endpoints.
+        ssrf_guard: bool = True,
     ):
         # Resolve profile name to path (crawl4ai stores profiles in ~/.crawl4ai/profiles/)
         data_dir = user_data_dir

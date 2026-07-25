@@ -39,3 +39,19 @@ def wrap_untrusted(content: str, *, source_url: str | None = None) -> str:
         f"{INJECTION_PREAMBLE}{source_line}\n"
         f"{_BEGIN}\n{safe}\n{_END}"
     )
+
+
+def strip_untrusted(content: str) -> str:
+    """Inverse of `wrap_untrusted` — recover the raw body from a fenced string.
+
+    Programmatic consumers (the recitation gate's `--note-bodies` map, the
+    citation verifier) match report prose against SOURCE TEXT and must not see
+    the preamble or the fence markers. Idempotent and lossless on unfenced
+    input, so callers can apply it unconditionally without first checking.
+    """
+    text = content or ""
+    start = text.find(_BEGIN)
+    end = text.rfind(_END)
+    if start == -1 or end == -1 or end < start:
+        return text
+    return text[start + len(_BEGIN):end].strip("\n")

@@ -704,7 +704,33 @@ note_app = typer.Typer(
 )
 
 
-def _read_one_note(vault: Vault, note_id: str) -> dict[str, Any]:
+def _fence_if_fetched(note: Any, *, raw: bool) -> str:
+    """Fence a FETCHED page body as untrusted before it reaches an agent.
+
+    This is the one seam all 16 agents already go through to read a source, so
+    fencing here covers every one of them — and every agent added later —
+    instead of pasting a prose warning into each prompt constant, where it
+    silently rots the next time an agent is added (15 of 16 lacked it).
+
+    Only notes carrying a `source` URL are fenced: those are attacker-controlled
+    page text. Agent-authored interim notes (drafts, digests, critic findings)
+    are our own content and stay clean, so the fence keeps meaning something.
+
+    `raw=True` opts out for programmatic consumers that match against source
+    text (the recitation gate's `--note-bodies` map, the citation verifier).
+    """
+    body = note.body or ""
+    if raw:
+        return body
+    source_url = getattr(note.meta, "source", None) or getattr(note.meta, "url", None)
+    if not source_url:
+        return body
+    from bad_research.quality.injection import wrap_untrusted
+
+    return wrap_untrusted(body, source_url=str(source_url))
+
+
+def _read_one_note(vault: Vault, note_id: str, *, raw: bool = False) -> dict[str, Any]:
     """Resolve a note by id (notes_dir then temp_dir) and return its payload.
 
     Returns {ok:False, error, id} if the note is missing or unreadable so the
@@ -734,7 +760,7 @@ def _read_one_note(vault: Vault, note_id: str) -> dict[str, Any]:
         "tags": note.meta.tags or [],
         "type": note.meta.type,
         "status": note.meta.status,
-        "body": note.body,
+        "body": _fence_if_fetched(note, raw=raw),
         "path": note.path,
         "word_count": note.word_count,
         "meta": note.meta.model_dump(mode="json", exclude_none=True),
@@ -745,6 +771,10 @@ def _read_one_note(vault: Vault, note_id: str) -> dict[str, Any]:
 def note_show_cmd(
     note_ids: list[str] = typer.Argument(..., help="One or more note ids (stems of the .md files)"),
     json_output: bool = typer.Option(False, "--json", "-j", help="Emit JSON"),
+    raw: bool = typer.Option(
+        False, "--raw",
+        help="Return fetched bodies UNFENCED (for gates that match source text).",
+    ),
 ) -> None:
     """Show one or more vault notes by id.
 
@@ -752,6 +782,10 @@ def note_show_cmd(
     id, parses frontmatter, and emits the canonical Envelope with
     `data.notes` — a list of per-note payloads {id, title, tags, type, status,
     body, path, word_count, meta}. Exits non-zero if ANY requested id is missing.
+
+    A note carrying a `source` URL is FETCHED page text — attacker-controlled —
+    so its body is fenced with the untrusted-content preamble before it reaches
+    an agent. Pass `--raw` to get the unfenced body for programmatic matching.
     """
     from bad_research.core.vault import VaultError
 
@@ -761,7 +795,7 @@ def note_show_cmd(
         _emit_error(str(exc), json_mode=json_output, code="NO_VAULT")
         raise typer.Exit(code=1) from exc
 
-    notes = [_read_one_note(vault, nid) for nid in note_ids]
+    notes = [_read_one_note(vault, nid, raw=raw) for nid in note_ids]
     any_missing = any(not n["ok"] for n in notes)
 
     data = {"notes": notes, "count": len(notes)}

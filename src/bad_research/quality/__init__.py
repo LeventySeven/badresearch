@@ -7,7 +7,11 @@ filter + the mandatory untrusted-content injection preamble.
 from __future__ import annotations
 
 from bad_research.quality.content_filter import looks_like_paywall, postfetch_filter
-from bad_research.quality.injection import INJECTION_PREAMBLE, wrap_untrusted
+from bad_research.quality.injection import (
+    INJECTION_PREAMBLE,
+    strip_untrusted,
+    wrap_untrusted,
+)
 from bad_research.quality.prefilter import (
     DOMAIN_TIER,
     TierInfo,
@@ -25,7 +29,7 @@ __all__ = [  # noqa: RUF022 — grouped by pipeline stage (the filter contract),
     # Stage 2 — post-fetch content filter
     "postfetch_filter", "looks_like_paywall",
     # Injection defense
-    "INJECTION_PREAMBLE", "wrap_untrusted",
+    "INJECTION_PREAMBLE", "strip_untrusted", "wrap_untrusted",
     # sources provenance
     "source_id", "build_source_row", "upsert_source",
 ]
