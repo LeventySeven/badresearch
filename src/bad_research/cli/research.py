@@ -782,6 +782,10 @@ def _uncited_gate(report_path: str, vault_tag: str, note_bodies_path: str | None
 
     report_md = Path(report_path).read_text(encoding="utf-8")
 
+    # Bound in BOTH branches: the --note-bodies path has no vault to read notes
+    # from, and leaving it unbound there raises UnboundLocalError downstream.
+    notes_dir: Path | None = None
+
     if note_bodies_path:
         bodies = json.loads(Path(note_bodies_path).read_text(encoding="utf-8"))
         store: AnchorStore = _standalone_store_from_bodies(bodies)
@@ -791,7 +795,6 @@ def _uncited_gate(report_path: str, vault_tag: str, note_bodies_path: str | None
         # sentence reads as uncited, which is the honest answer with no sources).
         from bad_research.core.vault import Vault, VaultError
 
-        notes_dir: Path | None = None
         try:
             vault = Vault.discover()
             db_path = Path(vault.root) / ".bad-research" / "anchors.db"
@@ -815,12 +818,47 @@ def _uncited_gate(report_path: str, vault_tag: str, note_bodies_path: str | None
         if notes_dir is not None:
             _seed_anchors_from_notes_dir(store, notes_dir)
 
-    findings = no_uncited_claim_gate(report_md, store)
+    findings = list(no_uncited_claim_gate(report_md, store))
+
+    # Bare-URL grounding. The uncited gate validates `[N]` markers, so a
+    # fabricated URL inside an OTHERWISE-CITED sentence ("according to
+    # https://example.com/fake-study [3]") sails through: the sentence IS cited.
+    # This checks the URLs themselves against what we actually fetched. Emits
+    # `minor`, so it lands in the non-blocking `warnings` channel.
+    from bad_research.grounding.gate import ungrounded_url_gate
+
+    known_urls = _known_source_urls(store, notes_dir)
+    findings.extend(ungrounded_url_gate(report_md, known_urls))
+
     return [
         {"sentence": getattr(f, "location", ""), "reason": getattr(f, "failure_mode", "uncited"),
          "severity": getattr(f, "severity", "critical")}
         for f in findings
     ]
+
+
+def _known_source_urls(store: object, notes_dir: Path | None) -> set[str]:
+    """Every URL we actually grounded this run — the allowlist for prose URLs.
+
+    Sourced from the note frontmatter on disk (the file-based path the gate
+    already supports) plus any anchor the store carries. Returns an empty set
+    when nothing is discoverable, which makes the URL check flag every prose
+    URL — deliberately loud rather than silently vacuous.
+    """
+    urls: set[str] = set()
+    if notes_dir is not None and Path(notes_dir).is_dir():
+        from bad_research.core.note import read_note
+
+        for path in Path(notes_dir).glob("*.md"):
+            try:
+                note = read_note(path, Path(notes_dir).parent)
+            except Exception:
+                continue
+            for attr in ("source", "url"):
+                val = getattr(note.meta, attr, None)
+                if val:
+                    urls.add(str(val))
+    return urls
 
 
 def uncited_gate_cmd(
