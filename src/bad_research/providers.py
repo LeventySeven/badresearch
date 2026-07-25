@@ -3,8 +3,17 @@
 Pure and network-free: `bad doctor` and `bad calibrate` use this to report the
 keyless capability surface. Every provider is KEYLESS (host model + local OSS +
 self-host) — `requires_key` is False on every row, so `active` reduces to
-`import_present`. The external CLIs the skill drives (agent-browser/lightpanda/
-yt-dlp/git) are detected via `shutil.which` (no subprocess execution).
+`import_present` for everything that runs IN-PROCESS.
+
+The exception is `_HOST_BRIDGE_PROVIDERS` (`websearch`, `anthropic-host`):
+adapters over a Claude-host tool that a `bad …` subprocess has no wire to. They
+carry no import to check, so `import_present` is vacuously True — equating that
+with "active" made `doctor` promise capability the engine could not deliver
+(issue #35 §2). They remain keyless; they are simply reported honestly as
+unreachable from here.
+
+The external CLIs the skill drives (agent-browser/lightpanda/yt-dlp/git) are
+detected via `shutil.which` (no subprocess execution).
 """
 
 from __future__ import annotations
@@ -66,6 +75,16 @@ class ProviderStatus:
     active: bool
 
 
+# Providers that are adapters over a HOST tool bridge (Claude Code's WebSearch
+# tool, host model inference). They have no client library to import, so
+# `_import_ok` returns True vacuously — but a `bad …` subprocess has no bridge
+# wired, so they can never return a result there. `doctor` is itself always a
+# subprocess, so reporting them "active" was a capability claim the engine could
+# not honour; the plugin bootstrap reads doctor to decide whether it can run at
+# all (issue #35 §2). Import-resolves != can-return-a-result.
+_HOST_BRIDGE_PROVIDERS = frozenset({"websearch", "anthropic-host"})
+
+
 def _import_ok(import_name: str | None) -> bool:
     if not import_name:
         return True  # host tool / self-host / pure-httpx vertical — no client lib needed
@@ -73,6 +92,20 @@ def _import_ok(import_name: str | None) -> bool:
         return importlib.util.find_spec(import_name) is not None
     except (ImportError, ValueError):
         return False
+
+
+def _host_bridge_live(name: str) -> bool:
+    """Can this host-bridge provider actually produce a result from here?
+
+    `anthropic-host` becomes genuinely usable when a key is exported (the LLM
+    client then calls the API directly instead of the absent host bridge).
+    `websearch` has no such escape hatch: the CLI's `_build_providers` never
+    wires a `links_source`, so it raises NotImplementedError in every
+    subprocess invocation.
+    """
+    if name == "anthropic-host":
+        return bool(os.environ.get("ANTHROPIC_API_KEY"))
+    return False
 
 
 def provider_status() -> list[ProviderStatus]:
@@ -85,6 +118,9 @@ def provider_status() -> list[ProviderStatus]:
         requires_key = bool(p.env_var)  # always False in the keyless registry
         key_present = (not requires_key) or bool(os.environ.get(p.env_var or ""))
         import_present = _import_ok(p.import_name)
+        active = key_present and import_present
+        if p.name in _HOST_BRIDGE_PROVIDERS:
+            active = active and _host_bridge_live(p.name)
         out.append(
             ProviderStatus(
                 name=p.name,
@@ -93,7 +129,7 @@ def provider_status() -> list[ProviderStatus]:
                 requires_key=requires_key,
                 key_present=key_present,
                 import_present=import_present,
-                active=key_present and import_present,
+                active=active,
             )
         )
     return out

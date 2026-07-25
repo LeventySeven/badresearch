@@ -41,10 +41,41 @@ def test_every_provider_is_keyless():
         assert s.key_present is True, f"{s.name} should be key_present (no key needed)"
 
 
-def test_active_reduces_to_import_present():
-    # With requires_key False everywhere, active == import_present.
+def test_active_reduces_to_import_present_for_self_contained_providers():
+    """For everything that runs in-process, active == import_present.
+
+    HOST-BRIDGE providers are the deliberate exception: `websearch` and
+    `anthropic-host` are adapters over a Claude-host tool that a `bad …`
+    subprocess has no wire to, and they carry no import to check, so
+    `import_present` is vacuously True for them. Equating that with "active"
+    made `doctor` promise capability the engine could not deliver — the plugin
+    bootstrap reads doctor to decide whether it can run at all (issue #35 §2).
+    They stay KEYLESS (`requires_key` False); they are simply reported honestly
+    as unreachable from here.
+    """
+    from bad_research.providers import _HOST_BRIDGE_PROVIDERS
+
     for s in provider_status():
+        if s.name in _HOST_BRIDGE_PROVIDERS:
+            continue
         assert s.active == s.import_present
+
+
+def test_host_bridge_providers_are_inactive_in_a_subprocess(monkeypatch):
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    by_name = {s.name: s for s in provider_status()}
+    assert by_name["websearch"].active is False
+    assert by_name["anthropic-host"].active is False
+    # …and they remain keyless — this is an honesty fix, not a key requirement.
+    assert by_name["websearch"].requires_key is False
+    assert by_name["anthropic-host"].requires_key is False
+
+
+def test_anthropic_host_becomes_active_with_a_key(monkeypatch):
+    """A key gives the LLM client a real path, bypassing the absent host bridge."""
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test")
+    by_name = {s.name: s for s in provider_status()}
+    assert by_name["anthropic-host"].active is True
 
 
 def test_anthropic_host_is_base_and_keyless():
