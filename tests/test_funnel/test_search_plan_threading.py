@@ -176,16 +176,34 @@ def test_plan_with_no_locatable_query_column_yields_nothing(tmp_path: Path):
     assert RESEARCH.parse_search_plan(plan, k_per_query=5) == []
 
 
-def test_unescaped_pipe_in_a_query_is_rejoined_not_truncated(tmp_path: Path):
-    """`solar | wind capacity` split a cell in two and fired only `solar`."""
+def test_unescaped_pipe_is_rejoined_when_the_query_is_the_last_column(tmp_path: Path):
+    """Only then can the surplus be attributed to the query."""
     plan = tmp_path / "search-plan.md"
     plan.write_text(
-        "| A | Search query | T |\n|---|---|---|\n"
-        "| S1 | solar | wind capacity | web |\n",
+        "| A | Search query |\n|---|---|\n"
+        "| S1 | solar | wind capacity |\n",
         encoding="utf-8",
     )
     assert [q.query for q in RESEARCH.parse_search_plan(plan, k_per_query=5)] == [
         "solar | wind capacity"
+    ]
+
+
+def test_a_stray_pipe_in_a_later_column_never_splices_onto_the_query(tmp_path: Path):
+    """The surplus is unattributable here — guessing corrupts the query.
+
+    With the query at index 1 of 5 and a stray pipe in Target, a blind rejoin
+    fired "southeast asia GMV | breadth" as a real search: the same silent
+    corruption the escaped-pipe handling exists to prevent.
+    """
+    plan = tmp_path / "search-plan.md"
+    plan.write_text(
+        "| Atomic item | Search query | Type | Lens | Target |\n|---|---|---|---|---|\n"
+        "| S1 | southeast asia GMV | web | breadth | factual | extra |\n",
+        encoding="utf-8",
+    )
+    assert [q.query for q in RESEARCH.parse_search_plan(plan, k_per_query=5)] == [
+        "southeast asia GMV"
     ]
 
 

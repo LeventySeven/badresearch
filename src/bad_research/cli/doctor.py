@@ -93,7 +93,11 @@ def doctor(
     # they only fire for academic/medical queries and cannot carry a general
     # one. So the flag tracks the general lanes — `ddgs` (a real import) and a
     # configured self-host SearXNG.
-    _general = {"ddgs", "searxng"}
+    # ddgs ONLY. searxng carries no import_name either, so its `active` is
+    # vacuously True — including it reproduced the exact vacuity this field
+    # exists to avoid: a configured-but-dead endpoint would report capable,
+    # while a genuinely running SearXNG left on the default endpoint would not.
+    _general = {"ddgs"}
     headless_capable = any(
         s.active and s.capability == "search" and s.name in _general for s in visible
     )

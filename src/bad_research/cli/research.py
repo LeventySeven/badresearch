@@ -278,14 +278,15 @@ def parse_search_plan(path: str | Path, *, k_per_query: int,
     for cells in rows:
         if len(cells) <= q_idx or _is_separator(cells):
             continue
-        # A row with MORE cells than the header means an unescaped `|` inside a
-        # value split one cell into several; re-join the surplus back into the
-        # query cell instead of silently truncating the query at the pipe.
+        # A row with MORE cells than the header means an unescaped `|` split one
+        # value into several. We can only attribute that surplus to the QUERY
+        # column when the query is the LAST column — otherwise the extra pipe is
+        # just as likely to sit in a later column, and blindly re-joining would
+        # splice that column's text onto the query ("gmv 2026 | breadth"), which
+        # is the same silent corruption this handling exists to prevent. When we
+        # cannot attribute it, take the query cell verbatim.
         if n_cols and len(cells) > n_cols and q_idx == n_cols - 1:
             q = " | ".join(cells[q_idx:])
-        elif n_cols and len(cells) > n_cols:
-            surplus = len(cells) - n_cols
-            q = " | ".join(cells[q_idx:q_idx + surplus + 1])
         else:
             q = cells[q_idx]
         q = q.strip().strip('"').strip("'").strip()

@@ -59,6 +59,12 @@ while step < 6 and next_queries and now < deadline:      # (1) hard cap = FAST_M
     before = (len(seen_domains), len(seen_urls))
     ACT: fan out <=4 queries (FAST_MAX_QUERIES_PER_STEP), <=5 results each (FAST_MAX_RESULTS_PER_QUERY):
         bad funnel-gather "<q>" --mode light --vault-tag <tag> --max-queries 4 --read-top-k 12 --json
+        if the envelope has degraded:true (exit code 3): ABORT THE LOOP NOW.       # (0) infrastructure failure
+            Report degraded_reasons + provider_outcomes to the user and STOP.
+            Do NOT count it as a stalled step, do NOT keep looping, do NOT write
+            an answer. A degraded gather means the search stack could not run —
+            continuing produces a confident answer from an empty corpus and
+            reports an outage as "no sources exist on this topic".
         for each NEW url: seen_domains.add(domain); add that domain to the checklist entry of the sub-q this query served
     OBSERVE: bad retrieve "<original verbatim query>" --mode light --top-k 12 --json
     new_domains, new_urls = deltas vs `before`           # loop counters, ZERO model calls

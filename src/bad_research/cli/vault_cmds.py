@@ -246,6 +246,10 @@ def search_cmd(
     include_body: bool = typer.Option(
         False, "--include-body", help="Include each note's full body text in results"
     ),
+    raw: bool = typer.Option(
+        False, "--raw",
+        help="Return fetched bodies UNFENCED (for gates that match source text).",
+    ),
     json_output: bool = typer.Option(False, "--json", "-j", help="Emit JSON"),
 ) -> None:
     """Search or list vault notes.
@@ -321,19 +325,39 @@ def search_cmd(
     # frontmatter-stripped (matching `note show`) so downstream skills get clean
     # evidence text, not raw YAML.
     clean: list[dict[str, Any]] = []
+    any_fenced = False
     for n in results:
         body_path: Path = n["_body_path"]
         item = {k: v for k, v in n.items() if k != "_body_path"}
         if include_body:
             try:
                 from bad_research.core.frontmatter import parse_frontmatter
-                _meta, body_text = parse_frontmatter(body_path.read_text(encoding="utf-8"))
+                meta, body_text = parse_frontmatter(body_path.read_text(encoding="utf-8"))
+                # Same fence as `note show`. This path is NOT decorative: the
+                # step-8 corpus-critic skill runs `bad search … --include-body -j`
+                # and the CLI cheat-sheet advertises it to every agent, so
+                # fencing only `note show` would have left attacker page text
+                # reaching a Bash-holding agent through a shipped path — with
+                # the sibling command's fence making the gap look covered.
+                # parse_frontmatter returns a NoteMeta model, not a dict.
+                src = getattr(meta, "source", None)
+                if src and not raw:
+                    from bad_research.quality.injection import wrap_untrusted
+
+                    body_text = wrap_untrusted(body_text, source_url=str(src),
+                                               include_preamble=False)
+                    any_fenced = True
                 item["body"] = body_text
             except Exception:
                 item["body"] = ""
         clean.append(item)
 
     data = {"results": clean, "count": len(clean), "query": query, "tag": tag, "type": note_type}
+    if include_body and any_fenced:
+        # Preamble ONCE for the whole payload, not per body — see wrap_untrusted.
+        from bad_research.quality.injection import INJECTION_PREAMBLE
+
+        data["untrusted_notice"] = INJECTION_PREAMBLE
     _emit_success(data, json_mode=json_output, count=len(clean), vault=str(vault.root))
 
 
@@ -716,18 +740,27 @@ def _fence_if_fetched(note: Any, *, raw: bool) -> str:
     page text. Agent-authored interim notes (drafts, digests, critic findings)
     are our own content and stay clean, so the fence keeps meaning something.
 
-    `raw=True` opts out for programmatic consumers that match against source
-    text (the recitation gate's `--note-bodies` map, the citation verifier).
+    `raw=True` is reserved for programmatic consumers that match against source
+    text. (Today's gates do not reach this seam — the recitation map is built
+    from `bad search` and verify-citations reads `research/notes/*.md` directly
+    — so the flag exists so that fencing can never silently corrupt a future
+    text-matching consumer, not because one calls it now.)
     """
     body = note.body or ""
     if raw:
         return body
-    source_url = getattr(note.meta, "source", None) or getattr(note.meta, "url", None)
+    # `NoteMeta` has no `url` field and ignores extras, so `source` is the only
+    # signal — both write paths (vault_cmds `note new`, funnel/filter) set it.
+    source_url = getattr(note.meta, "source", None)
     if not source_url:
         return body
     from bad_research.quality.injection import wrap_untrusted
 
-    return wrap_untrusted(body, source_url=str(source_url))
+    # Markers only. The ~700-char preamble is emitted ONCE per envelope by the
+    # caller: prefixing it to every body pushed the real source text past the
+    # read window of any agent told to truncate (the step-4 loci-analyst reads
+    # "the first ~400 chars", which the preamble alone would entirely fill).
+    return wrap_untrusted(body, source_url=str(source_url), include_preamble=False)
 
 
 def _read_one_note(vault: Vault, note_id: str, *, raw: bool = False) -> dict[str, Any]:
@@ -799,6 +832,12 @@ def note_show_cmd(
     any_missing = any(not n["ok"] for n in notes)
 
     data = {"notes": notes, "count": len(notes)}
+    # Preamble ONCE per envelope, not per body — the bodies carry only the
+    # BEGIN/END markers so a truncating reader still reaches real source text.
+    if not raw and any("<BEGIN UNTRUSTED CONTENT>" in str(n.get("body", "")) for n in notes):
+        from bad_research.quality.injection import INJECTION_PREAMBLE
+
+        data["untrusted_notice"] = INJECTION_PREAMBLE
     if any_missing:
         if json_output:
             env = envelope_error("one or more notes not found", code="NOTE_NOT_FOUND")
