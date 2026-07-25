@@ -231,7 +231,7 @@ wheels = [
 
 [[package]]
 name = "bad-research"
-version = "0.1.0"
+version = "0.3.0"
 source = { editable = "." }
 dependencies = [
     { name = "anthropic" },
@@ -249,10 +249,8 @@ dependencies = [
     { name = "pymupdf" },
     { name = "pymupdf4llm" },
     { name = "pyyaml" },
-    { name = "rank-bm25" },
     { name = "rapidfuzz" },
     { name = "rich" },
-    { name = "snowballstemmer" },
     { name = "trafilatura" },
     { name = "tree-sitter" },
     { name = "tree-sitter-language-pack" },
@@ -317,13 +315,11 @@ requires-dist = [
     { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=0.23" },
     { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=4.1" },
     { name = "pyyaml", specifier = ">=6.0" },
-    { name = "rank-bm25", specifier = ">=0.2" },
     { name = "rapidfuzz", specifier = ">=3.0" },
     { name = "respx", marker = "extra == 'dev'", specifier = ">=0.21" },
     { name = "rich", specifier = ">=13.0" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.3" },
     { name = "sentence-transformers", marker = "extra == 'local'", specifier = ">=3.0" },
-    { name = "snowballstemmer", specifier = ">=2.2" },
     { name = "torch", marker = "extra == 'local'", specifier = ">=2.0" },
     { name = "trafilatura", specifier = ">=1.8" },
     { name = "tree-sitter", specifier = ">=0.23" },
