@@ -431,7 +431,17 @@ def route_query(decomposition_path: str) -> str:
 def funnel_gather(query: str, mode: str = "light", vault_tag: str = "") -> str:
     """Run the scraper funnel: fan-out->dedup->rank->read(Tier0-3)->filter->chunk->rerank.
 
-    Returns FunnelEnvelope JSON {note_ids, top_chunks, n_read}. The model reads top_chunks only.
+    Returns FunnelEnvelope JSON {note_ids, top_chunks, n_read, n_stored, ok,
+    degraded, degraded_reasons, warnings, provider_outcomes}. The model reads
+    top_chunks only.
+
+    CHECK `degraded` FIRST. MCP has no exit-code channel (the CLI signals the
+    same condition with exit 3), so the envelope field is the ONLY signal here:
+    `degraded: true` means the corpus could not be built (no search lane
+    available, or no lane returned any hit) — report `degraded_reasons` and
+    stop, do NOT treat the empty corpus as evidence the topic has no sources.
+    Also check `warnings` even when `ok: true` — e.g. a supplied search plan
+    that could not be parsed, meaning the corpus is not plan-driven.
 
     Args:
         query: the research query / sub-question

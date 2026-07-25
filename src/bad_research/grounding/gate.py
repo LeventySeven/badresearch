@@ -225,6 +225,57 @@ def no_uncited_claim_gate(report_md: str, anchors: AnchorStore) -> list[Finding]
     return findings
 
 
+_URL_RE = re.compile(r"https?://[^\s<>\"'\)\]\}]+")
+
+
+def _canonical_url(url: str) -> str:
+    """Normalize for comparison: drop trailing punctuation and a trailing slash.
+
+    A URL written mid-prose picks up the sentence's punctuation — `(https://x/y).`
+    — and must still match the `https://x/y` we stored.
+    """
+    return url.rstrip(".,;:!?").rstrip("/")
+
+
+def ungrounded_url_gate(report_md: str, known_urls: set[str]) -> list[Finding]:
+    """Flag `http(s)://` URLs in the PROSE that we never actually fetched.
+
+    The uncited gate validates `[N]` markers against claim_anchors, but a bare
+    URL written into a sentence is unchecked: "according to
+    https://example.com/fake-study [3]" satisfies the uncited gate (the sentence
+    IS cited) while the URL itself is invented. This closes that hole.
+
+    Adapted from Silver's `ungroundedUrlWarning` — fail loud when the grounding
+    mechanism did not engage, instead of trusting a prompt that asks the model
+    not to fabricate. Deterministic and KEYLESS: pure string comparison against
+    the URLs already in the vault, no model call and no network.
+
+    MINOR, deliberately: a URL can legitimately be the SUBJECT of the research
+    ("the breach at https://victim.example/login"), so blocking would punish a
+    report about a website. `uncited_gate_cmd` blocks on critical+major and
+    routes `minor` to its non-blocking `warnings` channel — the same treatment
+    the citation-drift WARNING already gets — so this is VISIBLE to the
+    orchestrator and the polish pass without failing the run. Each distinct URL
+    is reported once, however often it recurs.
+    """
+    known = {_canonical_url(u) for u in known_urls}
+    body = strip_sources_section(report_md)
+    findings: list[Finding] = []
+    seen: set[str] = set()
+    for raw in _URL_RE.findall(body):
+        url = _canonical_url(raw)
+        if not url or url in known or url in seen:
+            continue
+        seen.add(url)
+        findings.append(Finding(
+            "ungrounded-url", "minor", raw,
+            f"URL {raw} appears in the report but no fetched source has it. "
+            f"Either it was fabricated, or the source was never grounded into "
+            f"the vault -- verify it, cite the real source, or cut the URL.",
+        ))
+    return findings
+
+
 def gate_blocks_ship(findings: list[Finding]) -> bool:
     """A run does not ship with any open `critical` finding (dossier §5.2)."""
     return any(f.severity == "critical" for f in findings)

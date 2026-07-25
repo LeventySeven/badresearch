@@ -20,6 +20,7 @@ provider reports (Snapshot.url → WebResult.url) and discard the result if it i
 
 from __future__ import annotations
 
+import logging
 from collections.abc import Callable
 from typing import Any, Literal
 
@@ -85,6 +86,29 @@ def fetch_tiered(
         )
         if browse_result is not None and browse_result.content.strip():
             result = browse_result
+        elif _browse is None and not _browse_cli_available():
+            # SAY SO. The escalation was REQUESTED (tier_max>=3 plus a bot wall,
+            # a login wall, or an instruction) and could not run because the
+            # `agent-browser` CLI is not on PATH — it is not a pip dependency,
+            # so this is the DEFAULT state, not an edge case.
+            #
+            # Four shipped skills tell agents to run `bad fetch --tier-max 3`.
+            # Silently returning the rung-1 httpx body makes those agents treat
+            # an anti-bot interstitial as the article. Recording it lets the
+            # caller tell "this is the best available" from "the renderer never
+            # ran", and tells the user what to install.
+            result.metadata["browse_unavailable"] = True
+            result.metadata["browse_unavailable_reason"] = (
+                "the `agent-browser` CLI is not on PATH, so browse rungs 2.5/3 "
+                "could not run; this content is the plain httpx fetch. Install "
+                "it with `agent-browser install` to enable JS render, anti-bot "
+                "and login-walled pages."
+            )
+            logging.getLogger(__name__).warning(
+                "browse rung requested (tier_max=%s) but agent-browser is not "
+                "installed — returning the un-rendered rung-1 body for %s",
+                tier_max, url,
+            )
 
     # ---------- Rung 2: typed extraction (schema / AQL request) ----------
     if schema is not None and tier_max >= 2:
@@ -105,6 +129,16 @@ def fetch_tiered(
                 result.metadata["extracted"] = data
 
     return result
+
+
+def _browse_cli_available() -> bool:
+    """Is the external browse CLI actually installed? Never raises."""
+    try:
+        from bad_research.browse.agent_browser import is_available
+
+        return is_available()
+    except Exception:
+        return False
 
 
 def _do_browse(

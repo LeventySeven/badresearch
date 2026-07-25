@@ -19,13 +19,13 @@ from typing import Any, Literal
 
 from bad_research.funnel.config import FunnelConfig
 from bad_research.funnel.dedup import dedup
-from bad_research.funnel.fanout import fan_out, plan_queries
+from bad_research.funnel.fanout import _clamp_concurrency, fan_out, plan_queries
 from bad_research.funnel.filter import filter_and_store
 from bad_research.funnel.rank import rank_candidates
 from bad_research.funnel.read import read_top_k
 from bad_research.quality.prefilter import (
-    SEO_FARM_BLOCK_THRESHOLD,
     _SEO_EXEMPT_TIERS,
+    SEO_FARM_BLOCK_THRESHOLD,
     domain_tier,
     is_blocklisted,
     passes_recency_gate,
@@ -118,12 +118,21 @@ async def gather(
     queries: list[Any] | None = None,
     recency_max_age_days: int | None = None,
     today: date | datetime | None = None,
+    read_budget: int | None = None,
+    stats: dict[str, Any] | None = None,
+    concurrency: int | None = None,
 ) -> list[Any]:
     """Run the six-stage funnel and return reranked Chunk[] (never raw pages).
 
     `queries` (optional): a caller-supplied lens-driven SearchQuery plan
     (the width-sweep skill passes its 3-lens A/B/C/D plan). When omitted we fall
     back to plan_queries (deterministic expansion).
+
+    `read_budget` (optional): override the mode's Stage-D read budget (the CLI's
+    `--read-top-k`). Named `read_budget` here because `read_top_k` is the Stage-D
+    FUNCTION imported into this module — a param of that name shadows it and
+    breaks every gather() call. Still clamped to READ_CEILING: a caller may
+    narrow the budget, never breach the ceiling that keeps synthesis quality up.
 
     `recency_max_age_days` (optional): the query's freshness window (one of the
     RECENCY_MAX_AGE_DAYS tiers, e.g. 7 breaking / 180 current / None evergreen).
@@ -138,7 +147,36 @@ async def gather(
     # Base providers obey the p_providers breadth cap; intent-routed verticals fire
     # ALONGSIDE them (they are already curated, so they don't compete for the cap).
     active_providers = deps.providers[: cfg.p_providers] + list(deps.vertical_providers)
-    raw_hits = await fan_out(queries, active_providers)
+    # Opt-in provider instrumentation: only allocate the dict when the caller
+    # asked for stats, so the un-instrumented path stays byte-identical.
+    outcomes: dict[str, str] | None = {} if stats is not None else None
+    raw_hits = await fan_out(queries, active_providers, outcomes,
+                             _clamp_concurrency(concurrency))
+    if stats is not None:
+        seen_outcomes = outcomes or {}
+        reasons: list[str] = []
+        # Degraded means "the run could not do its job", NOT "found nothing".
+        # A single lane that returned hits carries the run (the documented
+        # SPEC §13 failover), so we only flag when NOTHING came back at all.
+        if not any(v == "ok" for v in seen_outcomes.values()):
+            if not seen_outcomes or all(
+                v in {"unavailable", "error"} for v in seen_outcomes.values()
+            ):
+                # Every lane refused to run — unambiguous infrastructure failure.
+                reasons.append("no_search_provider_available")
+            else:
+                # Every lane RAN and returned zero hits. Because the keyless
+                # providers swallow transport errors into [], this is either a
+                # dead network or a genuinely sourceless topic — and we cannot
+                # tell which from here. We flag it deliberately: a false
+                # "degraded" costs one honest "couldn't build the corpus"
+                # message, while a false "healthy" ships a report asserting a
+                # research gap that is really an outage. Simultaneous zero hits
+                # across every lane is near-impossible for a well-formed query.
+                reasons.append("no_search_results_from_any_provider")
+        stats["provider_outcomes"] = dict(seen_outcomes)
+        stats["degraded_reasons"] = reasons
+        stats["degraded"] = bool(reasons)
 
     # ── Stage B — DEDUP (URL-canonical + content-hash, free) ───────────────
     # dedup also DATES each survivor (metadata['age_days'] + published_days_ago).
@@ -161,7 +199,13 @@ async def gather(
     pages = await read_top_k(
         ranked,
         fetcher=deps.fetcher,
-        read_top_k=cfg.read_top_k,
+        # Clamp to [1, READ_CEILING]. An unclamped negative budget made
+        # `ranked[:budget]` drop the tail and `reads_done >= budget` true on the
+        # first check, so ZERO pages were read and the run returned a silent
+        # empty corpus with ok:true — the failure mode this whole change exists
+        # to abolish, reachable from a stray `--read-top-k -5`.
+        read_top_k=(max(1, min(read_budget, FunnelConfig.READ_CEILING))
+                    if read_budget is not None else cfg.read_top_k),
         concurrency=cfg.read_concurrency,
         max_chain_depth=cfg.max_chain_depth,
         max_links_per_hub=cfg.max_links_per_hub,
