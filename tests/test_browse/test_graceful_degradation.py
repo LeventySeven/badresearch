@@ -23,9 +23,11 @@ def _no_optional_imports(monkeypatch):
     monkeypatch.setattr(builtins, "__import__", fake)
 
 
-def test_agent_browser_absent_factory_returns_none(monkeypatch):
+def test_no_browse_cli_factory_returns_none(monkeypatch):
+    monkeypatch.setattr(base, "silver_is_available", lambda program="silver": False)
     monkeypatch.setattr(base, "is_available", lambda program="agent-browser": False)
     assert get_browse_provider() is None
+    assert get_browse_provider("silver") is None
     assert get_browse_provider("agent-browser") is None
     # the LLM + AQL extractors are pure-Python and always constructible
     assert get_extract_provider("llm") is not None
@@ -33,6 +35,7 @@ def test_agent_browser_absent_factory_returns_none(monkeypatch):
 
 
 def test_ladder_degrades_to_rung1_when_nothing_else_available(monkeypatch):
+    monkeypatch.setattr(base, "silver_is_available", lambda program="silver": False)
     monkeypatch.setattr(base, "is_available", lambda program="agent-browser": False)
     _no_optional_imports(monkeypatch)
 

@@ -27,16 +27,35 @@ def test_extract_provider_protocol_is_runtime_checkable() -> None:
     assert isinstance(Ok(), ExtractProvider)
 
 
-def test_default_browse_provider_is_agent_browser_when_cli_present(monkeypatch) -> None:
+def test_default_browse_provider_prefers_silver_when_cli_present(monkeypatch) -> None:
+    monkeypatch.setattr(base, "silver_is_available", lambda program="silver": True)
+    monkeypatch.setattr(base, "is_available", lambda program="agent-browser": True)
+    prov = get_browse_provider()
+    assert prov is not None
+    assert prov.name == "silver"
+
+
+def test_default_browse_provider_falls_back_to_agent_browser(monkeypatch) -> None:
+    # Only agent-browser installed → the ladder still gets a browse rung.
+    monkeypatch.setattr(base, "silver_is_available", lambda program="silver": False)
     monkeypatch.setattr(base, "is_available", lambda program="agent-browser": True)
     prov = get_browse_provider()
     assert prov is not None
     assert prov.name == "agent-browser"
 
 
+def test_named_browse_provider_does_not_silently_substitute(monkeypatch) -> None:
+    # Asking for silver when it is absent returns None rather than agent-browser.
+    monkeypatch.setattr(base, "silver_is_available", lambda program="silver": False)
+    monkeypatch.setattr(base, "is_available", lambda program="agent-browser": True)
+    assert get_browse_provider("silver") is None
+
+
 def test_browse_provider_none_when_cli_absent(monkeypatch) -> None:
+    monkeypatch.setattr(base, "silver_is_available", lambda program="silver": False)
     monkeypatch.setattr(base, "is_available", lambda program="agent-browser": False)
     assert get_browse_provider() is None
+    assert get_browse_provider("silver") is None
     assert get_browse_provider("agent-browser") is None
 
 

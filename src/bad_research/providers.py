@@ -3,7 +3,7 @@
 Pure and network-free: `bad doctor` and `bad calibrate` use this to report the
 keyless capability surface. Every provider is KEYLESS (host model + local OSS +
 self-host) — `requires_key` is False on every row, so `active` reduces to
-`import_present`. The external CLIs the skill drives (agent-browser/lightpanda/
+`import_present`. The external CLIs the skill drives (silver/agent-browser/lightpanda/
 yt-dlp/git) are detected via `shutil.which` (no subprocess execution).
 """
 
@@ -31,7 +31,8 @@ PROVIDERS: tuple[Provider, ...] = (
     Provider("ddgs", None, "ddgs", "(base)", "search"),            # keyless multi-engine lib
     Provider("searxng", None, None, "(base)", "search"),           # self-host, no key
     Provider("crawl4ai", None, "crawl4ai", "(base)", "browse"),    # local JS render
-    Provider("agent-browser", None, None, "browse", "browse"),     # local CLI (CDP)
+    Provider("silver", None, None, "browse", "browse"),            # local CLI (Playwright)
+    Provider("agent-browser", None, None, "browse", "browse"),     # local CLI (CDP), fallback
     Provider("arxiv", None, None, "(base)", "search"),             # keyless vertical (httpx)
     Provider("openalex", None, None, "(base)", "search"),
     Provider("crossref", None, None, "(base)", "search"),
@@ -48,6 +49,7 @@ PROVIDERS: tuple[Provider, ...] = (
 # NOT pip deps — installed out-of-band. `bad doctor` reports presence + this hint.
 # SearXNG is intentionally ABSENT (silent/opt-in, INTERFACES_KEYLESS §9).
 EXTERNAL_CLIS: dict[str, str] = {
+    "silver": "npm i -g agent-silver   # keyless headless Chromium (default browse rung)",
     "agent-browser": "agent-browser install   # pulls Chrome-for-Testing, no account",
     "lightpanda": "curl -L github.com/lightpanda-io/browser/releases/latest -o lightpanda  # keyless JS engine",
     "yt-dlp": "pipx install yt-dlp      # caption-track puller (YouTube/video tier)",

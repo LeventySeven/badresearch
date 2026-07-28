@@ -77,10 +77,17 @@ on each redirect).
 **observe** the page's accessibility tree → **act** (click/type/navigate) → **extract**
 structured data, with the model choosing actions against stable element references.
 We use Stagehand's well-known observe/act/extract prompts as the loop's brain — but
-instead of a paid cloud browser, we drive **[vercel's `agent-browser`](https://github.com/vercel-labs/agent-browser)**,
-a local, keyless headless-Chrome CLI (with `lightpanda` as a fast optional engine).
+instead of a paid cloud browser, we drive **[`silver`](https://github.com/LeventySeven/silver)**,
+a local, keyless headless-Chromium CLI (**[vercel's `agent-browser`](https://github.com/vercel-labs/agent-browser)**,
+optionally with `lightpanda`, remains a drop-in fallback when silver isn't installed).
 The model only ever acts on element references that exist in the live page snapshot,
 so it can't be steered onto a hallucinated element.
+
+Two properties are why silver is the default. Its navigation is **redirect-guarded on
+every hop**, which closes the SSRF gap an external CLI leaves — the ladder itself can
+only check the entry URL and the final landed URL. And it is **read-only unless asked**:
+actor verbs aren't even dispatchable without `--enable-actions`, and the research path
+(open → snapshot → read) never passes it, so a hostile page has no verb to reach for.
 
 ### Element querying — ask the page in a query language
 *Pattern from: AgentQL.* AgentQL's idea is a small declarative query language for
@@ -146,7 +153,7 @@ low-confidence statements are hedged rather than asserted flatly.
 | Reranking | host-model cross-encoder | `[local]` `ms-marco-MiniLM` |
 | Retrieval | SQLite FTS5/BM25 | `[local]` `bge` + LanceDB dense lane |
 | Content render | native httpx + readability | `crawl4ai` JS render (bundled) |
-| Browse | — | `agent-browser` / `lightpanda` CLIs |
+| Browse | — | `silver` CLI (default), else `agent-browser` / `lightpanda` |
 | Media transcripts | — | `yt-dlp` CLI |
 
 Everything in the left column works the moment you `pip install bad-research`. The

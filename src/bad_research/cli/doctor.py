@@ -1,8 +1,8 @@
 """`bad doctor` — the keyless capability report. No network, no key checks.
 
 Reports: the keyless-by-default banner, the keyless provider rows (host model +
-keyless search/browse), the external keyless CLIs the skill drives (agent-browser/
-lightpanda/yt-dlp/git) with one-line install hints, and whether the optional
+keyless search/browse), the external keyless CLIs the skill drives (silver/
+agent-browser/lightpanda/yt-dlp/git) with one-line install hints, and whether the optional
 `[local]` neural stack is installed. SearXNG is intentionally silent — its provider
 row only renders when `searxng_endpoint` is configured away from the localhost
 default (opt-in, INTERFACES_KEYLESS §9).

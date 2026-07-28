@@ -2,20 +2,28 @@
 
   rung 1   httpx GET (core/fetcher) ............... $0  static HTML/APIs
   rung 2   crawl4ai local JS render → fit_markdown . $0  clean MD, no interaction
-  rung 2.5 agent-browser --engine lightpanda ....... $0  fast keyless JS render (snapshot/eval)
-  rung 3   agent-browser --engine chrome ........... $0  login/click/typed/screenshot
+  rung 2.5 silver (headless Chromium, read-only) ... $0  keyless JS render (snapshot/read)
+  rung 3   silver --enable-actions ................. $0  login/click/typed/screenshot
+
+Rungs 2.5/3 are ONE provider in two postures: the observe path never passes
+`--enable-actions`, so silver refuses actor verbs outright, and only a host-supplied step
+list unlocks them. agent-browser remains a drop-in fallback when silver is not installed
+(`browse.base.get_browse_provider` prefers silver, then agent-browser); its own
+lightpanda→chrome fallback still applies on that path.
 
 Escalation gates KEPT verbatim from web/base.py (looks_like_junk / looks_like_login_wall).
-There is NO rung that costs money. The lightpanda→chrome fallback lives inside
-AgentBrowserProvider.browse (it retries on an empty snapshot). Every optional rung degrades
-gracefully: a missing provider/CLI means the rung is skipped and the best lower-tier result
-is returned. Providers are injectable for tests (_tier0/_tier1_factory/_browse/_extractor/_llm).
+There is NO rung that costs money. Every optional rung degrades gracefully: a missing
+provider/CLI means the rung is skipped and the best lower-tier result is returned.
+Providers are injectable for tests (_tier0/_tier1_factory/_browse/_extractor/_llm);
+passing `_browse=None` explicitly means "no browse provider", NOT "resolve the default".
 
-SSRF (same contract as the KR-3 content fix): agent-browser drives a REAL browser, so a
+SSRF (same contract as the KR-3 content fix): the browse rung drives a REAL browser, so a
 malicious page could redirect/navigate to an internal host. We reuse the shared denylist
 predicate `core.fetcher.is_blocked_url` (the DRY single source of truth) to (a) gate the
 browse-rung entry URL before driving the CLI, and (b) re-validate the final/landed URL the
 provider reports (Snapshot.url → WebResult.url) and discard the result if it is internal.
+On silver the per-hop gap that (a)+(b) leave open is additionally covered by silver's own
+redirect-guarded navigation, which re-checks every hop.
 """
 
 from __future__ import annotations
@@ -25,6 +33,10 @@ from typing import Any, Literal
 
 from bad_research.web.base import WebResult
 
+# The browse backends the ladder can bind. "silver" is one provider in two postures
+# (read-only observe / --enable-actions); the other two are agent-browser engines.
+BrowseEngine = Literal["silver", "lightpanda", "chrome"]
+
 
 def _is_empty(result: WebResult) -> bool:
     return (result.looks_like_junk() or "").startswith("Empty or near-empty")
@@ -32,6 +44,24 @@ def _is_empty(result: WebResult) -> bool:
 
 def _is_bot_wall(result: WebResult) -> bool:
     return (result.looks_like_junk() or "").startswith("Bot detection page")
+
+
+# Sentinel for the `_browse` seam: absent → resolve the configured provider;
+# `None` → the caller already resolved and found nothing, so skip the rung.
+_UNSET: Any = object()
+
+
+def _accept_browse(candidate: WebResult, *, rescue: bool) -> bool:
+    """Should the browse rung's output replace the best lower-tier result?
+
+    Empty output never wins. When we escalated to BEAT a wall (`rescue`) and the browser
+    hit the same wall, the escalation failed — keeping the wall would store a Cloudflare
+    interstitial as if it were the source. An explicit `instruction` is not a rescue: the
+    caller asked for the interactive path and a short, targeted answer is the point.
+    """
+    if not candidate.content.strip():
+        return False
+    return not (rescue and _is_bot_wall(candidate))
 
 
 def fetch_tiered(
@@ -45,7 +75,7 @@ def fetch_tiered(
     # ---- injection seams (tests pass mocks; production gets real keyless defaults) ----
     _tier0: Any | None = None,
     _tier1_factory: Callable[[], Any | None] | None = None,
-    _browse: Any | None = None,
+    _browse: Any | None = _UNSET,
     _extractor: Any | None = None,
     _llm: Any | None = None,
 ) -> WebResult:
@@ -83,7 +113,9 @@ def fetch_tiered(
             url, instruction or "Read the main content of this page.",
             replay_key=replay_key, variables=variables, browse=_browse,
         )
-        if browse_result is not None and browse_result.content.strip():
+        if browse_result is not None and _accept_browse(
+            browse_result, rescue=want_anti_bot or want_login
+        ):
             result = browse_result
 
     # ---------- Rung 2: typed extraction (schema / AQL request) ----------
@@ -115,7 +147,7 @@ def _do_browse(
     variables: dict[str, Any] | None,
     browse: Any | None,
 ) -> WebResult | None:
-    """Drive the keyless AgentBrowserProvider (rung 2.5 lightpanda → 3 chrome inside browse()).
+    """Drive the keyless browse provider (silver, else agent-browser).
     Returns None if no provider is available (caller keeps the lower-tier result).
 
     SSRF gating (reuses core.fetcher.is_blocked_url — the DRY denylist from the KR-3 fix):
@@ -124,12 +156,13 @@ def _do_browse(
           WebResult.url); if a mid-navigation redirect landed on an internal host, discard
           the result rather than return content scraped from inside the perimeter.
 
-      # SSRF LIMITATION: agent-browser is an external CLI and exposes no per-navigation
-      # request-interception hook we can drive from Python (unlike the crawl4ai render rung,
-      # which uses a Playwright `route` handler in KR-3). So intermediate redirects that
-      # *transit* an internal host but land back on a public URL are not individually gated
-      # here — only the entry URL and the final landed URL are validated. A future
-      # `agent-browser --proxy`/interception surface (dossier 14 §11) would close this.
+      # SSRF LIMITATION (agent-browser fallback only): agent-browser is an external CLI
+      # and exposes no per-navigation request-interception hook we can drive from Python
+      # (unlike the crawl4ai render rung, which uses a Playwright `route` handler in KR-3).
+      # So on that path, intermediate redirects that *transit* an internal host but land
+      # back on a public URL are not individually gated — only the entry URL and the final
+      # landed URL are validated. silver closes this: its navigation is redirect-guarded
+      # and re-checks every hop, which is why it is the default provider.
     """
     from bad_research.core.fetcher import is_blocked_url
 
@@ -138,9 +171,9 @@ def _do_browse(
         return None
 
     prov = browse
-    if prov is None:
+    if prov is _UNSET:
         from bad_research.browse.base import get_browse_provider
-        prov = get_browse_provider("agent-browser")  # None when CLI absent (graceful)
+        prov = get_browse_provider()  # silver → agent-browser → None (graceful)
     if prov is None:
         return None
     try:
@@ -158,37 +191,44 @@ def _do_browse(
 
 class TieredFetcher:
     """Object wrapper over the module-level keyless `fetch_tiered` ladder, with the
-    configured browse engine bound for the rung-2.5/3 agent-browser rungs.
+    configured browse engine bound for the rung-2.5/3 rungs.
 
     The funnel (`FunnelDeps.fetcher`) and the skill CLI hold a `TieredFetcher` and
-    call `.fetch_tiered(url, tier_max=...)`. The wrapper threads `engine` (lightpanda
-    by default → chrome fallback inside `AgentBrowserProvider.browse`) into the
-    browse rung by lazily constructing an engine-configured `AgentBrowserProvider`
-    and injecting it as the `_browse` seam — so the rung uses the configured engine
-    rather than `get_browse_provider`'s default. Constructing the wrapper does NOT
-    touch the CLI/network: the provider is built only on first browse-rung use, and
-    a missing CLI degrades to None (the ladder keeps the best lower-tier result).
+    call `.fetch_tiered(url, tier_max=...)`. The wrapper threads `engine` into the
+    browse rung by lazily constructing the matching provider and injecting it as the
+    `_browse` seam. `"silver"` (default) builds a `SilverProvider`; the two
+    agent-browser engines build an engine-configured `AgentBrowserProvider` so the
+    lightpanda→chrome fallback still applies there. Constructing the wrapper does NOT
+    touch the CLI/network: the provider is built only on first browse-rung use, and a
+    missing CLI degrades to None (the ladder keeps the best lower-tier result).
     """
 
-    def __init__(self, engine: Literal["lightpanda", "chrome"] = "lightpanda") -> None:
+    def __init__(self, engine: BrowseEngine = "silver") -> None:
         self.engine = engine
         self._browse_provider: Any | None = None
         self._browse_resolved = False
 
     def _browse_seam(self) -> Any | None:
-        """Lazily build the engine-configured AgentBrowserProvider (keyless, local
-        Chrome/lightpanda over CDP). Returns None when the agent-browser CLI is
-        absent — the ladder then degrades to crawl4ai/httpx (graceful)."""
+        """Lazily build the engine-configured browse provider (keyless local Chromium).
+        Returns None when the matching CLI is absent — the ladder then degrades to
+        crawl4ai/httpx (graceful)."""
         if not self._browse_resolved:
             self._browse_resolved = True
             try:
-                from bad_research.browse.agent_browser import (
-                    AgentBrowserProvider,
-                    is_available,
-                )
+                if self.engine == "silver":
+                    from bad_research.browse.silver import SilverProvider
+                    from bad_research.browse.silver import is_available as silver_ok
 
-                if is_available():
-                    self._browse_provider = AgentBrowserProvider(engine=self.engine)
+                    if silver_ok():
+                        self._browse_provider = SilverProvider()
+                else:
+                    from bad_research.browse.agent_browser import (
+                        AgentBrowserProvider,
+                        is_available,
+                    )
+
+                    if is_available():
+                        self._browse_provider = AgentBrowserProvider(engine=self.engine)
             except Exception:
                 self._browse_provider = None
         return self._browse_provider

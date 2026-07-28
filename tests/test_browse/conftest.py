@@ -97,6 +97,48 @@ EMPTY_SNAPSHOT_JSON = _json.dumps({
     "data": {"snapshot": "Page: Loading…\nURL: https://spa.example/\n", "refs": {}},
 })
 
+# ---- silver envelopes: `{success, data, error}` with `data` a fenced TREE STRING ----
+SILVER_FENCE_OPEN = "⟦page-content untrusted⟧"
+SILVER_FENCE_CLOSE = "⟦/page-content⟧"
+
+SILVER_SNAPSHOT_JSON = _json.dumps({
+    "success": True,
+    "data": (
+        f"{SILVER_FENCE_OPEN}\n"
+        '- title: "Example - Log in" [url=https://example.com/login]\n'
+        '* heading "Log in" [level=1, ref=e1]\n'
+        "* form [ref=e2]\n"
+        '* textbox "Email" [ref=e3]\n'
+        '* textbox "Password" [ref=e4]\n'
+        '* button "Continue" [ref=e5]\n'
+        '* link "Forgot password?" [ref=e6]\n'
+        f"{SILVER_FENCE_CLOSE}"
+    ),
+    "error": None,
+})
+
+SILVER_EMPTY_SNAPSHOT_JSON = _json.dumps({
+    "success": True,
+    "data": f"{SILVER_FENCE_OPEN}\n- title: \"Loading…\" [url=https://spa.example/]\n{SILVER_FENCE_CLOSE}",
+    "error": None,
+})
+
+SILVER_OPEN_JSON = _json.dumps({
+    "success": True,
+    "data": {"url": "https://example.com/login", "title": "Example - Log in",
+             "page_changed": False},
+    "error": None,
+})
+
+SILVER_READ_JSON = _json.dumps({
+    "success": True,
+    "data": f"{SILVER_FENCE_OPEN}\nLog in\n\nEnter your email and password to continue.\n"
+            f"{SILVER_FENCE_CLOSE}",
+    "error": None,
+})
+
+SILVER_OK_JSON = _json.dumps({"success": True, "data": None, "error": None})
+
 
 class FakeRunner:
     """Stand-in for subprocess.run. Records every argv it is asked to run and returns

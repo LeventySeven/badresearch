@@ -62,17 +62,35 @@ def test_tier_max_caps_at_rung1() -> None:
     t1.fetch.assert_not_called()
 
 
-def test_bot_wall_escalates_to_agent_browser() -> None:
+def test_bot_wall_escalates_to_browse_rung() -> None:
     t0 = MagicMock()
     t0.fetch.return_value = _empty()
     t1 = MagicMock()
     t1.fetch.return_value = _bot()
     ab = MagicMock()
-    ab.browse.return_value = make_result("Recovered behind cloudflare. " * 20)
+    ab.browse.return_value = make_result("The recovered article body. " * 20)
     r = fetch_tiered("https://x.test", tier_max=3,
                      _tier0=t0, _tier1_factory=lambda: t1, _browse=ab)
-    assert "Recovered behind cloudflare" in r.content
+    assert "The recovered article body" in r.content
     ab.browse.assert_called_once()
+
+
+def test_bot_wall_that_survives_the_browse_rung_is_not_stored() -> None:
+    # Escalating to beat a wall and landing on the same wall is a FAILED fetch: the
+    # interstitial must not be handed back as if it were the source.
+    t0 = MagicMock()
+    t0.fetch.return_value = _empty()
+    t1 = MagicMock()
+    t1.fetch.return_value = _bot()
+    ab = MagicMock()
+    ab.browse.return_value = make_result(
+        "Performing security verification. Ray ID: a224d90e. Cloudflare. " * 10
+    )
+    r = fetch_tiered("https://x.test", tier_max=3,
+                     _tier0=t0, _tier1_factory=lambda: t1, _browse=ab)
+    ab.browse.assert_called_once()
+    assert "Ray ID" not in r.content          # the browse wall was rejected
+    assert r.content == t1.fetch.return_value.content   # kept the lower-tier result
 
 
 def test_login_wall_escalates_to_agent_browser_with_instruction() -> None:
@@ -102,6 +120,9 @@ def test_instruction_triggers_rung3_browse() -> None:
 
 
 def test_no_browse_provider_stays_on_lower_tier() -> None:
+    # `_browse=None` means "the caller resolved a provider and found none" — the rung is
+    # skipped. (It must NOT fall through to resolving a real CLI off PATH, or this test
+    # drives a live browser on any machine that has one installed.)
     t0 = MagicMock()
     t0.fetch.return_value = _good()
     r = fetch_tiered("https://x.test", tier_max=3, instruction="paginate",

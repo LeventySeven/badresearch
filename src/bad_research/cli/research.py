@@ -145,18 +145,18 @@ def _build_providers(cfg: object) -> list:
 
 
 def _build_tiered_fetcher(cfg: object) -> object | None:
-    """Keyless 4-rung browse fetcher (KR-4): httpx -> crawl4ai -> agent-browser
-    (lightpanda) -> agent-browser (chrome). No Browserbase/Browser-Use rung.
-    The ladder reads the default browse engine from config."""
-    from typing import Literal
-
+    """Keyless 4-rung browse fetcher (KR-4): httpx -> crawl4ai -> silver (read-only)
+    -> silver (--enable-actions). No Browserbase/Browser-Use rung. The ladder reads the
+    default browse engine from config; the agent-browser engines stay selectable as the
+    fallback for machines without silver."""
     try:
-        from bad_research.browse.ladder import TieredFetcher
+        from bad_research.browse.ladder import BrowseEngine, TieredFetcher
 
-        # Normalize to the Literal the ladder accepts; any non-"chrome" value
-        # defaults to lightpanda (the keyless rung-2.5 default, dossier 14 §12.5).
-        engine: Literal["lightpanda", "chrome"] = (
-            "chrome" if getattr(cfg, "browse_engine", "lightpanda") == "chrome" else "lightpanda"
+        # Normalize to the Literal the ladder accepts; anything unrecognized falls back
+        # to the keyless default rather than failing the run.
+        configured = getattr(cfg, "browse_engine", "silver")
+        engine: BrowseEngine = (
+            configured if configured in ("silver", "lightpanda", "chrome") else "silver"
         )
         return TieredFetcher(engine=engine)
     except TypeError:
