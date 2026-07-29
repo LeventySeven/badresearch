@@ -387,11 +387,51 @@ def shape_reason(decomp: dict[str, Any]) -> str:
                 f"{R.SHAPE_DEPTH_MIN_PERSPECTIVES}-{R.SHAPE_DEPTH_MAX_PERSPECTIVES} "
                 "sequential perspectives on one locus")
     if shape == "breadth_first":
-        k = min(n, R.SHAPE_BREADTH_K_CAP)
-        return (f"breadth_first: {n} independent sub-question(s) ({modality}), "
-                f"K={k} parallel investigators, importance-ordered")
+        cov = fanout_coverage(decomp)
+        base = (f"breadth_first: {n} independent sub-question(s) ({modality}), "
+                f"K={cov['k']} parallel investigators, importance-ordered")
+        if cov["deferred"]:
+            # No silent truncation (issue #36 item 5): say what this pass does
+            # NOT cover, so the run can carry the remainder to the gap waves.
+            base += (f" — covers {cov['k']} of {n} sub-question(s) this pass, "
+                     f"{cov['deferred']} deferred to the gap waves "
+                     f"(cap {cov['cap']})")
+        return base
     return (f"straightforward: {n} atomic item(s), single focused investigation "
             "(1 investigator)")
+
+
+def fanout_coverage(decomp: dict[str, Any]) -> dict[str, Any]:
+    """Machine-readable fan-out coverage for the classified query shape — the
+    structured twin of `shape_reason`, so an orchestrator can branch on
+    `deferred > 0` instead of parsing prose (issue #36 item 5).
+
+    Keys: `shape`, `arrangement`, `n_subq` (independent sub-questions the
+    decomposition carries), `cap` (the shape's hard fan-out ceiling), `k`
+    (investigators this pass), `deferred` (sub-questions this pass does NOT
+    cover — the gap waves' input).
+
+    Only `breadth_first` can defer: its K is one investigator PER independent
+    sub-question, so anything past `SHAPE_BREADTH_K_CAP` genuinely gets no
+    investigator this pass. `depth_first` runs 2-4 sequential perspectives on the
+    ONE contested locus and `straightforward` runs a single investigation over
+    the whole query — in both, every sub-question is inside the one thing being
+    investigated, so nothing is dropped and `deferred` is 0. `k` is None for
+    `depth_first` because the perspective count is chosen at dispatch inside
+    [SHAPE_DEPTH_MIN_PERSPECTIVES, SHAPE_DEPTH_MAX_PERSPECTIVES].
+    """
+    shape = classify_query_shape(decomp)
+    n = _n_independent_subq(decomp)
+    if shape == "breadth_first":
+        cap = R.SHAPE_BREADTH_K_CAP
+        k = min(n, cap)
+        return {"shape": shape, "arrangement": "parallel", "n_subq": n,
+                "cap": cap, "k": k, "deferred": max(0, n - k)}
+    if shape == "depth_first":
+        return {"shape": shape, "arrangement": "sequential", "n_subq": n,
+                "cap": R.SHAPE_DEPTH_MAX_PERSPECTIVES, "k": None, "deferred": 0}
+    return {"shape": shape, "arrangement": "single", "n_subq": n,
+            "cap": 1, "k": 1, "deferred": 0}
 
 
 def effort_overrides(effort: str | None) -> dict[str, Any] | None:

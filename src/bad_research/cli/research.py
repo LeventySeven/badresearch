@@ -37,6 +37,11 @@ def route_cmd(
     shape ADDS the investigator arrangement (single|parallel|sequential); it does
     NOT change the route decision.
 
+    Emits `fanout` — the machine-readable coverage of that shape
+    {shape, arrangement, n_subq, cap, k, deferred}. `deferred > 0` means this
+    pass covers only `k` of `n_subq` sub-questions and the rest go to the gap
+    waves; branch on that key rather than parsing `shape_reason` (issue #36).
+
     Emits `plan_gate.would_gate` (E11, Gemini collaborative_planning) — whether step
     1.6 should pause to show a plan for approval. It is a SEPARATE gate signal; it
     NEVER changes the route. The flags default OFF, so a run that does NOT pass
@@ -46,6 +51,7 @@ def route_cmd(
     from bad_research.skills.router import (
         classify_query_shape,
         classify_route,
+        fanout_coverage,
         plan_gate_fires,
         route_reason,
         shape_reason,
@@ -75,6 +81,7 @@ def route_cmd(
         "reason": reason,
         "query_shape": shape,
         "shape_reason": shape_reason(decomp),
+        "fanout": fanout_coverage(decomp),
         "applied": apply,
         "plan_gate": {
             "would_gate": would_gate,

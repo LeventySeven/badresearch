@@ -155,11 +155,22 @@ The loci procedure below reads `contradiction-graph.json` (the fight clusters fe
 
 6. **Decide investigator count AND fan-out arrangement (branch on `query_shape`).** Read `query_shape` from `research/prompt-decomposition.json` (set by step 1.5). The fan-out *shape* — orthogonal to the tier — decides how step 5's investigators are *arranged* (Claude Research `research_lead_agent.md:12-29`):
 
-   - **`breadth_first`** → investigators run **in parallel** across the independent sub-questions / loci, **importance-ordered** (highest composite-score locus first), `K = min(n_subq, cap)` capped at 6. This is the default arrangement for surveys/comparisons/collections — the loci are independent so they go wide simultaneously.
+   - **`breadth_first`** → investigators run **in parallel** across the independent sub-questions / loci, **importance-ordered** (highest composite-score locus first), `K = min(n_subq, cap)` capped at `LOCI_MAX` (`skills/routing_constants.py`, currently **6**). This is the default arrangement for surveys/comparisons/collections — the loci are independent so they go wide simultaneously. `bad route --json` reports the same numbers under its `fanout` key (`{k, n_subq, cap, deferred}`) — do not re-derive them.
    - **`depth_first`** → **2–4 SEQUENTIAL** perspectives on the **one** highest-impact locus. Do NOT fan out across many loci; instead pick the single most contested/load-bearing locus and queue 2–4 investigators that run one after another, each reading the prior's committed position (set up in step 5). One topic, many angles, going deep.
    - **`straightforward`** → a **single** investigator on the one locus that matters. No ensemble.
 
-   Record the chosen arrangement (`parallel` / `sequential` / `single`) and the ordered locus list in `research/loci.json` under a top-level `"fanout"` key so step 5 dispatches accordingly. Absent a `query_shape` (older runs), default to the legacy parallel-per-locus behavior. The base rule still holds: one depth-investigator per locus with `source_budget > 0`, capped at 6; if only 1 locus passes scoring, spawn 1.
+   Record the chosen arrangement (`parallel` / `sequential` / `single`) and the ordered locus list in `research/loci.json` under a top-level `"fanout"` key so step 5 dispatches accordingly. Absent a `query_shape` (older runs), default to the legacy parallel-per-locus behavior. The base rule still holds: one depth-investigator per locus with `source_budget > 0`, capped at `LOCI_MAX` (currently 6); if only 1 locus passes scoring, spawn 1.
+
+   **Say what the cap dropped — never truncate silently.** When more loci / sub-questions survive scoring than `LOCI_MAX`, the surplus is **deferred**, not discarded. Add a `"coverage"` block inside that same `"fanout"` key:
+
+   ```json
+   "fanout": {
+     "arrangement": "parallel",
+     "coverage": {"covered": 6, "of": 25, "deferred": ["<locus name>", "..."]}
+   }
+   ```
+
+   and echo one line to the user: `Covered 6 of 25 sub-questions this pass; 19 deferred to the gap waves.` A wide survey that investigates 6 of 25 forks is a legitimate pass — one that does it without saying so is a silent coverage hole (issue #36 item 5).
 
 **INVARIANT:** at least one `flavor: "dialectical"` locus must be present unless an analyst's `skip_loci` justifies its absence with specific evidence of a univocal corpus. No dialectical locus + no justification = re-spawn the loci-analyst with a tighter prompt.
 
