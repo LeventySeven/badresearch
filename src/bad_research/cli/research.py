@@ -299,6 +299,32 @@ def parse_search_plan(path: str | Path, *, k_per_query: int,
     return out
 
 
+def _close_quietly(resource: object) -> None:
+    """Best-effort release of a per-call handle (issue #35 §7).
+
+    Two reasons this is guarded rather than a bare ``resource.close()``:
+
+    - ``close`` may not exist. The funnel's collaborators are duck-typed (the
+      tests inject fake engines/stores), so a missing method must be a no-op,
+      not an AttributeError raised from a ``finally``.
+    - A raising close must never replace the real outcome. ``funnel_gather_cmd``
+      turns ANY exception out of ``run_funnel`` into ``{"ok": false}`` + exit 1,
+      so a failure while tidying up would misreport a healthy run as a failed
+      one — and on the error path it would mask the original traceback.
+    """
+    closer = getattr(resource, "close", None)
+    if closer is None:
+        return
+    try:
+        closer()
+    except Exception as e:  # pragma: no cover - defensive; a close should not fail
+        import logging
+
+        logging.getLogger("bad_research.cli.research").debug(
+            "closing %s failed (%s); continuing", type(resource).__name__, e,
+        )
+
+
 def run_funnel(query: str, *, mode: str, vault_tag: str,
                search_plan: str | None = None, max_queries: int | None = None,
                read_top_k: int | None = None, concurrency: int | None = None) -> dict:
@@ -348,100 +374,107 @@ def run_funnel(query: str, *, mode: str, vault_tag: str,
     cfg = BadResearchConfig.load()
     vault = Vault.discover()
     engine = _build_engine(cfg, vault)
-    store = VaultStore(vault, tags=[vault_tag] if vault_tag else [])
-    deps = FunnelDeps(
-        providers=_build_providers(cfg),
-        # Intent-routed scholarly verticals fire alongside the base providers (they
-        # bypass the p_providers breadth cap); a general query gets an empty list.
-        vertical_providers=_build_vertical_providers(query),
-        fetcher=_build_tiered_fetcher(cfg),
-        postfetch_filter=_build_postfetch(cfg),
-        # Tag every stored note with the run's vault_tag so the corpus survey
-        # (`bad search --tag <vault_tag>`) can find the run's corpus.
-        vault=store,
-        retrieval=engine,
-    )
-    norm_mode = "full" if mode == "full" else "light"
-    from bad_research.funnel.config import FunnelConfig
+    try:
+        store = VaultStore(vault, tags=[vault_tag] if vault_tag else [])
+        deps = FunnelDeps(
+            providers=_build_providers(cfg),
+            # Intent-routed scholarly verticals fire alongside the base providers (they
+            # bypass the p_providers breadth cap); a general query gets an empty list.
+            vertical_providers=_build_vertical_providers(query),
+            fetcher=_build_tiered_fetcher(cfg),
+            postfetch_filter=_build_postfetch(cfg),
+            # Tag every stored note with the run's vault_tag so the corpus survey
+            # (`bad search --tag <vault_tag>`) can find the run's corpus.
+            vault=store,
+            retrieval=engine,
+        )
+        norm_mode = "full" if mode == "full" else "light"
+        from bad_research.funnel.config import FunnelConfig
 
-    fcfg = FunnelConfig.for_mode(norm_mode)
-    # The skill's hand-written lens plan wins over deterministic expansion when
-    # present (it carries the adversarial/period-pinned lenses the suffix table
-    # cannot express); plan_queries stays the fallback for programmatic callers.
-    queries = None
-    warnings: list[str] = []
-    if search_plan:
-        queries = parse_search_plan(
-            search_plan,
-            k_per_query=fcfg.k_per_query,
-            # `or` would silently reinterpret an explicit --max-queries 0 as the
-            # mode default; only an ABSENT flag falls back.
-            max_queries=fcfg.m_queries if max_queries is None else max(1, max_queries),
-        ) or None
-        if queries is None:
-            # A plan was SUPPLIED but yielded nothing parseable. Falling back to
-            # the deterministic expansion without saying so would re-create the
-            # exact defect this seam exists to remove: the caller believes its
-            # 40-100 lens queries ran when 16 generic suffixes did. The run
-            # continues (a lost plan shouldn't kill a long job) but the envelope
-            # says the plan did not apply, so the orchestrator can fix and retry.
-            warnings.append("search_plan_empty_or_unparseable")
-    elif max_queries:
-        from bad_research.funnel.fanout import plan_queries
+        fcfg = FunnelConfig.for_mode(norm_mode)
+        # The skill's hand-written lens plan wins over deterministic expansion when
+        # present (it carries the adversarial/period-pinned lenses the suffix table
+        # cannot express); plan_queries stays the fallback for programmatic callers.
+        queries = None
+        warnings: list[str] = []
+        if search_plan:
+            queries = parse_search_plan(
+                search_plan,
+                k_per_query=fcfg.k_per_query,
+                # `or` would silently reinterpret an explicit --max-queries 0 as the
+                # mode default; only an ABSENT flag falls back.
+                max_queries=fcfg.m_queries if max_queries is None else max(1, max_queries),
+            ) or None
+            if queries is None:
+                # A plan was SUPPLIED but yielded nothing parseable. Falling back to
+                # the deterministic expansion without saying so would re-create the
+                # exact defect this seam exists to remove: the caller believes its
+                # 40-100 lens queries ran when 16 generic suffixes did. The run
+                # continues (a lost plan shouldn't kill a long job) but the envelope
+                # says the plan did not apply, so the orchestrator can fix and retry.
+                warnings.append("search_plan_empty_or_unparseable")
+        elif max_queries:
+            from bad_research.funnel.fanout import plan_queries
 
-        queries = plan_queries(query, m_queries=max_queries, k_per_query=fcfg.k_per_query)
+            queries = plan_queries(query, m_queries=max_queries, k_per_query=fcfg.k_per_query)
 
-    stats: dict = {}
-    chunks = asyncio.run(gather(query, mode=norm_mode, deps=deps, queries=queries,
-                                read_budget=read_top_k, stats=stats,
-                                concurrency=concurrency))
+        stats: dict = {}
+        chunks = asyncio.run(gather(query, mode=norm_mode, deps=deps, queries=queries,
+                                    read_budget=read_top_k, stats=stats,
+                                    concurrency=concurrency))
 
-    note_ids: list[str] = []
-    seen: set[str] = set()
-    top_chunks: list[dict] = []
-    for c in chunks:
-        nid = getattr(c, "note_id", None)
-        if nid is not None and nid not in seen:
-            seen.add(nid)
-            note_ids.append(nid)
-        top_chunks.append(asdict(c) if is_dataclass(c) else dict(getattr(c, "__dict__", {})))
+        note_ids: list[str] = []
+        seen: set[str] = set()
+        top_chunks: list[dict] = []
+        for c in chunks:
+            nid = getattr(c, "note_id", None)
+            if nid is not None and nid not in seen:
+                seen.add(nid)
+                note_ids.append(nid)
+            top_chunks.append(asdict(c) if is_dataclass(c) else dict(getattr(c, "__dict__", {})))
 
-    # Sources GATHERED = the corpus persisted to the vault this run. Stage F's
-    # reranked `top_chunks` are the in-agent model-feed view; its host-model
-    # reranker cannot score inside a CLI subprocess, so `note_ids` (chunk-derived)
-    # can be empty even when the corpus is full. The stored note ids are the
-    # load-bearing output the width-sweep corpus survey reads — surface them so a
-    # standalone run honestly reports >0 sources. Union (chunk order first, then
-    # any stored note the rerank dropped) keeps the model-relevant ordering.
-    stored_ids = getattr(store, "stored_note_ids", [])
-    for nid in stored_ids:
-        if nid not in seen:
-            seen.add(nid)
-            note_ids.append(nid)
-    # A run is DEGRADED when the machinery failed. `gather` only records a
-    # reason when NO lane returned a hit — and with no hits there are no
-    # candidates, no pages and no stored notes — so a non-empty corpus and a
-    # degraded reason are mutually exclusive by construction. (An earlier
-    # `if stored_ids: degraded_reasons = []` override was dead code that would
-    # have silently erased a real infrastructure failure had that ever changed.)
-    degraded_reasons: list[str] = list(stats.get("degraded_reasons") or [])
-    degraded = bool(degraded_reasons)
-    return {
-        "note_ids": note_ids,
-        "top_chunks": top_chunks,
-        "n_read": len(note_ids),
-        "n_stored": len(stored_ids),
-        "ok": not degraded,
-        "degraded": degraded,
-        "degraded_reasons": degraded_reasons,
-        # `warnings` is ORTHOGONAL to `degraded`: a run can succeed (ok:true)
-        # while still having silently not done what the caller asked. Folding
-        # these into `degraded` would either kill healthy runs or, worse, get
-        # cleared the moment sources were found — hiding the very thing the
-        # caller needs to know.
-        "warnings": warnings,
-        "provider_outcomes": stats.get("provider_outcomes", {}),
-    }
+        # Sources GATHERED = the corpus persisted to the vault this run. Stage F's
+        # reranked `top_chunks` are the in-agent model-feed view; its host-model
+        # reranker cannot score inside a CLI subprocess, so `note_ids` (chunk-derived)
+        # can be empty even when the corpus is full. The stored note ids are the
+        # load-bearing output the width-sweep corpus survey reads — surface them so a
+        # standalone run honestly reports >0 sources. Union (chunk order first, then
+        # any stored note the rerank dropped) keeps the model-relevant ordering.
+        stored_ids = getattr(store, "stored_note_ids", [])
+        for nid in stored_ids:
+            if nid not in seen:
+                seen.add(nid)
+                note_ids.append(nid)
+        # A run is DEGRADED when the machinery failed. `gather` only records a
+        # reason when NO lane returned a hit — and with no hits there are no
+        # candidates, no pages and no stored notes — so a non-empty corpus and a
+        # degraded reason are mutually exclusive by construction. (An earlier
+        # `if stored_ids: degraded_reasons = []` override was dead code that would
+        # have silently erased a real infrastructure failure had that ever changed.)
+        degraded_reasons: list[str] = list(stats.get("degraded_reasons") or [])
+        degraded = bool(degraded_reasons)
+        return {
+            "note_ids": note_ids,
+            "top_chunks": top_chunks,
+            "n_read": len(note_ids),
+            "n_stored": len(stored_ids),
+            "ok": not degraded,
+            "degraded": degraded,
+            "degraded_reasons": degraded_reasons,
+            # `warnings` is ORTHOGONAL to `degraded`: a run can succeed (ok:true)
+            # while still having silently not done what the caller asked. Folding
+            # these into `degraded` would either kill healthy runs or, worse, get
+            # cleared the moment sources were found — hiding the very thing the
+            # caller needs to know.
+            "warnings": warnings,
+            "provider_outcomes": stats.get("provider_outcomes", {}),
+        }
+    finally:
+        # Per-call resources, released on BOTH the success and the error path.
+        # `run_funnel` is also the MCP tool body (mcp/server.py), where the
+        # process outlives the call and the leaked handles accumulate.
+        _close_quietly(engine)
+        _close_quietly(vault)
 
 
 def funnel_gather_cmd(
@@ -598,8 +631,13 @@ def retrieve_cmd(
     vault = Vault.discover()
     engine = _build_engine(cfg, vault)
     norm_mode = "full" if mode == "full" else "light"
-    chunks = engine.search(query, mode=norm_mode, top_k=top_k)
-    typer.echo(json.dumps([asdict(c) for c in chunks], default=str))
+    try:
+        chunks = engine.search(query, mode=norm_mode, top_k=top_k)
+        typer.echo(json.dumps([asdict(c) for c in chunks], default=str))
+    finally:
+        # Same two SQLite handles as run_funnel — leaked once per invocation.
+        _close_quietly(engine)
+        _close_quietly(vault)
 
 
 # ── verify-citations (Task 8/11/12) — backward grounding ─────────────────────

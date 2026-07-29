@@ -113,6 +113,36 @@ class RetrievalEngine:
         self.last_rerank_candidate_count: int = 0
         self.last_reranked_count: int = 0
 
+    # ── LIFECYCLE (issue #35 §7) ─────────────────────────────────────────
+    def close(self) -> None:
+        """Release the engine's SQLite handles. Idempotent.
+
+        An engine owns TWO connections — the chunk-meta/FTS DB opened here and
+        the query cache's own DB — and neither was ever closed, so every
+        `run_funnel` leaked a pair (`ResourceWarning: unclosed database in
+        <sqlite3.Connection ...>`, twice, on CPython >= 3.13). A CLI process
+        exiting masked it. The MCP server does not: it rebuilds an engine per
+        tool call inside one long-lived process, so the handles accumulate.
+
+        Deliberately NO `__del__`: it would make GC order load-bearing and can
+        run during interpreter teardown. An explicit `close()` (or the context
+        manager below) is the contract, mirroring `Vault.close`.
+
+        The cache close is `getattr`-guarded because `get_cache` is a factory —
+        a future backend without a SQLite handle must not turn cleanup into an
+        AttributeError.
+        """
+        self.conn.close()
+        cache_close = getattr(self.cache, "close", None)
+        if cache_close is not None:
+            cache_close()
+
+    def __enter__(self) -> RetrievalEngine:
+        return self
+
+    def __exit__(self, *args: object) -> None:
+        self.close()
+
     # ── INDEX ────────────────────────────────────────────────────────────
     def index(self, notes: Iterable[Note]) -> None:
         pending: list[Chunk] = []
