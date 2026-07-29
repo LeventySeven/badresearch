@@ -19,6 +19,7 @@ from urllib.parse import urlsplit
 import httpx
 
 from bad_research.web.base import SearchQuery, WebResult, recency_cutoff_date
+from bad_research.web.search.status import OK, classify_search_failure, status_for
 
 
 def _is_fetchable_url(url: str) -> bool:
@@ -192,6 +193,7 @@ class DdgsProvider:
         if DDGS is None:  # pragma: no cover - exercised only without the dep
             raise ImportError("DdgsProvider requires: pip install ddgs")
         self._backend = backend  # e.g. "google,bing,brave"; None = ddgs default union
+        self.last_status: str = OK
 
     def search(self, query: str, max_results: int = 10) -> list[WebResult]:
         try:
@@ -199,7 +201,12 @@ class DdgsProvider:
             if self._backend:
                 kw["backend"] = self._backend
             rows = DDGS().text(query, **kw)
-        except Exception:
+        except Exception as e:
+            # Still degrade to [] — one dead lane must never abort a fan-out.
+            # But leave WHY behind: without this, a 429 on the always-on breadth
+            # lane reached the funnel as a clean empty SERP and the report said
+            # "there is nothing on X" (issue #39).
+            self.last_status = classify_search_failure(e)
             return []  # scraper failure → empty lane (graceful)
         out: list[WebResult] = []
         for i, x in enumerate(rows or [], start=1):
@@ -211,6 +218,7 @@ class DdgsProvider:
                           content=x.get("body", ""),
                           metadata={"rank": i, "source": "ddgs"})
             )
+        self.last_status = status_for(out, None)
         return out
 
     def search_ex(self, q: SearchQuery) -> list[WebResult]:
@@ -238,6 +246,7 @@ class SearxngProvider:
                  client: httpx.Client | None = None) -> None:
         self.endpoint = endpoint.rstrip("/")
         self._client = client
+        self.last_status: str = OK
 
     def _get(self, params: dict[str, Any]) -> dict[str, Any]:
         url = f"{self.endpoint}/search"
@@ -259,7 +268,8 @@ class SearxngProvider:
             params["engines"] = ",".join(engines)
         try:
             data = self._get(params)
-        except Exception:
+        except Exception as e:
+            self.last_status = classify_search_failure(e)
             return []
         out: list[WebResult] = []
         for i, x in enumerate(data.get("results", []) or [], start=1):
@@ -273,6 +283,7 @@ class SearxngProvider:
             ))
             if len(out) >= max_results:
                 break
+        self.last_status = status_for(out, None)
         return out
 
     def search_ex(self, q: SearchQuery) -> list[WebResult]:

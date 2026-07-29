@@ -27,7 +27,7 @@ def _wire(monkeypatch, tmp_path):
     """
     Vault.init(tmp_path)
     monkeypatch.chdir(tmp_path)
-    monkeypatch.setattr(RESEARCH, "_build_providers", lambda cfg: [])
+    monkeypatch.setattr(RESEARCH, "_build_providers", lambda cfg, skipped=None: [])
     monkeypatch.setattr(RESEARCH, "_build_vertical_providers", lambda q: [])
     monkeypatch.setattr(RESEARCH, "_build_tiered_fetcher", lambda cfg: object())
 

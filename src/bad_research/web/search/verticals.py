@@ -14,6 +14,13 @@ from typing import Any
 import httpx
 
 from bad_research.web.base import SearchQuery, WebResult, recency_cutoff_date
+from bad_research.web.search.status import (
+    NO_RESULTS,
+    OK,
+    RATE_LIMITED,
+    classify_search_failure,
+    status_for,
+)
 
 _UA = "bad-research/keyless (research tool; mailto:{mailto})"
 _ATOM = {"a": "http://www.w3.org/2005/Atom"}
@@ -43,6 +50,7 @@ class ArxivProvider:
 
     def __init__(self, client: httpx.Client | None = None) -> None:
         self._client = client
+        self.last_status: str = OK
 
     def search(self, query: str, max_results: int = 10,
                recency_days: int | None = None) -> list[WebResult]:
@@ -60,7 +68,10 @@ class ArxivProvider:
                                              headers={"User-Agent": _UA.format(mailto="")})
             resp.raise_for_status()
             root = ET.fromstring(resp.text)
-        except Exception:
+        except Exception as e:
+            # Degrade to [] as before, but record WHY so the funnel can tell a
+            # broken scholarly lane from a topic with no literature (issue #39).
+            self.last_status = classify_search_failure(e)
             return []
         out: list[WebResult] = []
         for i, e in enumerate(root.findall("a:entry", _ATOM), start=1):
@@ -80,6 +91,7 @@ class ArxivProvider:
                           "authors": [a for a in authors if a], "oa_pdf": pdf or None,
                           "doi": None, "citations": None},
             ))
+        self.last_status = status_for(out, None)
         return out
 
     def search_ex(self, q: SearchQuery) -> list[WebResult]:
@@ -105,6 +117,7 @@ class OpenAlexProvider:
                  client: httpx.Client | None = None) -> None:
         self._mailto = mailto
         self._client = client
+        self.last_status: str = OK
 
     def search(self, query: str, max_results: int = 10,
                recency_days: int | None = None) -> list[WebResult]:
@@ -118,7 +131,10 @@ class OpenAlexProvider:
                                              headers={"User-Agent": _UA.format(mailto=self._mailto)})
             resp.raise_for_status()
             data = resp.json()
-        except Exception:
+        except Exception as e:
+            # Degrade to [] as before, but record WHY so the funnel can tell a
+            # broken scholarly lane from a topic with no literature (issue #39).
+            self.last_status = classify_search_failure(e)
             return []
         out: list[WebResult] = []
         for i, w in enumerate(data.get("results", []) or [], start=1):
@@ -135,6 +151,7 @@ class OpenAlexProvider:
                           "citations": w.get("cited_by_count"),
                           "oa_pdf": oa, "native_score": w.get("relevance_score")},
             ))
+        self.last_status = status_for(out, None)
         return out
 
     def search_ex(self, q: SearchQuery) -> list[WebResult]:
@@ -160,6 +177,7 @@ class CrossrefProvider:
                  client: httpx.Client | None = None) -> None:
         self._mailto = mailto
         self._client = client
+        self.last_status: str = OK
 
     def search(self, query: str, max_results: int = 10,
                recency_days: int | None = None) -> list[WebResult]:
@@ -173,7 +191,10 @@ class CrossrefProvider:
                                              headers={"User-Agent": _UA.format(mailto=self._mailto)})
             resp.raise_for_status()
             items = (resp.json().get("message") or {}).get("items", [])
-        except Exception:
+        except Exception as e:
+            # Degrade to [] as before, but record WHY so the funnel can tell a
+            # broken scholarly lane from a topic with no literature (issue #39).
+            self.last_status = classify_search_failure(e)
             return []
         out: list[WebResult] = []
         for i, it in enumerate(items or [], start=1):
@@ -191,6 +212,7 @@ class CrossrefProvider:
                           "citations": it.get("is-referenced-by-count"),
                           "native_score": it.get("score")},
             ))
+        self.last_status = status_for(out, None)
         return out
 
     def search_ex(self, q: SearchQuery) -> list[WebResult]:
@@ -219,25 +241,35 @@ class SemanticScholarProvider:
         self._client = client
         self._max_retries = max_retries
         self._backoff = backoff_base
+        self.last_status: str = OK
 
     def search(self, query: str, max_results: int = 10) -> list[WebResult]:
         params: dict[str, str | int] = {"query": query, "limit": max_results, "fields": self.FIELDS}
         client = _client(self._client)
         data: dict[str, Any] | None = None
+        # The sharpest instance of the whole class of bug (issue #39): S2 is
+        # documented as throttled ("live probe returned 429"), the retry loop
+        # CONFIRMS the 429, and then the result was thrown into a bare [] that
+        # the funnel read as "the scholarly literature has nothing on this".
+        failure: str | None = None
         for attempt in range(self._max_retries):
             try:
                 resp = client.get(self.BASE, params=params,
                                   headers={"User-Agent": _UA.format(mailto="")})
                 if resp.status_code == 429:
+                    failure = RATE_LIMITED
                     if attempt + 1 < self._max_retries and self._backoff > 0:
                         time.sleep(self._backoff * (attempt + 1))
                     continue
                 resp.raise_for_status()
                 data = resp.json()
+                failure = None
                 break
-            except Exception:
+            except Exception as e:
+                self.last_status = classify_search_failure(e)
                 return []
         if data is None:
+            self.last_status = failure or NO_RESULTS
             return []
         out: list[WebResult] = []
         for i, p in enumerate(data.get("data", []) or [], start=1):
@@ -253,6 +285,7 @@ class SemanticScholarProvider:
                           "authors": [a.get("name") for a in (p.get("authors") or [])],
                           "citations": p.get("citationCount"), "oa_pdf": oa, "tldr": tldr},
             ))
+        self.last_status = status_for(out, None)
         return out
 
     def search_ex(self, q: SearchQuery) -> list[WebResult]:
@@ -275,6 +308,7 @@ class EuropePMCProvider:
 
     def __init__(self, client: httpx.Client | None = None) -> None:
         self._client = client
+        self.last_status: str = OK
 
     def search(self, query: str, max_results: int = 10) -> list[WebResult]:
         params: dict[str, str | int] = {"query": query, "format": "json",
@@ -284,7 +318,10 @@ class EuropePMCProvider:
                                              headers={"User-Agent": _UA.format(mailto="")})
             resp.raise_for_status()
             results = ((resp.json().get("resultList") or {}).get("result") or [])
-        except Exception:
+        except Exception as e:
+            # Degrade to [] as before, but record WHY so the funnel can tell a
+            # broken scholarly lane from a topic with no literature (issue #39).
+            self.last_status = classify_search_failure(e)
             return []
         out: list[WebResult] = []
         for i, r in enumerate(results, start=1):
@@ -299,6 +336,7 @@ class EuropePMCProvider:
                           "year": r.get("pubYear"),
                           "oa_pdf": None if r.get("isOpenAccess") != "Y" else url},
             ))
+        self.last_status = status_for(out, None)
         return out
 
     def search_ex(self, q: SearchQuery) -> list[WebResult]:
@@ -322,6 +360,7 @@ class PubMedProvider:
 
     def __init__(self, client: httpx.Client | None = None) -> None:
         self._client = client
+        self.last_status: str = OK
 
     def search(self, query: str, max_results: int = 10) -> list[WebResult]:
         client = _client(self._client)
@@ -332,13 +371,17 @@ class PubMedProvider:
             r1.raise_for_status()
             ids = (r1.json().get("esearchresult") or {}).get("idlist", [])
             if not ids:
+                self.last_status = NO_RESULTS
                 return []
             r2 = client.get(self.ESUMMARY, params={"db": "pubmed", "id": ",".join(ids),
                                                     "retmode": "json"},
                             headers={"User-Agent": _UA.format(mailto="")})
             r2.raise_for_status()
             result = r2.json().get("result") or {}
-        except Exception:
+        except Exception as e:
+            # Degrade to [] as before, but record WHY so the funnel can tell a
+            # broken scholarly lane from a topic with no literature (issue #39).
+            self.last_status = classify_search_failure(e)
             return []
         out: list[WebResult] = []
         for i, pmid in enumerate(ids, start=1):
@@ -351,6 +394,7 @@ class PubMedProvider:
                           "authors": [a.get("name") for a in (doc.get("authors") or [])],
                           "journal": doc.get("fulljournalname")},
             ))
+        self.last_status = status_for(out, None)
         return out
 
     def search_ex(self, q: SearchQuery) -> list[WebResult]:
@@ -376,6 +420,7 @@ class WikipediaProvider:
 
     def __init__(self, client: httpx.Client | None = None) -> None:
         self._client = client
+        self.last_status: str = OK
 
     def search(self, query: str, max_results: int = 5) -> list[WebResult]:
         client = _client(self._client)
@@ -386,7 +431,10 @@ class WikipediaProvider:
                                                   "srlimit": max_results}, headers=ua)
             r1.raise_for_status()
             hits = (r1.json().get("query") or {}).get("search", [])
-        except Exception:
+        except Exception as e:
+            # Degrade to [] as before, but record WHY so the funnel can tell a
+            # broken scholarly lane from a topic with no literature (issue #39).
+            self.last_status = classify_search_failure(e)
             return []
         out: list[WebResult] = []
         for i, h in enumerate(hits, start=1):
@@ -404,6 +452,7 @@ class WikipediaProvider:
                 metadata={"source": "wikipedia", "rank": i,
                           "wikibase_item": summ.get("wikibase_item")},
             ))
+        self.last_status = status_for(out, None)
         return out
 
     def search_ex(self, q: SearchQuery) -> list[WebResult]:

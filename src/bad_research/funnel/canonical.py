@@ -17,8 +17,10 @@ _INDEX_RE = re.compile(r"/index\.(html?|php|aspx?|jsp|cgi)$", re.IGNORECASE)
 # ordinary query params — ?id=5, ?page=2 — as meaningful, dossier 10 §3.1).
 _TRACKING_PARAMS = frozenset({"fbclid", "gclid", "mc_cid", "mc_eid", "igshid"})
 _TRACKING_PREFIXES = ("utm_",)
-# AMP / mobile twins: an amp./m. host or an /amp path segment is the same page.
-_AMP_SUBDOMAINS = ("amp.", "m.")
+# Host-prefix twins: amp./m. (AMP + mobile) and old. (legacy UI, e.g.
+# old.reddit.com) all serve the SAME page as the bare host, so they must collapse
+# onto one canonical candidate. An /amp path segment is the same page too.
+_HOST_PREFIXES = ("amp.", "m.", "old.")
 _AMP_PATH_RE = re.compile(r"/amp(/|$)", re.IGNORECASE)
 
 
@@ -31,9 +33,12 @@ def canonicalize_url(url: str) -> str:
     host = host.lower()
     if host.startswith("www."):
         host = host[4:]
-    # strip a leading amp./m. subdomain (AMP + mobile twins share one canonical host)
-    for sub in _AMP_SUBDOMAINS:
-        if host.startswith(sub):
+    # strip a leading amp./m./old. subdomain (they share one canonical host).
+    # The remainder must still look like a host (contain a dot) — otherwise
+    # `m.com` / `old.com`, which are ordinary registrable domains, would be
+    # mangled into the bare TLD `com` and collide with every other `*.com`.
+    for sub in _HOST_PREFIXES:
+        if host.startswith(sub) and "." in host[len(sub):]:
             host = host[len(sub):]
             break
 

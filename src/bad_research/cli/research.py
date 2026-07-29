@@ -94,7 +94,7 @@ def route_cmd(
 
 
 # ── funnel-gather (Task 6/9/12) — the §6 scraper funnel ──────────────────────
-def _build_providers(cfg: object) -> list:
+def _build_providers(cfg: object, skipped: dict[str, str] | None = None) -> list:
     """Keyless web providers for the STANDALONE / CLI funnel path (KR-2).
 
     The provider order MUST lead with providers that actually return results when the
@@ -112,18 +112,35 @@ def _build_providers(cfg: object) -> list:
     `links_source` is wired) can use it, and `fan_out` skips it cleanly when it
     raises `NotImplementedError`. An optional self-host SearXNG is added when
     configured. Every provider is cost_per_search=0.0, zero key. Degrades to []
-    on import error."""
+    on import error.
+
+    `skipped` (optional, issue #39): when a dict is passed, a lane we MEANT to
+    build and could not is recorded as {name: "skipped-unconfigured"}. Without it
+    the lane simply never appears in `providers`, so `fan_out` emits no row for it
+    and the run reports a corpus gap on a topic it never actually searched.
+
+    An UNCONFIGURED SearXNG is deliberately NOT recorded: it is opt-in
+    infrastructure most installs never intend to run, so a row on every run would
+    be noise that devalues the signal. Only a lane whose construction was
+    ATTEMPTED and failed is a gap.
+    """
     provs: list[Any] = []
     try:
         from bad_research.web.search.base import DdgsProvider, WebSearchToolProvider
     except Exception:
+        if skipped is not None:
+            skipped["ddgs"] = "skipped-unconfigured"
+            skipped["websearch"] = "skipped-unconfigured"
         return []
 
     # Keyless HTTP breadth lane FIRST — works in a subprocess (real httpx GETs).
     try:
         provs.append(DdgsProvider())
     except Exception:
-        pass  # ddgs lib missing → fall through to the other lanes
+        # ddgs lib missing -> fall through to the other lanes. This is the
+        # always-on breadth lane, so its absence is a real coverage gap.
+        if skipped is not None:
+            skipped["ddgs"] = "skipped-unconfigured"
 
     # Optional self-host SearXNG (keyless JSON) as an additional breadth lane.
     endpoint = getattr(cfg, "searxng_endpoint", "") or ""
@@ -133,7 +150,8 @@ def _build_providers(cfg: object) -> list:
 
             provs.append(SearxngProvider(endpoint=endpoint))
         except Exception:
-            pass
+            if skipped is not None:
+                skipped["searxng"] = "skipped-unconfigured"
 
     # Host WebSearch tool adapter LAST: usable on the in-agent path (a wired
     # links_source), harmlessly skipped by fan_out's NotImplementedError guard
@@ -332,9 +350,40 @@ def _close_quietly(resource: object) -> None:
         )
 
 
+def _fence_chunk_dicts(chunks: list[dict], *, raw: bool) -> bool:
+    """Fence every chunk body as untrusted, in place. Returns True if any was fenced.
+
+    `top_chunks` is the ONE payload the funnel guarantees reaches the model —
+    the width-sweep skill says "Read these; do NOT re-read full pages" — and it
+    was the only such payload with no fence (issue #39). Every sibling seam an
+    agent reads a source through (`note show`, `search --include-body`) has been
+    fenced since the vault seam landed; this closes the last one.
+
+    Markers ONLY. The ~700-char preamble rides ONCE on the envelope
+    (`untrusted_notice`), so a chunk's real text still starts ~30 chars in and a
+    reader told to skim "the first ~400 chars" still reaches source text.
+
+    `Chunk.source_id` is a sha256, not a URL, so no `Source URL` line is emitted
+    — a hash there would read as a provenance claim it cannot support.
+    """
+    if raw:
+        return False
+    from bad_research.quality.injection import wrap_untrusted
+
+    fenced = False
+    for d in chunks:
+        text = d.get("text")
+        if not isinstance(text, str) or not text:
+            continue
+        d["text"] = wrap_untrusted(text, include_preamble=False)
+        fenced = True
+    return fenced
+
+
 def run_funnel(query: str, *, mode: str, vault_tag: str,
                search_plan: str | None = None, max_queries: int | None = None,
-               read_top_k: int | None = None, concurrency: int | None = None) -> dict:
+               read_top_k: int | None = None, concurrency: int | None = None,
+               raw: bool = False) -> dict:
     """Build FunnelDeps from config + run the FROZEN async gather(), then collapse
     the returned list[Chunk] into a FunnelEnvelope dict. Shared by CLI + MCP.
 
@@ -345,7 +394,8 @@ def run_funnel(query: str, *, mode: str, vault_tag: str,
     `read_top_k` overrides the mode's read budget.
 
     Returns {"note_ids", "top_chunks", "n_read", "n_stored", "ok", "degraded",
-    "degraded_reasons", "provider_outcomes"}. The model reads top_chunks only.
+    "degraded_reasons", "provider_outcomes", "coverage_gaps", "n_fetch_failed",
+    "untrusted_notice"}. The model reads top_chunks only.
 
     `degraded` is the honest-failure seam — True when the run could not do its
     job. Two reasons, both exit 3:
@@ -368,6 +418,16 @@ def run_funnel(query: str, *, mode: str, vault_tag: str,
     `warnings` is ORTHOGONAL to `degraded`: an `ok: True` run can still carry a
     warning that it did not do what the caller asked (e.g. a supplied search
     plan that could not be parsed, so the deterministic fallback ran instead).
+
+    `coverage_gaps` is ALSO orthogonal to `degraded`: lanes that could not answer
+    (rate-limited / timed out / unreachable / never built) while another lane
+    carried the run. `ok` stays True — the corpus IS usable — but the run did not
+    search everything it meant to, so an absence in the corpus is not evidence of
+    absence in the world. `n_fetch_failed` is the read-stage equivalent.
+
+    `top_chunks` bodies are FENCED as untrusted content (BEGIN/END markers) with
+    the preamble on the envelope's `untrusted_notice`. Pass `raw=True` for the
+    unfenced bodies (programmatic text-matching consumers).
     """
     import asyncio
     from dataclasses import asdict, is_dataclass
@@ -383,8 +443,12 @@ def run_funnel(query: str, *, mode: str, vault_tag: str,
     engine = _build_engine(cfg, vault)
     try:
         store = VaultStore(vault, tags=[vault_tag] if vault_tag else [])
+        # Lanes we MEANT to build and could not. `fan_out` can only report on
+        # providers it was handed, so this is the only place the absence is
+        # observable at all (issue #39).
+        skipped_lanes: dict[str, str] = {}
         deps = FunnelDeps(
-            providers=_build_providers(cfg),
+            providers=_build_providers(cfg, skipped=skipped_lanes),
             # Intent-routed scholarly verticals fire alongside the base providers (they
             # bypass the p_providers breadth cap); a general query gets an empty list.
             vertical_providers=_build_vertical_providers(query),
@@ -439,6 +503,7 @@ def run_funnel(query: str, *, mode: str, vault_tag: str,
                 seen.add(nid)
                 note_ids.append(nid)
             top_chunks.append(asdict(c) if is_dataclass(c) else dict(getattr(c, "__dict__", {})))
+        fenced = _fence_chunk_dicts(top_chunks, raw=raw)
 
         # Sources GATHERED = the corpus persisted to the vault this run. Stage F's
         # reranked `top_chunks` are the in-agent model-feed view; its host-model
@@ -460,7 +525,16 @@ def run_funnel(query: str, *, mode: str, vault_tag: str,
         # have silently erased a real infrastructure failure had that ever changed.)
         degraded_reasons: list[str] = list(stats.get("degraded_reasons") or [])
         degraded = bool(degraded_reasons)
-        return {
+        # A lane the CLI could not even BUILD never reaches fan_out, so the
+        # funnel's outcome table was silent about it entirely (issue #39). Merge
+        # those rows in here — the CLI is the only layer that knows a lane was
+        # intended — and count them as coverage gaps, never as degradation.
+        outcomes = dict(stats.get("provider_outcomes") or {})
+        gaps = list(stats.get("coverage_gaps") or [])
+        for name, status in skipped_lanes.items():
+            outcomes.setdefault(name, status)
+            gaps.append({"provider": name, "outcome": status})
+        envelope = {
             "note_ids": note_ids,
             "top_chunks": top_chunks,
             "n_read": len(note_ids),
@@ -474,8 +548,21 @@ def run_funnel(query: str, *, mode: str, vault_tag: str,
             # cleared the moment sources were found — hiding the very thing the
             # caller needs to know.
             "warnings": warnings,
-            "provider_outcomes": stats.get("provider_outcomes", {}),
+            "provider_outcomes": outcomes,
+            # ORTHOGONAL to `degraded` (see the docstring): lanes that could not
+            # answer while the run still succeeded. Non-empty means "do NOT write
+            # 'there is nothing on X'" — report the gap instead.
+            "coverage_gaps": gaps,
+            "n_fetch_failed": int(stats.get("n_fetch_failed") or 0),
         }
+        if fenced:
+            # Preamble ONCE per envelope, markers on each body — the pattern
+            # `bad note show` uses, and the reason wrap_untrusted takes
+            # include_preamble=False (injection.py:36-42).
+            from bad_research.quality.injection import INJECTION_PREAMBLE
+
+            envelope["untrusted_notice"] = INJECTION_PREAMBLE
+        return envelope
     finally:
         # Per-call resources, released on BOTH the success and the error path.
         # `run_funnel` is also the MCP tool body (mcp/server.py), where the
@@ -499,6 +586,10 @@ def funnel_gather_cmd(
     ),
     effort: str = typer.Option(None, "--effort"),
     max_tokens: int = typer.Option(None, "--max-tokens"),
+    raw: bool = typer.Option(
+        False, "--raw",
+        help="Emit top_chunks UNFENCED (for gates/consumers that match source text).",
+    ),
     json_output: bool = typer.Option(False, "--json", "-j"),
 ) -> None:
     """Run the scraper funnel: fan-out->dedup->rank->read(rung0-3)->filter->chunk->rerank.
@@ -545,7 +636,8 @@ def funnel_gather_cmd(
         with contextlib.redirect_stdout(noise):
             result = run_funnel(q, mode=eff_mode, vault_tag=vault_tag,
                                 search_plan=search_plan, max_queries=max_queries,
-                                read_top_k=read_top_k, concurrency=concurrency)
+                                read_top_k=read_top_k, concurrency=concurrency,
+                                raw=raw)
     except Exception as exc:
         if noise.getvalue():
             print(noise.getvalue(), file=sys.stderr, end="")
@@ -624,11 +716,22 @@ def retrieve_cmd(
     query: str = typer.Argument(...),
     mode: str = typer.Option("full", "--mode"),
     top_k: int = typer.Option(20, "--top-k"),
+    raw: bool = typer.Option(
+        False, "--raw",
+        help="Emit chunk text UNFENCED (for gates/consumers that match source text).",
+    ),
     json_output: bool = typer.Option(False, "--json", "-j"),
 ) -> None:
     """Keyless retrieval: min-max BM25 recall -> host-model rerank -> 0.70 relevance gate.
     Returns top_k Chunks. (An optional [local] dense lane adds RRF vector+BM25 fusion when
-    neural_recall is enabled; the default keyless path is BM25 + rerank, no vector fuse.)"""
+    neural_recall is enabled; the default keyless path is BM25 + rerank, no vector fuse.)
+
+    Chunk `text` is FETCHED page content, so it is fenced with BEGIN/END untrusted
+    markers before it reaches a model (issue #39) — the same treatment `bad note
+    show` gives a fetched body. The top-level JSON stays a LIST, so the shape the
+    step-11 synthesizer and fast-mode OBSERVE step parse is unchanged; the fence
+    rule for it lives in those skills. `--raw` returns the unfenced text.
+    """
     from dataclasses import asdict
 
     from bad_research.config import BadResearchConfig
@@ -640,7 +743,9 @@ def retrieve_cmd(
     norm_mode = "full" if mode == "full" else "light"
     try:
         chunks = engine.search(query, mode=norm_mode, top_k=top_k)
-        typer.echo(json.dumps([asdict(c) for c in chunks], default=str))
+        rows = [asdict(c) for c in chunks]
+        _fence_chunk_dicts(rows, raw=raw)
+        typer.echo(json.dumps(rows, default=str))
     finally:
         # Same two SQLite handles as run_funnel — leaked once per invocation.
         _close_quietly(engine)
