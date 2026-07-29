@@ -69,6 +69,17 @@ adversarially-reviewed pipeline (~1.5–2.5 h). You can steer it:
   trying Bad Research out, start here.
 - **Dial the effort** with `--effort minimal|low|medium|high` to nudge the route and per-step
   fan-out (`minimal`/`low` bias toward fast; `medium`/`high` toward full).
+- **Dial the throughput** with `bad funnel-gather --concurrency N` (1–16, default 8) — how many
+  provider searches run at once during the search fan-out. Raise it on a fast, tolerant network;
+  lower it if searches start coming back empty.
+
+There is deliberately **no unbounded / "use everything" mode**, and two measured limits are why.
+The search backend is keyless and scraped, so it has no rate-limit contract: past a handful of
+concurrent requests it soft-blocks, and a soft-block returns an empty result list that is
+indistinguishable from "this topic has no sources" — an uncapped fan-out reports its own traffic
+as a research gap. And reading past roughly 80 sources measurably *degrades* synthesis rather
+than improving it, so the read ceiling is a report-quality bound, not a cost-saving one. The
+knobs above give you the throughput control without either failure mode.
 
 On an interactive run the skill announces the chosen route and its rough ETA before it
 commits to a long job (and for `full` it shows the editable plan first), so you're never

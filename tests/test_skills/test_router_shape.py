@@ -23,6 +23,7 @@ from bad_research.skills.router import (
     QUERY_SHAPES,
     classify_query_shape,
     classify_route,
+    fanout_coverage,
     shape_reason,
 )
 
@@ -136,6 +137,91 @@ def test_shape_reason_is_nonempty_string():
     assert isinstance(r, str) and r != ""
     # the reason names the chosen shape
     assert classify_query_shape(_decomp()) in shape_reason(_decomp())
+
+
+# ── issue #36: the breadth cap must equal the cap the pipeline enforces ────────
+# The breadth-first K IS the depth-investigator count. SHAPE_BREADTH_K_CAP used
+# to alias SUBAGENT_FANOUT_MAX (20) while steps 4 and 5 spawn at most 6, so
+# `bad route` promised a 25-sub-question survey "K=20 parallel investigators"
+# and 19 sub-questions were dropped with nothing recording it.
+
+def _wide_survey(n=25):
+    """A breadth-first decomposition far wider than the loci cap."""
+    return _decomp(sub_questions=[f"option {i}" for i in range(n)], entities=[],
+                   response_format="structured", modality="collect",
+                   domains=["tech"])
+
+
+def test_breadth_k_cap_matches_the_loci_cap_the_skills_enforce():
+    assert R.LOCI_MAX == 6
+    assert R.SHAPE_BREADTH_K_CAP == R.LOCI_MAX
+    assert R.SHAPE_FANOUT["breadth_first"]["k_cap"] == R.LOCI_MAX
+    # LOCI_MAX is its OWN constant, not an alias of the generic subagent ceiling
+    assert R.SHAPE_BREADTH_K_CAP != R.SUBAGENT_FANOUT_MAX
+    # and the top effort rung reads from the same source of truth
+    assert R.EFFORT_MAP["high"]["loci_max"] == R.LOCI_MAX
+
+
+def test_shape_reason_reports_deferred_subquestions():
+    d = _wide_survey(25)
+    assert classify_query_shape(d) == "breadth_first"
+    r = shape_reason(d)
+    # the K it reports is the K that will actually run
+    assert f"K={R.LOCI_MAX} " in r
+    assert "K=20" not in r
+    # and it says out loud what this pass does NOT cover
+    assert f"covers {R.LOCI_MAX} of 25" in r
+    assert f"{25 - R.LOCI_MAX} deferred" in r
+
+
+def test_shape_reason_omits_the_deferred_clause_when_nothing_is_dropped():
+    d = _wide_survey(4)
+    assert classify_query_shape(d) == "breadth_first"
+    r = shape_reason(d)
+    assert "K=4 " in r
+    assert "deferred" not in r
+
+
+def test_fanout_coverage_is_machine_readable():
+    cov = fanout_coverage(_wide_survey(25))
+    assert cov == {"shape": "breadth_first", "arrangement": "parallel",
+                   "n_subq": 25, "cap": R.LOCI_MAX, "k": R.LOCI_MAX,
+                   "deferred": 25 - R.LOCI_MAX}
+
+
+def test_fanout_coverage_defers_nothing_for_non_breadth_shapes():
+    # depth-first: 2-4 sequential perspectives on the ONE locus — k is chosen at
+    # dispatch, and nothing is dropped because there is only one locus.
+    deep = _decomp(sub_questions=["what caused the 2008 financial crisis"],
+                   entities=["2008 financial crisis"],
+                   response_format="argumentative",
+                   contradiction_terms=["versus"], modality="deep",
+                   domains=["econ"])
+    cov = fanout_coverage(deep)
+    assert cov["shape"] == "depth_first" and cov["k"] is None
+    assert cov["deferred"] == 0
+
+    single = _decomp(sub_questions=["what is the population of Tokyo"],
+                     entities=["Tokyo"], response_format="short", domains=["geo"])
+    cov = fanout_coverage(single)
+    assert cov["shape"] == "straightforward" and cov["k"] == 1
+    assert cov["deferred"] == 0
+
+
+def test_skill_bodies_agree_with_the_loci_cap_constant():
+    """The skills state the cap in prose; prose and constant must not drift.
+
+    They previously drifted in the other direction (constant 20, prose 6). Both
+    files now name LOCI_MAX and quote its current value — if LOCI_MAX changes
+    and the prose does not, this fails.
+    """
+    for name in ("bad-research-4-loci-analysis.md",
+                 "bad-research-5-depth-investigation.md"):
+        body = (SKILLS_DIR / name).read_text()
+        assert "LOCI_MAX" in body, name
+        assert str(R.LOCI_MAX) in body, name
+        # no bare "capped at <old number>" left behind
+        assert f"capped at {R.SUBAGENT_FANOUT_MAX}" not in body, name
 
 
 # ── CRITICAL: query_shape must NOT change classify_route's output ──────────────

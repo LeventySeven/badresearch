@@ -73,6 +73,27 @@ def test_route_apply_writes_query_shape_field(tmp_path):
     assert written["route"] == "fast"
 
 
+def test_route_emits_machine_readable_fanout_coverage(tmp_path):
+    # issue #36: a survey wider than the loci cap must report what it will NOT
+    # cover as data, so an orchestrator branches on `deferred` instead of
+    # parsing `shape_reason` prose.
+    from bad_research.skills import routing_constants as R  # noqa: N812
+
+    d = tmp_path / "decomp.json"
+    d.write_text(json.dumps({"sub_questions": [f"option {i}" for i in range(25)],
+                             "entities": [], "response_format": "structured",
+                             "modality": "collect", "time_periods": [],
+                             "contradiction_terms": [], "domains": ["tech"]}))
+    res = runner.invoke(app, ["route", "--decomposition", str(d), "--json"])
+    assert res.exit_code == 0
+    fan = json.loads(res.stdout)["fanout"]
+    assert fan["shape"] == "breadth_first"
+    assert fan["n_subq"] == 25
+    assert fan["cap"] == R.LOCI_MAX
+    assert fan["k"] == R.LOCI_MAX
+    assert fan["deferred"] == 25 - R.LOCI_MAX
+
+
 def test_route_fast_flag_overrides(tmp_path):
     # A decomposition the router would call "full" (multi-domain), forced to fast.
     decomp = tmp_path / "decomp.json"

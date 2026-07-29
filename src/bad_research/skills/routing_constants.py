@@ -30,6 +30,21 @@ FAST_SUBRESEARCHER_K = 3
 SUBAGENT_FANOUT_DEFAULT = 3
 SUBAGENT_FANOUT_MAX = 20
 
+# The loci / depth-investigator fan-out cap — the SINGLE SOURCE OF TRUTH for
+# "how many parallel depth investigators can one full-route pass run". Steps 4
+# and 5 enforce it (bad-research-4-loci-analysis.md, bad-research-5-depth-
+# investigation.md) and EFFORT_MAP's top rung pins it as `loci_max`.
+#
+# It is deliberately NOT SUBAGENT_FANOUT_MAX (20). 20 is the generic Claude
+# subagent ceiling — what the host will spawn at all. 6 is what a depth pass can
+# usefully investigate: each locus costs a full source budget and an
+# INVESTIGATOR_TIMEOUT_S window, and the ~80-read synthesis ceiling
+# (READ_TOP_K_CEILING / SPEC §"the ~80-read ceiling is load-bearing") binds long
+# before 20 loci do. Anything past the cap is DEFERRED to the gap waves, and the
+# router now says so out loud (router.fanout_coverage / shape_reason) instead of
+# truncating in silence — issue #36 item 5.
+LOCI_MAX = 6
+
 # Clarifier (OpenAI default-proceed) — DR-loops §1 / ODR §5
 CLARIFY_MAX_QUESTIONS = 3
 
@@ -122,9 +137,17 @@ ROUTER_SURVEY_MAX_ATOMIC = 40
 # How many atomic items count as a "straightforward" single-investigation query.
 SHAPE_STRAIGHTFORWARD_MAX_ATOMIC = 2
 
-# The parallel breadth-first fan-out cap (mirrors SUBAGENT_FANOUT_MAX = 20). The
-# effective K is min(n_independent_subq, this cap).
-SHAPE_BREADTH_K_CAP = SUBAGENT_FANOUT_MAX  # 20
+# The parallel breadth-first fan-out cap. The effective K is
+# min(n_independent_subq, this cap).
+#
+# This K IS the depth-investigator count, so it must equal LOCI_MAX — the cap
+# steps 4 and 5 actually enforce. It used to mirror SUBAGENT_FANOUT_MAX (20),
+# which made `bad route` promise a 25-sub-question survey "K=20 parallel
+# investigators" when 6 would run: 3.3x over-reported width, 19 sub-questions
+# dropped, nothing recording it (issue #36 item 5). The cap is unchanged in
+# effect — only the reported number was ever wrong — and what falls outside it
+# is now reported as DEFERRED rather than silently truncated.
+SHAPE_BREADTH_K_CAP = LOCI_MAX  # 6
 
 # Depth-first deploys 2-4 SEQUENTIAL perspectives on one locus.
 SHAPE_DEPTH_MIN_PERSPECTIVES = 2
@@ -178,7 +201,8 @@ EFFORT_MAP = {
                 "extended_thinking": False, "single_draft": True},
     "medium":  {"route": "full",  "tier": "default", "fetchers_max": 12, "loci_max": 4,
                 "extended_thinking": True,  "single_draft": False},
-    "high":    {"route": "full",  "tier": "heavy",  "fetchers_max": 12, "loci_max": 6,
+    "high":    {"route": "full",  "tier": "heavy",  "fetchers_max": 12,
+                "loci_max": LOCI_MAX,
                 "extended_thinking": True,  "single_draft": False},
 }
 
