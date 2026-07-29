@@ -25,7 +25,7 @@ Read these inputs:
 - All `research/temp/claims-*.json` files (one per fetched note) — Step 4.0 below pairs these into the contradiction graph
 - `research/temp/coverage-gaps.md` — which atomic items have weak coverage
 
-Survey the corpus: `$HPR search "" --tag <vault_tag> -j` to confirm width sweep is complete.
+Survey the corpus: `bad search "" --tag <vault_tag> -j` to confirm width sweep is complete.
 
 (The contradiction graph + consensus claims are no longer a separate step's input — Step 4.0 below WRITES them from the claims files, and the loci procedure that follows READS them in-context.)
 
@@ -33,7 +33,17 @@ Survey the corpus: `$HPR search "" --tag <vault_tag> -j` to confirm width sweep 
 
 ## Step 4.0 — Contradiction graph (preamble)
 
-**Tier gate for Step 4.0:** SKIP if no `research/temp/claims-*.json` files exist (e.g., fetchers didn't produce them) — fall through to Step 1 below, which prose-scans the corpus instead.
+**Two mechanisms — the prose-scan is the DEFAULT, not a fallback.** The mechanical
+claim-pairing below needs `research/temp/claims-*.json` (one distilled-claims file per note).
+Those are produced ONLY by the legacy hand-dispatched fetcher path. The **preferred**
+step-2 path — `bad funnel-gather` (deterministic, $0, flat-context) — has **no model to
+distill claims, so it does NOT emit `claims-*.json`**. So on the default path these files are
+**absent, and that is EXPECTED, not a failure**: skip the mechanical claim-pairing and use
+**Step 1 below (the prose-scan of the corpus) as the first-class contradiction-finding
+mechanism** — read it as the primary procedure, do it well (it feeds the loci scoring's
+*disagreement* dimension), not as a degraded afterthought. The mechanical claim-graph is the
+higher-rigor path available only when a claim-producing fetcher wave was actually run; do NOT
+treat its absence as an error or go hunting for the missing files.
 
 **Goal:** before loci analysis (loci = the contested focal points / sub-debates the report must engage), build an explicit graph of opposing claims via **claim-pairing** across the corpus, plus the consensus claims that are settled ground. This is the procedure that was the former step 3.
 

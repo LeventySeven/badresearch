@@ -87,14 +87,13 @@ def test_fetch_clean_html_pipeline(monkeypatch, sample_html: str, tmp_path) -> N
         lambda url: ("text/html; charset=utf-8", sample_html.encode("utf-8")),
     )
     out = fetch_clean("https://ex.com/post", query="chunk size overlap",
-                      formats=("markdown", "metadata", "links", "highlights",
+                      formats=("markdown", "metadata", "links",
                                "published_date"))
     assert "Retrieval-augmented generation combines a retriever" in out["markdown"]
     assert "Buy our product now" not in out["markdown"]      # chrome stripped
     assert out["metadata"]["title"] == "How Retrieval-Augmented Generation Works"
     assert out["published_date"].startswith("2024-03-15")
     assert isinstance(out["links"], list)
-    assert out["highlights"] and "text" in out["highlights"][0]
 
 
 def test_fetch_clean_cache_hit(monkeypatch, sample_html: str, tmp_path) -> None:

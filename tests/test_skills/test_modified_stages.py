@@ -167,6 +167,60 @@ def test_width_sweep_token_growth_is_linear(skills_dir):
     assert "linear" in low
 
 
+# ── Draft ensemble reduced 3→2 (strongest-thesis + steelman-contrarian); the
+# synthesizer is the reconciler, so a 3rd reconciling draft is no longer spawned.
+# The skill filename `bad-research-10-triple-draft` stays as a LEGACY IDENTIFIER. ──
+
+
+def test_step10_spawns_two_draft_orchestrators_not_three(skills_dir):
+    body = (skills_dir / "bad-research-10-triple-draft.md").read_text()
+    low = body.lower()
+    # spawns TWO draft sub-orchestrators
+    assert "spawn 2" in low, "step 10 must spawn 2 draft sub-orchestrators"
+    assert "spawn 3" not in low, "step 10 must not spawn 3 draft sub-orchestrators"
+    # the dropped third angle has no bold "Draft C" assignment label
+    assert "**draft c" not in low, "no third draft angle assignment"
+    # produced artifacts are draft-a/b only (no draft-c on disk)
+    assert "draft-c" not in low, "no draft-c artifact/id"
+    assert "draft-c.md" not in body and "draft-c-source-list" not in body
+    # the legacy-filename note must be present (the name: frontmatter is unchanged)
+    assert "legacy identifier" in low, "must note the filename is a legacy identifier"
+
+
+def test_step10_frontmatter_name_unchanged_legacy_identifier(skills_dir):
+    """The behavior dropped to 2 drafts, but the skill `name:` frontmatter stays
+    `bad-research-10-triple-draft` (a legacy identifier) to avoid churning the
+    step-skill roster / hooks / installers."""
+    body = (skills_dir / "bad-research-10-triple-draft.md").read_text()
+    assert "name: bad-research-10-triple-draft" in body
+
+
+def test_step11_synthesizer_reads_two_drafts_not_three(skills_dir):
+    body = (skills_dir / "bad-research-11-synthesize.md").read_text()
+    low = body.lower()
+    assert "draft-c" not in low, "synthesizer must not read a third draft"
+    # draft_paths handed to the synthesizer are draft-a + draft-b only
+    assert "draft-a.md, research/temp/draft-b.md]" in body
+    assert "draft-c.md]" not in body
+
+
+def test_entry_skill_invariant10_spawns_two_orchestrators(skills_dir):
+    body = (skills_dir / "bad-research.md").read_text()
+    # invariant #10: MUST spawn 2 draft-orchestrators (not 3)
+    assert "spawn 2 `bad-research-draft-orchestrator`" in body
+    assert "spawn 3 `bad-research-draft-orchestrator`" not in body
+
+
+def test_draft_and_synthesizer_agent_constants_reference_two_drafts():
+    from bad_research.core import hooks
+
+    for const in (hooks.DRAFT_ORCHESTRATOR_AGENT, hooks.SYNTHESIZER_AGENT):
+        low = const.lower()
+        assert "draft-c" not in low, "agent constants must not reference a third draft"
+        assert "from all three drafts" not in low
+        assert "one of three" not in low
+
+
 def test_triple_draft_plans_from_reflections_reinjects_raw_for_cited(skills_dir):
     body = (skills_dir / "bad-research-10-triple-draft.md").read_text()
     low = body.lower()
@@ -395,7 +449,6 @@ def test_grader_skill_handles_keyless_null_verdict(skills_dir):
     [
         "bad-research-11.5-citation-verifier.md",
         "bad-research-fast.md",
-        "bad-research-ultrafast.md",
     ],
 )
 def test_grounding_skills_consume_needs_host_judgment(skills_dir, skill_file):
@@ -435,3 +488,42 @@ def test_depth_investigation_direction_switch_rule(skills_dir):
     # the pivot must be announced explicitly (written to notes)
     assert "switching direction" in low or "pivot" in low
     assert "orchestrator-notes" in body or "orchestrator_notes" in body or "orchestrator-notes.md" in body
+
+
+def test_polish_defers_structural_readability_to_step16(skills_dir):
+    """Dedup: paragraph/run-on/list surgery was done in BOTH step 15 (polish, blind Edit)
+    and step 16 (readability, judgment-safe recommend-then-apply). Step 16 owns structure on
+    purpose (a blind reformatter 'sometimes makes changes that hurt the argument'), so polish
+    must NOT reformat structure — only hygiene + filler + redundancy. Locks the dedup in."""
+    polish = (skills_dir / "bad-research-15-polish.md").read_text()
+    low = polish.lower()
+    # polish keeps its unique, load-bearing hygiene/leak-strip + filler + redundancy
+    assert "pipeline reference leaks" in low and "filler" in low
+    # ...but must explicitly defer structural reformatting to step 16
+    assert "step 16" in low and ("do not reformat structure" in low or "structural readability is\nstep 16" in low
+                                 or "structural readability is step 16" in low or "that is step 16's job" in low)
+    # and must NOT re-introduce the blind run-on/paragraph Edit surgery
+    assert "breaks into smaller units via edit" not in low
+
+
+def test_step16_surfaces_citation_drift_warnings(skills_dir):
+    """Grounding phase-1.5: `bad uncited-gate` now returns non-blocking `warnings`
+    (citation-drift). Step 16 must surface + act on them (repoint/hedge), not ship
+    them silently — the cheap, non-blocking half of 'bind, not count'."""
+    body = (skills_dir / "bad-research-16-readability-audit.md").read_text().lower()
+    assert "citation-drift" in body and "warnings" in body
+    assert "repoint" in body or "re-point" in body        # the primary remedy
+    # it must stay non-blocking (the hard block stays on `uncited`, not warnings)
+    assert "does **not** block" in body or "does not block" in body or "non-blocking" in body
+
+
+def test_claims_seam_is_documented_honestly_not_silent(skills_dir):
+    """The preferred funnel-gather path has no model to distill per-note claims, so
+    claims-*.json is ABSENT by default and the contradiction graph prose-scans. Step 4.0
+    must frame the prose-scan as the first-class default (not a rare 'fetchers didn't
+    produce them' edge case), so the loci chain isn't silently resting on an artifact the
+    default path lacks."""
+    loci = (skills_dir / "bad-research-4-loci-analysis.md").read_text().lower()
+    assert "funnel-gather" in loci or "funnel path" in loci
+    assert "expected, not a failure" in loci or "not a failure" in loci
+    assert "first-class" in loci or "default, not a fallback" in loci

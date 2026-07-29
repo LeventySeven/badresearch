@@ -171,7 +171,60 @@ def test_allowed_domains_threads_into_every_command() -> None:
     runner = FakeRunner(route=_ROUTE)
     prov = SilverProvider(runner=runner, session="test", allowed_domains="example.com")
     prov.browse("https://example.com/login", "read")
-    assert all("--allowedDomains" in argv for argv in runner.argvs())
+    # KEBAB-case. silver's CSV flag table keys on `allowed-domains`; a camelCase
+    # `--allowedDomains` hits its "unknown long flag → bool-ish no-op, lenient by
+    # design" fallthrough, so the egress fence would be silently OFF (fail-open).
+    assert all("--allowed-domains" in argv for argv in runner.argvs())
+    assert all("--allowedDomains" not in argv for argv in runner.argvs())
+    for argv in runner.argvs():
+        assert argv[argv.index("--allowed-domains") + 1] == "example.com"
+
+
+def test_every_long_flag_the_driver_emits_is_kebab_case() -> None:
+    """A mock-only argv assertion cannot tell a real silver flag from a typo, so pin the
+    INVARIANT instead: silver's parser only recognises kebab-case long flags and silently
+    ignores anything else. Any camelCase long flag we emit is therefore a no-op — which,
+    for a security flag like --allowed-domains, means fail-open.
+    """
+    runner = FakeRunner(route=_ROUTE)
+    SilverProvider(runner=runner, session="test",
+                   allowed_domains="example.com").browse("https://example.com/login",
+                                                         "read")
+    emitted = {tok for argv in runner.argvs() for tok in argv if tok.startswith("--")}
+    assert emitted, "the driver emitted no long flags at all — the test is not exercising it"
+    offenders = sorted(f for f in emitted if f.lower() != f)
+    assert not offenders, (
+        f"camelCase long flag(s) {offenders} — silver only maps kebab-case names and "
+        "drops unknown long flags without erroring, so these are silent no-ops"
+    )
+
+
+def test_no_allowed_domains_flag_when_unfenced() -> None:
+    runner = FakeRunner(route=_ROUTE)
+    _provider(runner).browse("https://example.com/login", "read")
+    assert all("--allowed-domains" not in argv for argv in runner.argvs())
+
+
+def test_session_is_closed_even_when_a_step_raises() -> None:
+    """`close` tears down the SESSION (browser + session dir), not a tab. If it only runs
+    on the happy path, a raising step — e.g. subprocess.TimeoutExpired, which
+    ladder._do_browse swallows — leaves a live headless Chromium for the whole process.
+    """
+    calls: list[list[str]] = []
+
+    def _boom(argv, *, timeout=None, env=None, stdin=None):
+        calls.append(list(argv))
+        if argv[1] == "snapshot":
+            raise RuntimeError("silver blew up mid-snapshot")
+        return (0, _ROUTE.get(argv[1], ""), "")
+
+    with pytest.raises(RuntimeError):
+        SilverProvider(runner=_boom, session="test").browse("https://example.com/", "read")
+
+    assert any(argv[1] == "close" for argv in calls), (
+        "the silver session was never closed on the error path — a headless Chromium "
+        "under `br-<pid>` outlives the failed browse()"
+    )
 
 
 def test_state_and_cookie_argv() -> None:

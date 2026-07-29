@@ -25,7 +25,6 @@ from bad_research.retrieval.cache import get_cache
 from bad_research.retrieval.chunker import chunk_note
 from bad_research.retrieval.chunker_code import embed_text_for
 from bad_research.retrieval.constants import (
-    ALPHA,
     EMBED_BATCH_CAP,
     EMBED_TRUNC_CHARS,
     RELEVANCE_GATE,
@@ -41,7 +40,6 @@ from bad_research.retrieval.fts_chunks import (
 )
 from bad_research.retrieval.fusion import (
     apply_source_type_weight,
-    hybrid_fuse,
     minmax_normalize,
     rrf_merge,
     three_tier_fuse,
@@ -86,11 +84,10 @@ class RetrievalEngine:
                  embedder: EmbedProvider | None = None,
                  lance_dir: Path | None = None,
                  links_db: Path | None = None,
-                 alpha: float = ALPHA, gate: float = RELEVANCE_GATE,
+                 gate: float = RELEVANCE_GATE,
                  top_k_retrieve: int = TOP_K_RETRIEVE):
         self.embedder = embedder
         self.reranker = reranker
-        self.alpha = alpha
         self.gate = gate
         self.top_k_retrieve = top_k_retrieve
         # Vector store: ONLY when a [local] embedder is supplied. Lazy import so
@@ -312,7 +309,3 @@ class RetrievalEngine:
         return survivors, pass_fraction, top_note
 
 
-# `hybrid_fuse` (alpha=0.7) and `ALPHA` are imported and retained for the
-# calibrated fuser path / parity tests; the default recall path uses min-max
-# BM25 or RRF.
-_ = (hybrid_fuse, ALPHA)

@@ -15,6 +15,37 @@ and open tooling.
 
 ---
 
+## How you run it — two keyless entrypoints
+
+Bad Research is a **Claude Code skill**, and that is how you use it — keyless, with a
+model driving the pipeline:
+
+1. **Interactive.** Type `/bad-research <your query>` in a Claude Code session.
+2. **From a subagent.** A Claude Code **Task** subagent invokes the `bad-research`
+   skill programmatically.
+
+Both are keyless: the *host model* (your Claude Code session, or the subagent's model)
+is what reads sources, reranks, drafts, critiques, and grounds every claim. No
+third-party API key is ever required.
+
+**The boundary — what the `bad` CLI is (and isn't).** The `bad` CLI is a set of
+**deterministic helpers only** — the funnel, retrieval/rerank, grounding gates, and
+vault ops. It never calls a model on its own. There is exactly ONE key-requiring
+path: the headless `run_query` synthesis that `bad calibrate` bridges to — the
+**off-mission calibration/benchmark harness**, not how you run research. Run it
+without a key and it degrades to an honest, stitched, best-effort report led by a
+banner that points you back to the keyless skill; it never crashes and never
+fabricates.
+
+**Why there is no "host-model provider" for the CLI.** A model-less subprocess cannot
+call the host model. The `bad` CLI runs *outside* the Claude Code session, so it has
+no channel to the model driving that session — this is an architectural truth, not a
+missing feature. There is no `HostModelProvider`, and one cannot be added from a plain
+subprocess. The keyless answer is to run research *through the skill*, where a model
+is already in the loop.
+
+---
+
 ## The build approach
 
 1. **Start from hyperresearch.** Its pipeline, vault, skill packaging, and grounding
@@ -83,11 +114,18 @@ optionally with `lightpanda`, remains a drop-in fallback when silver isn't insta
 The model only ever acts on element references that exist in the live page snapshot,
 so it can't be steered onto a hallucinated element.
 
-Two properties are why silver is the default. Its navigation is **redirect-guarded on
-every hop**, which closes the SSRF gap an external CLI leaves — the ladder itself can
-only check the entry URL and the final landed URL. And it is **read-only unless asked**:
-actor verbs aren't even dispatchable without `--enable-actions`, and the research path
-(open → snapshot → read) never passes it, so a hostile page has no verb to reach for.
+Two properties are why silver is the default. Its entry gate is **DNS-resolved**: before
+any browser is spawned it resolves the target host and refuses it if any address is
+loopback/link-local/private/reserved, which closes the DNS-rebinding variant our own
+lexical denylist can't see — and it applies the same egress decision to every page
+subresource, so a page can't beacon scraped data back out. And it is **read-only unless
+asked**: actor verbs aren't even dispatchable without `--enable-actions`, and the research
+path (open → snapshot → read) never passes it, so a hostile page has no verb to reach for.
+
+What silver does **not** fix is the per-hop redirect gap: navigation redirects are
+followed inside Chromium, so on both backends only the entry URL and the final landed URL
+are validated. An intermediate hop that transits an internal host and comes back out is
+still not individually gated (see the `SSRF LIMITATION` note in `browse/ladder.py`).
 
 ### Element querying — ask the page in a query language
 *Pattern from: AgentQL.* AgentQL's idea is a small declarative query language for

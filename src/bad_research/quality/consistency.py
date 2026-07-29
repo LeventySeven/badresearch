@@ -3,7 +3,7 @@
 Denny Zhou (`researchfms/.../TRANSCRIPTS_STANFORD.md:L1930-1936`): sampling N answers
 and selecting the most cross-supported one lifts accuracy 58→75%; the *universal*
 self-consistency variant generalises it to open-ended answers by having the model pick
-the most consistent response. DISTINCT from triple-draft, which MERGES three angle
+the most consistent response. DISTINCT from the draft ensemble, which MERGES two angle
 drafts — this VOTES across N independent judgments of ONE claim.
 
 The lane is **high-effort ONLY** (`consistency_enabled("high")`). On the default path it

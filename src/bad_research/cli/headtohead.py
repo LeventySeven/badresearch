@@ -13,11 +13,11 @@ Two input shapes for the entrant reports:
   1. `--manifest M.json` — a per-query manifest mapping each query id to its
      entrants:
         {
-          "bad_name": "bad-research-ultrafast",
+          "bad_name": "bad-research-fast",
           "competitor_name": "gemini-deep-research",
           "entrants": {
             "h2h_01_causal": [
-              {"name": "bad-research-ultrafast", "report_file": "runs/bad/01.md",
+              {"name": "bad-research-fast", "report_file": "runs/bad/01.md",
                "corpus_file": "runs/bad/01_corpus.json", "cost_usd": 0.02, "latency_s": 540},
               {"name": "gemini-deep-research", "report_file": "runs/gem/01.md",
                "cost_usd": 0.0, "latency_s": 300}

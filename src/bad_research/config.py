@@ -51,7 +51,8 @@ class BadResearchConfig:
     reranker: Literal["host", "local", "light", "zerank2", "none"] = "host"
     neural_recall: bool = False                            # opt-in local bi-encoder lane ([local])
     searxng_endpoint: str = "http://localhost:8080"        # self-host T1; no key
-    # rung-2.5/3 backend: "silver" (default, redirect-guarded + read-only by default)
+    # rung-2.5/3 backend: "silver" (default — DNS-resolved entry gate + read-only unless
+    # `--enable-actions`; it does NOT gate intermediate redirect hops, see browse/ladder.py)
     # or the two agent-browser engines kept as a fallback for machines without silver.
     browse_engine: Literal["silver", "lightpanda", "chrome"] = "silver"
     effort: Literal["minimal", "low", "medium", "high"] = "medium"  # KR-6 effort continuum

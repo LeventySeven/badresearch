@@ -62,11 +62,11 @@ By default the skill **auto-routes** — a simple, bounded question takes the **
 (a quick cited answer, minutes); a broad or contested one takes the **full**
 adversarially-reviewed pipeline (~1.5–2.5 h). You can steer it:
 
-- **Want a thorough report without the multi-hour wait?** Say *"ultrafast mode"* in your
-  request (or run `bad route --apply --ultrafast`). The **ultrafast** tier is the keyless
-  take on the commercial "Deep Research" button — plan → wide parallel multi-source browse →
-  a long, sectioned, fully-cited report in **5–15 minutes**. If you're just trying Bad
-  Research out, this is the sweet spot.
+- **Want a thorough report without the multi-hour wait?** The **fast** route is the sweet
+  spot — its breadth branch fans out K parallel researchers over a wide multi-source browse,
+  then writes a sectioned, fully-cited answer in minutes. Force it with `bad route --apply
+  --fast` if the auto-router picked `full` and you want the quicker take. If you're just
+  trying Bad Research out, start here.
 - **Dial the effort** with `--effort minimal|low|medium|high` to nudge the route and per-step
   fan-out (`minimal`/`low` bias toward fast; `medium`/`high` toward full).
 
@@ -77,6 +77,24 @@ decomposition and shown by that up-front in-skill route announcement — so you 
 route a query takes before any long work starts.
 
 > Want the latest unreleased build? Install from source: `pipx install git+https://github.com/LeventySeven/badresearch.git`
+
+### Updating
+
+Already installed? Upgrade the CLI **and** re-register the skill so both are current:
+
+```bash
+# From PyPI (pipx or uv — whichever you installed with)
+pipx upgrade bad-research      # or: uv tool upgrade bad-research
+bad install                    # refresh the /bad-research skill + agents in ~/.claude
+
+# ...or track the latest source
+pipx install --force git+https://github.com/LeventySeven/badresearch.git
+bad install
+```
+
+`bad install` is idempotent — re-run it any time after upgrading the CLI to pull the newest
+entry skill + agents (the per-step skills refresh lazily on the next `/bad-research` run).
+Confirm with `bad --version`.
 
 ## What it does
 

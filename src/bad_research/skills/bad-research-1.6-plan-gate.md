@@ -114,6 +114,8 @@ Read:
 
 ## Next step
 
-Return to the entry skill (`bad-research`). Continue per the route:
-- **light** → `Skill(skill: "bad-research-2-width-sweep")`
+Return to the entry skill (`bad-research`). Continue per the route (the plan-gate can
+fire on a `fast` broad-survey — `router.py::plan_gate_fires` allows atomic > 6 — so it
+MUST route `fast` back to the bounded loop, never into the full width-sweep):
+- **fast** → `Skill(skill: "bad-research-fast")`
 - **full** → `Skill(skill: "bad-research-2-width-sweep")`

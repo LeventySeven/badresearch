@@ -105,12 +105,46 @@ bad funnel-gather --query-file research/query-<vault_tag>.md \
     --effort <minimal|low|medium|high> --json
 ```
 
-Returns `FunnelEnvelope` JSON: `{note_ids, top_chunks, n_read}`.
+Returns `FunnelEnvelope` JSON:
+`{note_ids, top_chunks, n_read, n_stored, ok, degraded, degraded_reasons, warnings, provider_outcomes}`.
 - `note_ids` — sources written to the vault this run.
 - `top_chunks` — the reranked chunks (≤ TOP_CHUNKS for the mode) the model may
   read. Read these; do NOT re-read full pages.
 - `n_read` ≤ 80 (the load-bearing read ceiling — the funnel enforces it
   internally; reading past it degrades synthesis).
+
+**CHECK `degraded` BEFORE READING ANYTHING ELSE.** The envelope distinguishes a
+run that found nothing from a run that *could not search*:
+
+| Envelope | Meaning | What you do |
+|---|---|---|
+| `ok:true, degraded:false`, `note_ids` non-empty | normal | proceed to Step 2.5 |
+| `ok:false, degraded:true` (exit 3), reason `no_search_provider_available` | every search lane refused to run | **STOP. Do NOT gap-fetch, do NOT draft.** |
+| `ok:false, degraded:true` (exit 3), reason `no_search_results_from_any_provider` | every lane ran and returned zero hits across the entire plan | **STOP.** Almost always an outage, not an empty topic — see below |
+
+There is deliberately **no** "ran fine, found nothing" success row. Zero hits
+across every lane and every query (12 in light, up to 100 in full) is
+near-impossible for a well-formed query, and the keyless providers swallow
+transport errors into empty results — so this layer cannot tell a dead network
+from a sourceless topic. It is reported as degraded on purpose: a false alarm
+costs one honest message, whereas proceeding would ship a report asserting a
+research gap that is really an outage.
+
+When `degraded` is true, report the `degraded_reasons` and `provider_outcomes`
+to the user, say plainly that the corpus could not be built, and stop.
+
+**Also check `warnings` even when `ok:true`.** It is orthogonal to `degraded`: a
+run can succeed while not doing what you asked. `search_plan_empty_or_unparseable`
+means your plan did not apply and the generic fallback expansion ran instead —
+the corpus is NOT plan-driven, so regenerate the plan table and re-run rather
+than treating the coverage as if your lenses had fired.
+
+When `degraded` is true, a gap-fetch retry hits the same dead providers and
+returns empty again, and the run then reports a *content* gap that is really an
+*infrastructure* failure — a fabricated research finding. Instead: report the
+`degraded_reasons` and `provider_outcomes` to the user, say plainly that the
+corpus could not be built and why, and stop. A thin corpus is recoverable; a
+report that claims "no sources exist" when the search stack was down is not.
 
 **Fan-out constants are indexed by mode** (the funnel applies them internally
 via its `FunnelConfig`): `light` = 12–20 queries / 1–2 providers / read top
@@ -204,6 +238,7 @@ prompt: |
   OBJECTIVE: fetch and ground every URL in your batch into vault notes tagged
   <vault_tag>, chasing 3–8 primary sources via citation chains.
 
+  <!-- source-quality-signals -->
   SOURCE-QUALITY NEGATIVE SIGNALS (down-weight or FLAG, do NOT suppress):
   As you read each source, judge it against this list (Anthropic worker-prompt
   discipline — the things a regex/domain check CANNOT see). FLAG the source; do NOT
@@ -214,7 +249,7 @@ prompt: |
   - general qualifiers without specifics ("many", "often", "significant")  -> `vague_qualifier`
   - unconfirmed reports (rumor not yet verified)        -> flag `unconfirmed`
   - marketing language / spin language (promotional, sales copy)  -> `marketing_spin`
-  - speculation presented as finding                    -> flag `speculation`
+  - speculation presented as finding, incl. future-tense predictions ("could", "may", projections) stated as things that happened  -> flag `speculation`
   - cherry-picked data (selective evidence, no counter-data)  -> `cherry_picked`
   A source with NONE of these gets no flags (it is unchanged). A primary filing or
   peer-reviewed paper is almost never flagged; a vendor "X is the best" listicle on a
@@ -269,7 +304,7 @@ Append a few lines with `Edit` or `Write` every 30-60 seconds. Productive thinki
 
 **Vault count check** — once every 60 seconds max:
 ```bash
-PYTHONIOENCODING=utf-8 $HPR search "" --tag <vault_tag> --json | python -c "import sys,json; d=json.load(sys.stdin); print(f'Notes in vault: {len(d.get(\"data\",{}).get(\"results\",[]))}')"
+PYTHONIOENCODING=utf-8 bad search "" --tag <vault_tag> --json | python -c "import sys,json; d=json.load(sys.stdin); print(f'Notes in vault: {len(d.get(\"data\",{}).get(\"results\",[]))}')"
 ```
 
 The wave is done when the vault note count is ≥80% of total URLs queued.
@@ -339,10 +374,12 @@ each re-retrieve round makes inter-round token growth *quadratic*
 (`n·m·(m+1)/2`); carrying a compact distilled memory keeps it **linear** (`n·m`) —
 a ~−66% token win (Tavily). The raw bodies stay on disk in the vault, retrievable
 by `note_id`; they are NOT re-injected until synthesis (step 10/11), and even then
-only for the `note_id`s a section will cite. The data to do this already exists —
-each fetcher emits `research/temp/claims-<note-id>.json` of shape
-`{claim, note_id, quoted_support, char_start, char_end}`, i.e. the distilled
-claims are already separated from the raw note body.
+only for the `note_id`s a section will cite. On the legacy hand-dispatched fetcher path
+the distilled memory is `research/temp/claims-<note-id>.json` of shape
+`{claim, note_id, quoted_support, char_start, char_end}` (claims already separated from
+the raw body); on the **preferred `funnel-gather` path there are no per-note claims files** —
+the funnel's reranked `top_chunks` ARE the distilled, separated-from-raw-body memory that
+plays the same role. Either way, the raw bodies are not re-injected until synthesis.
 
 After each fetch wave (the funnel return in Step 2.2, and again after each gap
 fetch in Step 2.5), **distill, then drop the raw body from working context**:
@@ -407,7 +444,7 @@ Substantive (non-deprecated) note counts. Quality over quantity — reference re
 When a single long source (>5000 words) is load-bearing, delegate end-to-end analysis to `bad-research-source-analyst` (Sonnet, 1M context):
 
 Trigger conditions (ALL three must hold):
-1. **Length:** source's `word_count` (visible on `$HPR note show <id> -j`) exceeds ~5000 words
+1. **Length:** source's `word_count` (visible on `bad note show <id> -j`) exceeds ~5000 words
 2. **Relevance:** source is relevant to the research_query
 3. **No existing analysis:** no `type: source-analysis` note already exists for this source
 

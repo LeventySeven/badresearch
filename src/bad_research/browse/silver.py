@@ -7,17 +7,32 @@ into the same rung-2.5/3 seat with the same grounding contract. Claude Code (the
 model) remains the brain; this module is only the driver.
 
 Why it is the default browse provider (see docs/HOW_IT_WORKS.md):
-  * **Redirect-gated fetch.** `silver read <url>` re-checks EVERY redirect hop, which
-    closes the SSRF hole agent-browser leaves open (ladder._do_browse can only validate
-    the entry URL and the final landed URL — an intermediate hop through an internal
-    host is invisible to it).
+  * **DNS-resolved entry gate.** `silver open <url>` runs `assertNavigableResolved`
+    BEFORE any browser is spawned: the target host is resolved and refused if any
+    address is loopback / link-local / private / reserved. That closes the DNS-rebinding
+    variant which the ladder's own purely lexical `is_blocked_url` check cannot see.
   * **Read-only by default.** Actor verbs are not even dispatchable without
     `--enable-actions`. The research path (open → snapshot → read) never passes it, so a
     hostile page cannot talk the driver into clicking or typing.
   * **Clean body text.** `read` returns landmark-skipped Markdown rather than the raw
     a11y tree, so a stored note carries prose instead of widget scaffolding.
-  * **Egress allowlist.** `--allowedDomains` is tighten-only, so the browse rung can be
-    fenced to the domain being researched.
+  * **Subresource egress guard.** silver pauses every non-`Document` subresource over
+    CDP `Fetch` and applies the same egress decision, so a page on an allowed host
+    cannot beacon scraped data out to an internal or arbitrary third-party host.
+  * **Egress allowlist.** `--allowed-domains` (suffix match) hardens both the nav gate
+    and the subresource guard, so the browse rung can be fenced to the domain being
+    researched. The flag name is KEBAB-case: silver's CSV flag table keys on
+    `allowed-domains`, and its parser silently ignores unknown long flags, so a
+    camelCase `--allowedDomains` would be a fail-open no-op.
+
+NOT a property of this driver — per-redirect-hop gating. silver DOES re-assert every hop
+in `silver read <url>`, but that form is a RAW fetch with no JS, which is what rung 1
+already does; the browse rung exists to get a RENDERED page, so it drives
+`open → wait → snapshot → read` and calls `read` with NO url (it reads the live
+document). Navigation redirects are followed inside Chromium by `page.goto`, and silver's
+CDP Fetch guard deliberately omits `Document` requests, so intermediate hops are not
+individually checked. The ladder's `# SSRF LIMITATION` note applies to silver exactly as
+it applies to agent-browser: only the entry URL and the final landed URL are validated.
 
 silver is an EXTERNAL CLI (`npm i -g agent-silver`), NOT a pip dep. `is_available()`
 gates construction so the ladder degrades to agent-browser/crawl4ai/httpx without it.
@@ -92,8 +107,10 @@ def _runner_accepts_stdin(runner: Runner) -> bool:
 
 
 def default_session(pid: int | None = None) -> str:
-    """One silver session per OS process. Parallel fetchers are separate processes, so
-    they never contend on the same session lock; a single process reuses one browser."""
+    """One silver session NAME per OS process. Parallel fetchers are separate processes,
+    so they never contend on the same session lock. `browse()` closes the session in a
+    `finally` when it is done, so the name is stable across calls but the browser is not
+    kept warm — the close is what guarantees no orphaned Chromium survives an error."""
     return f"br-{os.getpid() if pid is None else pid}"
 
 
@@ -130,7 +147,11 @@ class _SilverCLI:
         if self.namespace:
             argv += ["--namespace", self.namespace]
         if self.allowed_domains:
-            argv += ["--allowedDomains", self.allowed_domains]
+            # KEBAB-case, and it must stay that way: silver's CSV_FLAGS table keys on
+            # `allowed-domains`, and its arg parser treats an UNKNOWN long flag as a
+            # bool-ish no-op ("lenient by design"). A camelCase `--allowedDomains`
+            # would therefore be silently dropped — a fail-open security flag.
+            argv += ["--allowed-domains", self.allowed_domains]
         if self.enable_actions:
             argv.append("--enable-actions")
         argv.append("--json")
@@ -327,36 +348,45 @@ class SilverProvider:
         acting = bool(steps)
         cli = self._cli(enable_actions=acting)
 
-        if state:
-            cli.state_load(state)
+        # `close` tears down the SESSION (browser + session dir), not a tab, so it MUST
+        # run on the error path too: a `subprocess.TimeoutExpired` out of any step is
+        # swallowed by ladder._do_browse's except, which would otherwise leave a live
+        # headless Chromium under `br-<pid>` for the rest of the process.
+        try:
+            if state:
+                cli.state_load(state)
 
-        opened = envelope_data(cli.open(url))
-        cli.wait_ready()
-        snap = parse_snapshot(cli.snapshot(interactive=True))
+            opened = envelope_data(cli.open(url))
+            cli.wait_ready()
+            snap = parse_snapshot(cli.snapshot(interactive=True))
 
-        executed = 0
-        for step in (steps or []):
-            if executed >= max_steps:
-                break
-            # ---- grounding: a @eN target must exist in the current snapshot refs ----
-            if step.target.startswith("@") and not snap.has_ref(step.target):
-                continue  # ungrounded ref → skip, never guess
-            self._dispatch(cli, step)
-            executed += 1
-            if step.kind in _PAGE_CHANGING:
-                cli.wait_ready()
-                snap = parse_snapshot(cli.snapshot(interactive=True))  # re-perceive
+            executed = 0
+            for step in (steps or []):
+                if executed >= max_steps:
+                    break
+                # ---- grounding: a @eN target must exist in the current snapshot refs ----
+                if step.target.startswith("@") and not snap.has_ref(step.target):
+                    continue  # ungrounded ref → skip, never guess
+                self._dispatch(cli, step)
+                executed += 1
+                if step.kind in _PAGE_CHANGING:
+                    cli.wait_ready()
+                    snap = parse_snapshot(cli.snapshot(interactive=True))  # re-perceive
 
-        # ---- body text beats the a11y tree for a stored note; tree is the fallback ----
-        body = envelope_data(cli.read())
-        content = strip_fence(body) if isinstance(body, str) else ""
-        if not content:
-            content = snap.text
+            # ---- body text beats the a11y tree for a stored note; tree is the fallback ----
+            body = envelope_data(cli.read())
+            content = strip_fence(body) if isinstance(body, str) else ""
+            if not content:
+                content = snap.text
 
-        landed = snap.url or (opened.get("url") if isinstance(opened, dict) else "") or url
-        title = snap.title or (opened.get("title") if isinstance(opened, dict) else "") or ""
+            landed = snap.url or (opened.get("url") if isinstance(opened, dict) else "") or url
+            title = snap.title or (opened.get("title") if isinstance(opened, dict) else "") or ""
+        finally:
+            try:
+                cli.close()
+            except Exception:
+                pass  # teardown must never mask the real error (or the real result)
 
-        cli.close()
         return WebResult(
             url=landed,
             title=title,

@@ -88,12 +88,25 @@ Read these inputs:
      and what was abandoned. Do NOT silently iterate on a dead query line.
 
      CRITICAL: Read the full source text of relevant vault notes (via
-     `hyperresearch note show <id1> <id2> ... -j`) BEFORE writing your
+     `bad note show <id1> <id2> ... -j`) BEFORE writing your
      interim note. Drafting from summaries alone produces paraphrase;
      drafting from full text produces synthesis. Use your source_budget
      to fetch additional sources beyond the width corpus if needed.
 
-     OUTPUT: Write a single interim note via the hyperresearch CLI with
+     <!-- source-quality-signals -->
+     SOURCE-QUALITY NEGATIVE SIGNALS (flag, do NOT silently drop or suppress):
+     as you read each full source, judge it against the Anthropic worker-prompt
+     list and record any that apply as a `source_quality_flags` array on the
+     interim note (the lead reconciles flags downstream — flag, don't suppress):
+     `aggregator` (news aggregator, not the original), `false_authority` (cites
+     authority it lacks), `nameless_source` ("experts say"), `vague_qualifier`
+     ("many"/"often", no specifics), `unconfirmed` (unverified rumor),
+     `marketing_spin` (promotional/sales copy), `speculation` (incl. future-tense
+     "could"/"may" projections stated as things that happened), `cherry_picked`
+     (selective evidence, no counter-data). A flagged source is caveated or
+     corroborated at synthesis, never suppressed.
+
+     OUTPUT: Write a single interim note via the bad CLI with
      type=interim, tags = <vault_tag> + locus-<locus-name>. The note MUST
      end with a "## Committed position" section that takes a SIDE on the
      dialectical question (or a synthesis verdict for non-dialectical
@@ -130,11 +143,11 @@ Read these inputs:
 
 4. **Read the interim notes.** After all return, list them:
    ```bash
-   $HPR search "" --tag <vault_tag> --type interim --json
+   bad search "" --tag <vault_tag> --type interim --json
    ```
    Then batch-read them:
    ```bash
-   $HPR note show <id1> <id2> ... -j
+   bad note show <id1> <id2> ... -j
    ```
    Hold the Committed Position sections in your context — they are the load-bearing input to step 6 (cross-locus reconciliation).
 

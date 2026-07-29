@@ -94,34 +94,6 @@ def test_route_fast_and_full_mutually_exclusive(tmp_path):
     assert result.exit_code != 0
 
 
-def test_route_ultrafast_flag_overrides(tmp_path):
-    # A decomposition the router would call "full" (multi-domain), forced to ultrafast.
-    decomp = tmp_path / "decomp.json"
-    decomp.write_text(json.dumps({
-        "sub_questions": ["a", "b"], "entities": [], "time_periods": [],
-        "response_format": "structured", "contradiction_terms": [],
-        "domains": ["a", "b", "c"],
-    }))
-    result = runner.invoke(
-        app, ["route", "--decomposition", str(decomp), "--ultrafast", "--apply", "--json"]
-    )
-    assert result.exit_code == 0
-    out = json.loads(result.stdout)
-    assert out["route"] == "ultrafast"
-    assert "ultrafast" in out["reason"]
-    assert json.loads(decomp.read_text())["route"] == "ultrafast"
-
-
-def test_route_ultrafast_mutually_exclusive_with_fast_and_full(tmp_path):
-    decomp = tmp_path / "decomp.json"
-    decomp.write_text(json.dumps({"sub_questions": ["a"], "entities": [], "domains": ["x"],
-                                  "response_format": "short"}))
-    r1 = runner.invoke(app, ["route", "--decomposition", str(decomp), "--ultrafast", "--fast"])
-    assert r1.exit_code != 0
-    r2 = runner.invoke(app, ["route", "--decomposition", str(decomp), "--ultrafast", "--full"])
-    assert r2.exit_code != 0
-
-
 # ── E11 plan-gate: route CLI reports the gate decision (default = no gate) ─────
 
 def test_route_plan_gate_default_is_false(tmp_path):
@@ -191,6 +163,29 @@ def test_uncited_gate_standalone_with_note_bodies_resolves_cites(tmp_path, monke
                               "--note-bodies", str(notes), "--vault-tag", "x", "--json"])
     assert res.exit_code == 0, res.stdout + (res.stderr or "")
     assert json.loads(res.stdout)["uncited"] == []
+
+
+def test_uncited_gate_citation_drift_warns_but_ships(tmp_path, monkeypatch):
+    # A factual claim cites a note whose body is about something else entirely.
+    # Phase-1 'bind, not count': this is a NON-BLOCKING drift warning — the report
+    # ships (exit 0), the drift lands under `warnings`, and `uncited` stays empty.
+    monkeypatch.chdir(tmp_path)
+    report = tmp_path / "r.md"
+    report.write_text(
+        "Southeast Asian e-commerce GMV grew 12.4% in 2024 [1].\n", encoding="utf-8")
+    off_topic = (
+        "Arctic terns undertake the longest annual migration of any bird, flying from "
+        "their Arctic breeding grounds to the Antarctic and back, a round trip that can "
+        "exceed ninety thousand kilometres over a lifetime spanning three decades.")
+    notes = tmp_path / "notes.json"
+    notes.write_text(json.dumps({"src1": off_topic}), encoding="utf-8")
+    res = runner.invoke(app, ["uncited-gate", "--report", str(report),
+                              "--note-bodies", str(notes), "--vault-tag", "x", "--json"])
+    assert res.exit_code == 0, res.stdout + (res.stderr or "")   # SHIPS — drift never blocks
+    out = json.loads(res.stdout)
+    assert out["uncited"] == []
+    assert len(out["warnings"]) == 1
+    assert out["warnings"][0]["reason"] == "citation-drift"
 
 
 def test_uncited_gate_standalone_flags_uncited_factual_sentence(tmp_path, monkeypatch):
@@ -285,6 +280,28 @@ def test_funnel_gather_cmd_has_only_effort_not_reasoning_effort_alias():
     r = runner.invoke(app, ["funnel-gather", "--help"])
     assert "--effort" in r.stdout
     assert "--reasoning-effort" not in r.stdout
+
+
+def test_funnel_gather_json_emits_error_envelope_not_traceback(monkeypatch):
+    # issue #24: a connection/DNS error inside run_funnel (e.g. an unreachable
+    # search-provider host on the fan-out) must NOT propagate as an uncaught
+    # traceback. Under --json the caller gets a parseable {"ok": false, ...}
+    # envelope and a clean non-zero exit, so an orchestrator can branch on it.
+    import bad_research.cli.research as research_mod
+
+    def _boom(*a, **k):
+        raise ConnectionError("[Errno 8] nodename nor servname provided, or not known")
+
+    monkeypatch.setattr(research_mod, "run_funnel", _boom)
+
+    res = runner.invoke(app, ["funnel-gather", "some query", "--mode", "full", "--json"])
+    assert res.exit_code != 0                      # non-zero, but CLEAN
+    assert res.exception is None or isinstance(res.exception, SystemExit)
+    env = json.loads(res.stdout)                   # parseable, not a stack trace
+    assert env["ok"] is False
+    assert env["stage"] == "funnel-gather"
+    assert "nodename nor servname" in env["error"]
+    assert env["error_type"] == "ConnectionError"
 
 
 def test_verify_report_threads_effort_into_verifier(tmp_path, monkeypatch):

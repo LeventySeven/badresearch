@@ -91,6 +91,24 @@ def _is_formatting_line(line: str) -> bool:
     return bool(_CODE_SPAN_ONLY.match(line))
 
 
+# A sentence piece that ENDS with one of these did not actually end a sentence — the
+# trailing "." is an abbreviation / initial ("Aidan N.", "F.D.A.") or an ellipsis
+# ("..."), not a terminator. split_sentences re-joins the spuriously split fragment
+# forward, so the citation-less fragment before the real [N] is not flagged uncited.
+_ABBREVIATIONS = (
+    "dr", "mr", "mrs", "ms", "prof", "sr", "jr", "st", "vs", "etc", "al", "inc",
+    "ltd", "co", "corp", "no", "nos", "fig", "eq", "vol", "pp", "ref", "cf",
+    "approx", "rev", "gen", "sen", "gov", "rep",
+)
+_NON_TERMINAL_END = re.compile(
+    r"(?:\.\.\.|…"                                        # ellipsis  ... or …
+    r"|(?<![A-Za-z])[A-Za-z]\."                                # lone initial: "Aidan N.", "F.D.A."
+    r"|(?<![A-Za-z])(?:" + "|".join(_ABBREVIATIONS) + r")\.)"  # common abbreviation
+    r"$",
+    re.IGNORECASE,
+)
+
+
 def split_sentences(text: str) -> list[str]:
     parts: list[str] = []
     in_code_fence = False
@@ -109,10 +127,20 @@ def split_sentences(text: str) -> list[str]:
         line = _LIST_MARKER.sub("", line, count=1).strip()
         if not line:
             continue
+        line_parts: list[str] = []
         for piece in re.split(r"(?<=[.!?])\s+", line):
             piece = piece.strip()
             if not piece:
                 continue
+            # The "." that split this piece off was NOT a terminator — it was an
+            # abbreviation/initial ("Aidan N.") or an ellipsis ("...") — so re-join
+            # forward rather than leaving a citation-less fragment the uncited-gate
+            # would flag as its own sentence (live-run finding).
+            if line_parts and _NON_TERMINAL_END.search(line_parts[-1]):
+                line_parts[-1] = f"{line_parts[-1]} {piece}"
+            else:
+                line_parts.append(piece)
+        for piece in line_parts:
             # A trailing citation-only fragment (`. [[note-id]]`) is split off the
             # preceding sentence by the terminal period -- re-attach it so the
             # factual sentence keeps its citation (dossier §5.1 "in/adjacent to").
@@ -171,7 +199,8 @@ def no_uncited_claim_gate(report_md: str, anchors: AnchorStore) -> list[Finding]
                 findings.append(Finding(
                     "dangling-cite", "critical", sent,
                     f"Citation {c} resolves to no claim_anchor -- remove or repoint."))
-            elif anchor.verified != 1:
+                continue
+            if anchor.verified != 1:
                 # Severity depends on the recorded verify_score. A span that
                 # explicitly does NOT support the claim (score < PARTIAL_LOW)
                 # blocks ship as critical (G4 gate tightening, round2-citation
@@ -188,6 +217,62 @@ def no_uncited_claim_gate(report_md: str, anchors: AnchorStore) -> list[Finding]
                     rec = (
                         f"Citation {c} was not confirmed by the CitationVerifier -- re-run Tier B or hedge.")
                 findings.append(Finding("unverified-cite", severity, sent, rec))
+            # Citation-drift WARN (non-blocking) — applies to ANY resolved anchor,
+            # incl. the keyless whole-body verified=1 seed the older logic waves through.
+            drift = _citation_drift_finding(sent, c, anchor)
+            if drift is not None:
+                findings.append(drift)
+    return findings
+
+
+_URL_RE = re.compile(r"https?://[^\s<>\"'\)\]\}]+")
+
+
+def _canonical_url(url: str) -> str:
+    """Normalize for comparison: drop trailing punctuation and a trailing slash.
+
+    A URL written mid-prose picks up the sentence's punctuation — `(https://x/y).`
+    — and must still match the `https://x/y` we stored.
+    """
+    return url.rstrip(".,;:!?").rstrip("/")
+
+
+def ungrounded_url_gate(report_md: str, known_urls: set[str]) -> list[Finding]:
+    """Flag `http(s)://` URLs in the PROSE that we never actually fetched.
+
+    The uncited gate validates `[N]` markers against claim_anchors, but a bare
+    URL written into a sentence is unchecked: "according to
+    https://example.com/fake-study [3]" satisfies the uncited gate (the sentence
+    IS cited) while the URL itself is invented. This closes that hole.
+
+    Adapted from Silver's `ungroundedUrlWarning` — fail loud when the grounding
+    mechanism did not engage, instead of trusting a prompt that asks the model
+    not to fabricate. Deterministic and KEYLESS: pure string comparison against
+    the URLs already in the vault, no model call and no network.
+
+    MINOR, deliberately: a URL can legitimately be the SUBJECT of the research
+    ("the breach at https://victim.example/login"), so blocking would punish a
+    report about a website. `uncited_gate_cmd` blocks on critical+major and
+    routes `minor` to its non-blocking `warnings` channel — the same treatment
+    the citation-drift WARNING already gets — so this is VISIBLE to the
+    orchestrator and the polish pass without failing the run. Each distinct URL
+    is reported once, however often it recurs.
+    """
+    known = {_canonical_url(u) for u in known_urls}
+    body = strip_sources_section(report_md)
+    findings: list[Finding] = []
+    seen: set[str] = set()
+    for raw in _URL_RE.findall(body):
+        url = _canonical_url(raw)
+        if not url or url in known or url in seen:
+            continue
+        seen.add(url)
+        findings.append(Finding(
+            "ungrounded-url", "minor", raw,
+            f"URL {raw} appears in the report but no fetched source has it. "
+            f"Either it was fabricated, or the source was never grounded into "
+            f"the vault -- verify it, cite the real source, or cut the URL.",
+        ))
     return findings
 
 
@@ -244,6 +329,41 @@ def claim_quote_overlap(claim: str, quote: str) -> float:
         return 1.0
     q = _content_tokens(quote)
     return len(c & q) / len(c)
+
+
+# ── Citation-drift WARN — phase 1 of "bind, not count" ────────────────────────
+# The keyless gate seeds whole-body anchors verified=1, so today a cite passes as
+# long as the note FILE exists — it never checks the note is ON-TOPIC. This adds a
+# NON-BLOCKING signal: when a factual claim's content tokens barely appear anywhere
+# in the cited note body, the cite is probably pointing at the wrong source (drift).
+# It is `minor` on purpose — it must NOT block ship (a block-flip is phase 2, after
+# located-span binding via build_from_claims + real-run validation of the false-
+# positive rate). Conservative thresholds keep noise low: only egregious drift, on a
+# substantial cited body, for a claim with enough content to judge.
+CITATION_DRIFT_WARN_THRESHOLD = 0.2   # < 20% of the claim's content tokens in the cited note
+_DRIFT_MIN_CLAIM_TOKENS = 4           # skip trivial/short claims
+_DRIFT_MIN_SPAN_CHARS = 200           # only when the cited span is a substantial body
+
+
+def _citation_drift_finding(sentence: str, cite: str, anchor: object) -> Finding | None:
+    """Non-blocking drift signal: the cited note shares almost none of the claim's
+    content tokens — probably the wrong source. Returns a `minor` Finding or None.
+
+    Deliberately does not depend on the CitationVerifier having run, so it catches drift
+    on the keyless whole-body-seed path where every anchor is stamped verified=1."""
+    quote = getattr(anchor, "quoted_support", "") or ""
+    if len(quote) < _DRIFT_MIN_SPAN_CHARS:
+        return None
+    if len(_content_tokens(sentence)) < _DRIFT_MIN_CLAIM_TOKENS:
+        return None
+    if claim_quote_overlap(sentence, quote) >= CITATION_DRIFT_WARN_THRESHOLD:
+        return None
+    pct = int(CITATION_DRIFT_WARN_THRESHOLD * 100)
+    return Finding(
+        "citation-drift", "minor", sentence,
+        f"Citation {cite} note shares <{pct}% of this claim's content words -- likely "
+        f"citation drift (wrong source). Verify the note actually supports the claim, or "
+        f"repoint the cite. (Non-blocking warning.)")
 
 
 # ── Numeric / negation / directional divergence guard (audit 2026-06-01 row 6;

@@ -4,11 +4,10 @@ Read this when a step calls for subagents. Each row: the pipeline stage, the
 prompt file under `references/agents/`, how many run in parallel, and the
 intended model / tool-lock to encode in the spawned agent's instructions.
 
-The routes are `fast` / `ultrafast` / `full` (the query-router emits
-`fast`/`full`; `ultrafast` is forced only by an explicit `--ultrafast` flag or
-an explicit "ultrafast mode" request). The depth columns scale by route — the
-critics fan-out and patcher run on `full` only; `fast`/`ultrafast` use the slim
-single critic.
+The routes are `fast` / `full` (the query-router emits both; the `fast` route
+owns the breadth branch that spawns K parallel researchers for a wider mid-tier
+answer). The depth columns scale by route — the critics fan-out and patcher run
+on `full` only; `fast` uses the slim single critic.
 
 | Stage | Agent prompt file | Parallel | Model | Tool-lock |
 |---|---|---|---|---|
@@ -20,7 +19,7 @@ single critic.
 | Triple draft (step 10) | `draft-orchestrator.md` | 3 | opus | Bash, Read, Write |
 | Synthesize (step 11) | `synthesizer.md` | 1 | opus | Read, Write |
 | Critics (step 12, full) | `dialectic-critic.md`, `depth-critic.md`, `width-critic.md`, `instruction-critic.md`, `assumption-critic.md` | 5 | opus | Bash, Read, Write |
-| Critic (fast / ultrafast slim pass) | `light-critic.md` | 1 | sonnet | Bash, Read, Write |
+| Critic (fast slim pass) | `light-critic.md` | 1 | sonnet | Bash, Read, Write |
 | Patcher (step 14) | `patcher.md` | 1 | sonnet | Read, Edit |
 | Fresh review (step 14.5, full) | `fresh-reviewer.md` | 1 | opus | Read |
 | Polish (step 15) | `polish-auditor.md` | 1 | sonnet | Read, Edit |

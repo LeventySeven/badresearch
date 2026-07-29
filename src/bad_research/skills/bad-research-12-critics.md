@@ -21,7 +21,7 @@ different adversarial angle. Critics complement rather than duplicate.
 
 ---
 
-## Light-tier slim critic (`fast` / `ultrafast` routes)
+## Light-tier slim critic (`fast` route)
 
 On the `fast` route there is no 4-critic fan-out and no patcher
 (step 14). Instead, spawn ONE slim critic — the `bad-research-light-critic` agent — that
@@ -108,6 +108,19 @@ Read these inputs:
      - vault_tag: <vault_tag>
      - decomposition_path: research/prompt-decomposition.json   (instruction-critic only)
    ```
+
+   **SOURCE-QUALITY HONOR CHECK (width + instruction critics).** The width-sweep
+   fetchers and depth-investigators recorded a `source_quality_flags` array on
+   each note (flag, do NOT suppress — the flags survive to here). The width and
+   instruction critics MUST honor them: a source carrying any flag must NOT be
+   presented in the report as established fact without its caveat. Emit a finding
+   whenever such a flagged source is cited bare (as plain fact, with no hedge or
+   corroborating unflagged source).
+   <!-- source-quality-signals -->
+   Flags to honor: `aggregator`, `false_authority`, `nameless_source`,
+   `vague_qualifier`, `unconfirmed`, `marketing_spin`, `speculation`,
+   `cherry_picked`. Flag, don't suppress — surface the bare citation as a finding
+   for the patcher rather than dropping the source.
 
 3. **Wait for all critics.** If one fails, you can proceed with the partial set, but log the absence to the run log — the patch pass is less robust with missing critic coverage. **Do NOT skip the instruction-critic specifically** — it's the only critic measuring prompt adherence, which is the dimension with the widest variance.
 

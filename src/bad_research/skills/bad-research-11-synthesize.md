@@ -3,7 +3,7 @@ name: bad-research-11-synthesize
 user-invocable: false
 description: >
   Step 11 of the Bad Research pipeline (full tier) — plans and outlines the
-  synthesis, then spawns one Read+Write-locked synthesizer that merges the 3
+  synthesis, then spawns one Read+Write-locked synthesizer that merges the 2
   drafts into the final report (research/notes/final_report_<vault_tag>.md).
 ---
 
@@ -11,7 +11,7 @@ description: >
 
 **Tier gate:** SKIP entirely for `light` tier — light tier wrote `research/notes/final_report_<vault_tag>.md` directly in step 10 and proceeds straight to step 15 (polish). For `full`: run as documented below.
 
-**Goal:** turn the 3 angle-specific drafts from step 10 into ONE integrated final report at `research/notes/final_report_<vault_tag>.md`. The orchestrator preps the strategic brief; the synthesizer subagent writes the report in two passes (rough integrated draft, then voice/redundancy/length cleanup).
+**Goal:** turn the 2 angle-specific drafts from step 10 into ONE integrated final report at `research/notes/final_report_<vault_tag>.md`. The orchestrator preps the strategic brief; the synthesizer subagent writes the report in two passes (rough integrated draft, then voice/redundancy/length cleanup). The synthesizer IS the reconciler — it merges the strongest-thesis and steelman-contrarian drafts and commits per-tension.
 
 **Why split orchestrator + synthesizer:** the orchestrator has been running for 30+ minutes and 200K+ tokens of context. Writing a coherent 5000-10000 word report at this point is the highest cognitive load step in the pipeline, and orchestrator context is full of stale subagent dispatch logic. The synthesizer is a fresh Opus session with `[Read, Write]` tool-lock, focused exclusively on producing the final report. This is the same architectural move that made the patcher and polish-auditor reliable.
 
@@ -23,16 +23,16 @@ Read these inputs:
 - `research/scaffold.md` — vault_tag
 - `research/prompt-decomposition.json` — atomic items, required_section_headings, response_format, citation_style
 - `research/temp/reflections.md` — the distilled short-term memory (≤3 claim bullets + `cited_note_ids` per round). **The synthesizer plans from this; cap the distilled context at ≤10K tokens — see Step 11.4b**
-- `research/temp/draft-a.md`, `research/temp/draft-b.md`, `research/temp/draft-c.md` — the 3 angle-specific drafts from step 10
+- `research/temp/draft-a.md`, `research/temp/draft-b.md` — the 2 angle-specific drafts from step 10
 - `research/temp/tensions.md` (full tier) — cross-locus + orphan expert disagreements (the merged step-6 artifact; replaces the former `comparisons.md` + `source-tensions.json`)
 - `research/temp/evidence-digest.md` — load-bearing claims with verbatim quotes
 - `research/query-<vault_tag>.md` — canonical research query (GOSPEL)
 
 ---
 
-## Step 11.1 — Read all 3 drafts in full
+## Step 11.1 — Read both drafts in full
 
-1. **Read each draft in full** from `research/temp/draft-{a,b,c}.md`. Don't skim — actually read. Hold them in context.
+1. **Read each draft in full** from `research/temp/draft-{a,b}.md`. Don't skim — actually read. Hold them in context.
 
 2. **Re-read each sub-orchestrator's report-back** (from your own task results in step 10). Note each draft's:
    - Core thesis
@@ -48,7 +48,7 @@ The synthesizer is tool-locked to `[Read, Write]` — it cannot run Bash to quer
 
 For each substantive contradiction between drafts:
 1. Identify the cited source IDs on both sides
-2. `$HPR note show <id1> <id2> -j` to read the actual source bodies
+2. `bad note show <id1> <id2> -j` to read the actual source bodies
 3. Decide which side is correct. Write the verdict to `research/temp/synthesis-conflicts.md`:
    ```markdown
    ## Conflict 1: <one-line description>
@@ -73,7 +73,7 @@ Write `research/temp/synthesis-plan.md`. This is your strategic brief for the sy
 <the final report's central argument>
 
 ## The 3-7 strongest argumentative beats
-1. **<short name>** — sourced from Draft <A/B/C>. <one sentence on the beat and why it's load-bearing>
+1. **<short name>** — sourced from Draft <A/B>. <one sentence on the beat and why it's load-bearing>
 2. ...
 
 ## Section structure
@@ -81,7 +81,7 @@ Write `research/temp/synthesis-plan.md`. This is your strategic brief for the sy
 
 ## Per-section commitments
 ### Section 1: <heading>
-- Evidence to pull from: Draft A's <topic>, Draft C's <topic>
+- Evidence to pull from: Draft A's <topic>, Draft B's <topic>
 - Argumentative beat: <which committed position to argue here>
 - Cross-locus tension to engage (if any): <name from tensions.md>
 
@@ -200,7 +200,7 @@ Before spawning the synthesizer, verify these files exist with non-trivial conte
 - `research/temp/synthesis-plan.md` — must include the core thesis and at least one per-section commitment
 - `research/temp/synthesis-outline.md` — must include one outline entry per H2 in the planned structure
 - `research/temp/synthesis-conflicts.md` — exists (may say "no conflicts found")
-- `research/temp/draft-{a,b,c}.md` — all three exist
+- `research/temp/draft-{a,b}.md` — both exist
 
 If any are missing or trivial, fix them before proceeding. The synthesizer cannot do strategic planning — it can only execute the plan. Skipping plan/outline produces a thin synthesizer output that doesn't beat the original drafts.
 
@@ -220,7 +220,7 @@ prompt: |
   QUERY FILE: research/query-<vault_tag>.md
 
   PIPELINE POSITION: You are step 11 of the Bad Research pipeline.
-  Step 10 produced 3 angle-specific drafts. The orchestrator wrote a
+  Step 10 produced 2 angle-specific drafts. The orchestrator wrote a
   synthesis plan and outline. You read everything and write the final
   report in TWO passes (pass 1 = rough integrated draft, pass 2 = voice/
   redundancy/length cleanup). You are tool-locked to [Read, Write] — you
@@ -229,7 +229,7 @@ prompt: |
 
   YOUR INPUTS:
   - query_file_path: research/query-<vault_tag>.md
-  - draft_paths: [research/temp/draft-a.md, research/temp/draft-b.md, research/temp/draft-c.md]
+  - draft_paths: [research/temp/draft-a.md, research/temp/draft-b.md]
   - synthesis_plan_path: research/temp/synthesis-plan.md
   - synthesis_outline_path: research/temp/synthesis-outline.md
   - synthesis_conflicts_path: research/temp/synthesis-conflicts.md

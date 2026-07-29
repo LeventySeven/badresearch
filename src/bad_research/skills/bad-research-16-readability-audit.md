@@ -166,6 +166,24 @@ bad uncited-gate --report research/notes/final_report_<vault_tag>.md \
 This is deterministic, so it is a hard pass/fail — never "good enough." The
 non-zero exit code surfaces the block to the orchestrator.
 
+### Step 16.6b — Citation-drift warnings (non-blocking, but ACT on them)
+
+The gate's JSON also carries a `warnings` array (severity `minor`) alongside `uncited`:
+
+```json
+{"uncited": [], "warnings": [{"sentence": "...", "reason": "citation-drift", "severity": "minor"}]}
+```
+
+A `citation-drift` warning means the cited note shares almost none of the claim's content
+words — the cite probably points at the WRONG source (a real note, but not the one that
+supports the claim). This does **not** block ship (that stays deterministic on `uncited`),
+but do not ship it silently: for each drift warning, either **(a) repoint** the cite to the
+note that actually supports the sentence (check the vault via `bad search`), or **(b) hedge**
+the claim to what the cited note does support, or **(c)** if the note genuinely supports it
+and the low overlap is a heavy paraphrase, leave it. Fixing drift here is the cheap,
+non-blocking half of "bind, not count" — the claim ends up bound to a source that *supports*
+it, not merely to a source that *exists*.
+
 ---
 
 ## Step 16.7 — Recitation overlap gate (major finding, NOT a ship-block)
@@ -180,7 +198,7 @@ quality/legal smell, not a correctness failure) — so it never blocks ship.
 First build the note-bodies JSON (note_id → body) the gate needs:
 
 ```bash
-PYTHONIOENCODING=utf-8 $HPR search "" --tag <vault_tag> --json \
+PYTHONIOENCODING=utf-8 bad search "" --tag <vault_tag> --json \
   | python -c "
 import sys, json
 d = json.load(sys.stdin)

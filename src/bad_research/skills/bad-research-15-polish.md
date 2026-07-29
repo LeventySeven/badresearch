@@ -62,7 +62,15 @@ The polish auditor strips:
 - Hygiene leaks (YAML frontmatter, scaffold sections, prompt echoes)
 - Filler phrases ("It is worth noting", "Importantly", etc.)
 - Redundant sentences / paragraphs that restate prior content
-- Run-on sentences and over-long paragraphs (breaks into smaller units via Edit)
+
+**Do NOT reformat structure here** (run-on/paragraph splitting, list/table conversion,
+paragraph rhythm). That is step 16's job, and step 16 owns it on purpose: it uses the
+judgment-safe *recommend-then-apply* mechanism (the recommender proposes, the orchestrator
+decides), because a direct-Edit reformatter "sometimes makes changes that hurt the argument —
+converting a flowing paragraph to a bullet list when the prose was load-bearing." Splitting a
+run-on here via blind Edit is exactly that hazard, and doing it in both steps is duplicate work.
+Polish is hygiene + filler + redundancy (a NEGATIVE net-char cut); structural readability is
+step 16.
 
 ---
 
@@ -119,10 +127,10 @@ If any artifact is missing, the responsible step failed silently. Re-spawn the r
 
 2. **Run the lint gate:**
    ```bash
-   $HPR lint --rule wrapper-report --json
-   $HPR lint --rule locus-coverage --json
-   $HPR lint --rule scaffold-prompt --json
-   $HPR lint --rule patch-surgery --json
+   bad lint --rule wrapper-report --json
+   bad lint --rule locus-coverage --json
+   bad lint --rule scaffold-prompt --json
+   bad lint --rule patch-surgery --json
    ```
 
    If any rule returns `error` severity issues, address them before declaring complete:

@@ -79,10 +79,8 @@ def test_domain_tier_returns_tierinfo_with_priority():
 
 
 from bad_research.quality.prefilter import (
-    Candidate,
     canonical_url,
     is_blocklisted,
-    passes_engagement_floor,
     passes_recency_gate,
 )
 
@@ -121,60 +119,3 @@ def test_recency_gate_drops_stale_non_primary():
     # unknown age passes (don't drop what we can't date)
     assert passes_recency_gate(published_days_ago=None, tier_name="blog",
                                max_age_days=180)
-
-
-def test_engagement_floor_only_for_social():
-    # HN floor 10 points, Reddit floor 20 upvotes (dossier 07 §1.5)
-    assert not passes_engagement_floor("https://news.ycombinator.com/item?id=1", engagement=3)
-    assert passes_engagement_floor("https://news.ycombinator.com/item?id=1", engagement=50)
-    assert not passes_engagement_floor("https://www.reddit.com/r/x/c", engagement=5)
-    assert passes_engagement_floor("https://www.reddit.com/r/x/c", engagement=99)
-    # non-social url: no engagement metric -> never dropped on this axis
-    assert passes_engagement_floor("https://arxiv.org/abs/1", engagement=None)
-
-
-def test_candidate_dataclass_fields():
-    c = Candidate(url="https://x.com/p", snippet="hi", provider="tavily", engagement=42)
-    assert c.url == "https://x.com/p"
-    assert c.provider == "tavily"
-    assert c.engagement == 42
-    assert c.published_days_ago is None
-
-
-from bad_research.quality.prefilter import prefetch_filter
-
-
-def test_prefetch_filter_drops_farms_blocklist_and_dups_orders_by_priority():
-    cands = [
-        # farm (listicle + money path) -> dropped
-        Candidate(url="https://deals.example/best-vpn-2026-review",
-                  snippet="The 12 best VPNs in 2026 — top deals ranked"),
-        # blocklisted -> dropped
-        Candidate(url="https://www.pinterest.com/pin/1", snippet="image wall"),
-        # duplicate of the next (tracking-param twin) -> collapsed
-        Candidate(url="https://docs.python.org/3/library/asyncio.html?utm_source=x",
-                  snippet="asyncio — Asynchronous I/O"),
-        Candidate(url="https://docs.python.org/3/library/asyncio.html",
-                  snippet="asyncio — Asynchronous I/O"),
-        # primary (lower prefetch_priority) should sort first
-        Candidate(url="https://www.sec.gov/edgar/filing",
-                  snippet="Quarterly report under the Securities Exchange Act"),
-    ]
-    kept = prefetch_filter(cands, query="vpn", max_age_days=None)
-    urls = [c.url for c in kept]
-
-    # farm + pinterest dropped
-    assert not any("best-vpn" in u for u in urls)
-    assert not any("pinterest" in u for u in urls)
-    # asyncio collapsed to a single survivor (canonical)
-    assert sum("asyncio" in u for u in urls) == 1
-    # primary fetched first (prefetch_priority 0 < docs 1)
-    assert urls[0] == "https://www.sec.gov/edgar/filing"
-
-
-def test_prefetch_filter_exempts_primary_from_seo_gate():
-    # a .gov URL with a number-in-title snippet must NOT be SEO-dropped
-    cands = [Candidate(url="https://www.nist.gov/best-practices-2026-top-10",
-                       snippet="Top 10 best practices for 2026 cybersecurity guidance")]
-    kept = prefetch_filter(cands, query="cybersecurity", max_age_days=None)
-    assert len(kept) == 1

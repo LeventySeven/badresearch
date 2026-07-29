@@ -61,9 +61,11 @@ def test_base_is_pure_keyless(pp):
 def test_base_carries_keyless_essentials(pp):
     base = _names(pp["project"]["dependencies"])
     # anthropic stays core (the calibration/headless bridge); the keyless content stack.
+    # (rank-bm25 + snowballstemmer were dropped once fetch_clean's highlights path — their
+    # only consumer — was amputated; retrieval ranks via SQLite FTS5's native bm25().)
     assert {
         "anthropic", "httpx", "crawl4ai", "ddgs", "pymupdf", "trafilatura",
-        "beautifulsoup4", "rank-bm25", "feedparser", "typer", "rich", "pydantic",
+        "beautifulsoup4", "feedparser", "typer", "rich", "pydantic",
     } <= base, f"missing keyless essentials; have {sorted(base)}"
 
 

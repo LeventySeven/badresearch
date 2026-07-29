@@ -83,6 +83,36 @@ async def test_chain_depth_zero_follows_nothing():
     assert fetcher.read_urls == [hub]    # no link-following on light tier
 
 
+class _RaisingFetcher(FakeFetcher):
+    """A fetcher that raises on one specific URL (e.g. a 401/timeout), like the
+    real tiered fetcher does on a non-2xx, so we can prove one bad read never
+    aborts the whole gather."""
+
+    def __init__(self, *, raise_url: str):
+        super().__init__()
+        self._raise_url = raise_url
+
+    async def fetch_tiered(self, url, *, tier_max=1, instruction=None, schema=None):
+        if url == self._raise_url:
+            self.read_urls.append(url)
+            raise RuntimeError("HTTP 401 Unauthorized")
+        return await super().fetch_tiered(url, tier_max=tier_max)
+
+
+async def test_one_failing_url_does_not_abort_the_read_wave():
+    # issue #27 / #14: a single URL raising (401/403/timeout) inside the primary
+    # asyncio.gather must NOT propagate and zero the whole run. The offender is
+    # dropped to None; every other candidate is still read and returned.
+    ranked = _ranked(10)
+    bad_url = ranked[3].canonical_url
+    fetcher = _RaisingFetcher(raise_url=bad_url)
+    results = await read_top_k(ranked, fetcher=fetcher, read_top_k=10, concurrency=5,
+                               max_chain_depth=0, max_links_per_hub=0)
+    assert len(results) == 9                        # 10 attempted, 1 raised → dropped
+    assert bad_url in fetcher.read_urls             # it WAS attempted
+    assert all(r is not None for r in results)      # survivors, no None leaks
+
+
 async def test_chained_links_reenter_dedup_no_double_read():
     # A hub links to a URL already in the read set → it is NOT read twice.
     hub = "https://hub.com/p"

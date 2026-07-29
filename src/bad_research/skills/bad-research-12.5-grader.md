@@ -57,7 +57,7 @@ The grader needs the evidence as a JSON list of `{note_id, url, text}`. Convert
 the evidence-digest into that shape (one entry per cited note):
 
 ```bash
-PYTHONIOENCODING=utf-8 $HPR search "" --tag <vault_tag> --json \
+PYTHONIOENCODING=utf-8 bad search "" --tag <vault_tag> --json \
   | python -c "
 import sys, json
 d = json.load(sys.stdin)
@@ -223,10 +223,20 @@ keyless-skip carries `findings: []` and `passed: null`, meaning "the grader neve
 ran." Treating it as `false` would spawn the patcher (step 14) with an empty
 findings list — a wasted round that patches nothing. Do not do that.
 
-**You (the orchestrator) ARE the host judge model.** When you get a keyless-skip,
-pick exactly ONE of these two and record which in `research/temp/orchestrator-notes.md`:
+**On the keyless default, PREFER the clean skip (option 2 below).** Here is why, and
+it is the "no-overkill" call: grading inline means *you* — the same class of model that
+wrote the report — grade your own output. On the keyless path that adds **no independent
+signal** over the work already done this run: the 5 fresh-context adversarial critics
+(step 12, each an independent Opus context) and the fresh-context reviewer (step 14.5, a
+cold read) are the real independent-judgment layer, and the deterministic uncited gate at
+step 16 is the hard ship-block. A self-grade loop on top of those is the author re-reading
+their own draft — belt-and-suspenders that costs up to 3 judge passes + 3 patcher spawns
+for a signal you already have. So **default to option 2 (clean skip)**; reach for option 1
+(grade inline) ONLY when you have a specific reason to believe the 5 critics + fresh-review
+missed a whole axis (e.g. a critic Task failed to return). Record which you chose in
+`research/temp/orchestrator-notes.md`:
 
-1. **Grade inline (preferred when you have the evidence-digest in context).** Read
+1. **Grade inline (the EXCEPTION — only when the critics/fresh-review under-covered).** Read
    `research/temp/evidence-digest.md` and the report, then score the report
    yourself on the 5 axes (factual, completeness, source_quality, efficiency,
    readability) — you are the same class of model `grade-report` would have called.

@@ -27,11 +27,12 @@ tree (2-route consolidation; the former agentic-fast + light bands both map to
 """
 from __future__ import annotations
 
+import re
 from typing import Any, Literal
 
 from bad_research.skills import routing_constants as R  # noqa: N812
 
-Route = Literal["fast", "full", "ultrafast"]
+Route = Literal["fast", "full"]
 QueryShape = Literal["straightforward", "breadth_first", "depth_first"]
 
 # The 3-way Claude Research fan-out-shape taxonomy (research_lead_agent.md:12-29).
@@ -142,18 +143,52 @@ def contestedness_score(decomp: dict[str, Any]) -> float:
     return max(signals)
 
 
+# time_periods entry `type`s that mark a PUBLICATION date, not a period-pinned
+# primary-source window — a bare publication year must not escalate to the full tier.
+_PUBLICATION_PERIOD_TYPES = frozenset(
+    {"publication-year", "publication", "pub-year", "pub_year", "year"}
+)
+_BARE_YEAR = re.compile(r"\d{4}")
+
+
+def _forces_full_period(entry: Any) -> bool:
+    """True when ONE `time_periods` entry is a PERIOD-PINNED primary-source window
+    (Lens D): a fiscal quarter/year, a filing, a dated event, or a multi-year range —
+    the case where the report must fetch the exact filing for that period.
+
+    A BARE single publication year ("2017", or a dict whose `type` marks it a
+    publication year) is NOT period-pinned — it is merely when a source appeared, and
+    must not escalate a trivial lookup to the full ~2.5h pipeline (over-escalation)."""
+    if isinstance(entry, dict):
+        ptype = str(entry.get("type", "")).strip().lower()
+        if ptype and ptype not in _PUBLICATION_PERIOD_TYPES:
+            return True  # an explicit fiscal / regulatory / event type is period-pinned
+        text = str(entry.get("period", "")).strip()
+    else:
+        text = str(entry).strip()
+    # No fiscal/event type → period-pinned iff the text is not a bare 4-digit year
+    # (quarters "Q3 2024", ranges "1993-2023", months "March 2024", filings all qualify).
+    return bool(text) and not _BARE_YEAR.fullmatch(text)
+
+
+def _period_pinned_time_periods(decomp: dict[str, Any]) -> bool:
+    """True when `time_periods` holds >=1 PERIOD-PINNED window (the Lens-D full-tier
+    trigger). A list of only bare publication years does not qualify."""
+    return any(_forces_full_period(e) for e in (decomp.get("time_periods") or []))
+
+
 def _hard_full_triggers(decomp: dict[str, Any]) -> list[str]:
     """The full-tier triggers that are NON-NEGOTIABLE regardless of modality:
-    Lens-D primaries (time_periods), explicit argumentative format, contradiction
-    terms (source tensions), and multi-domain breadth. These are unchanged by
-    B-5 — only the breadth-only (atomic-count) trigger gains the modality gate."""
+    Lens-D primaries (period-pinned time_periods), explicit argumentative format,
+    contradiction terms (source tensions), and multi-domain breadth. Unchanged by
+    B-5 — only the breadth-only (atomic-count) trigger gains the modality gate; and a
+    bare publication year in time_periods no longer counts (over-escalation fix)."""
     fmt = decomp.get("response_format", "structured")
-    time_periods = decomp.get("time_periods") or []
     contradiction = decomp.get("contradiction_terms") or []
     domains = decomp.get("domains") or []
     reasons: list[str] = []
-    if time_periods:
-        reasons.append("time_periods present (Lens D primaries)")
+    if _period_pinned_time_periods(decomp):
+        reasons.append("period-pinned time_periods present (Lens D primaries)")
     if fmt == "argumentative":
         reasons.append("argumentative response_format (dialectics)")
     if contradiction:
@@ -206,15 +241,15 @@ def _full_triggers(decomp: dict[str, Any]) -> list[str]:
 
 def classify_route(decomp: dict[str, Any]) -> Route:
     fmt = decomp.get("response_format", "structured")
-    time_periods = decomp.get("time_periods") or []
     contradiction = decomp.get("contradiction_terms") or []
     domains = decomp.get("domains") or []
     multi_domain = len(domains) >= 3
 
-    # FULL: explicit pipeline_tier floor, time_periods, argumentative, contradiction,
-    # multi-domain, or a breadth count that survives the modality gate. UNCHANGED.
+    # FULL: explicit pipeline_tier floor, PERIOD-PINNED time_periods, argumentative,
+    # contradiction, multi-domain, or a breadth count that survives the modality gate.
+    # A bare publication year in time_periods no longer forces full (over-escalation fix).
     if (_pipeline_tier_floor_full(decomp)
-            or time_periods or fmt == "argumentative" or contradiction
+            or _period_pinned_time_periods(decomp) or fmt == "argumentative" or contradiction
             or multi_domain or _breadth_forces_full(decomp)):
         return "full"
 
@@ -357,17 +392,6 @@ def shape_reason(decomp: dict[str, Any]) -> str:
                 f"K={k} parallel investigators, importance-ordered")
     return (f"straightforward: {n} atomic item(s), single focused investigation "
             "(1 investigator)")
-
-
-def shape_fanout(decomp: dict[str, Any]) -> dict[str, Any]:
-    """Resolve SHAPE_FANOUT for this decomposition: the arrangement + the concrete
-    investigator count K. For breadth_first, K = min(n_independent_subq, cap)."""
-    shape = classify_query_shape(decomp)
-    spec = dict(R.SHAPE_FANOUT[shape])
-    if shape == "breadth_first":
-        spec["k"] = min(_n_independent_subq(decomp), R.SHAPE_BREADTH_K_CAP)
-    spec["shape"] = shape
-    return spec
 
 
 def effort_overrides(effort: str | None) -> dict[str, Any] | None:

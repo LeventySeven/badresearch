@@ -19,6 +19,29 @@ def test_collapses_url_variants_to_one_candidate():
     assert len(cands) == 1
 
 
+def test_collapses_tracking_param_twins_to_one_candidate():
+    # Distinct BODIES so only URL-canonical collapse (tracking-param stripping)
+    # can merge them — content-hash dedup cannot (bodies differ).
+    hits = [
+        _hit("https://a.com/p?utm_source=x", content="AAA " * 60),
+        _hit("https://a.com/p?utm_source=y", content="BBB " * 60),
+        _hit("https://a.com/p", content="CCC " * 60),
+    ]
+    cands = dedup(hits)
+    assert len(cands) == 1
+
+
+def test_collapses_amp_and_mobile_twins_to_one_candidate():
+    hits = [
+        _hit("https://a.com/story", content="AAA " * 60),
+        _hit("https://amp.a.com/story", content="BBB " * 60),   # amp. subdomain
+        _hit("https://m.a.com/story", content="CCC " * 60),     # m. subdomain
+        _hit("https://a.com/story/amp", content="DDD " * 60),   # /amp path segment
+    ]
+    cands = dedup(hits)
+    assert len(cands) == 1
+
+
 def test_collapses_identical_content_under_different_urls():
     same = "the exact same syndicated wire story " * 20
     hits = [
