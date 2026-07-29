@@ -35,6 +35,15 @@ def test_light_tier_constants_match_dossier():
     assert cfg.top_chunks == 8           # lower bound of 8-15
 
 
+def test_diversity_guards_are_identical_across_tiers():
+    # The Stage C.5 guards are about the SHAPE of the pool, not its width, so a
+    # light run must be as spread across hosts/lanes as a full one (issue #40).
+    for mode in ("light", "full"):
+        cfg = FunnelConfig.for_mode(mode)
+        assert cfg.max_per_domain == 3       # netloc port of the 3-per-author cap
+        assert cfg.min_per_provider == 2     # reserved head slots per search lane
+
+
 def test_read_top_k_never_exceeds_ceiling():
     # The ceiling is global and load-bearing (degrades past 80, hyperresearch).
     for mode in ("light", "full"):

@@ -84,6 +84,82 @@ async def test_rank_runs_before_read():
     assert "https://sec.gov/top" in fetcher.read_urls
 
 
+# ---- the pool cap runs AFTER the rank (issue #40) --------------------------
+
+class _LateAuthorityProvider(FakeProvider):
+    """Emits 5 distinct low-value hits per query, and the ONE authoritative hit
+    only on its LAST query — i.e. last in raw fan-out order."""
+
+    def __init__(self, name, *, n_queries):
+        super().__init__(name)
+        self._n_queries = n_queries
+        self._seen = 0
+
+    async def search_ex(self, q):
+        from tests.test_funnel.conftest import FakeWebResult
+
+        self.calls.append(q.query)
+        self._seen += 1
+        out = []
+        if self._seen >= self._n_queries:
+            out.append(FakeWebResult(url="https://sec.gov/top", title="SEC filing data",
+                                     content="authoritative primary filing " * 40,
+                                     serp_rank=1, serp_provider=self.name))
+        for i in range(q.max_results):
+            n = self._seen * 100 + i
+            out.append(FakeWebResult(
+                url=f"https://filler{n}.example/p", title="blog",
+                content=f"filler {n} body " * 40,
+                serp_rank=len(out) + 1, serp_provider=self.name))
+        return out
+
+
+async def test_pool_cap_runs_after_the_rank_not_in_fanout_order():
+    # The defect: `candidates[:candidate_pool]` executed BEFORE rank_candidates,
+    # so the pool was the FIRST N hits the fan-out happened to return. A
+    # top-ranked source emitted by the last query was discarded unscored.
+    fetcher = FakeFetcher()
+    provider = _LateAuthorityProvider("sonar", n_queries=12)  # light m_queries=12
+    deps = _deps(providers=[provider], fetcher=fetcher)
+    stats: dict = {}
+    await gather("financial data", mode="light", deps=deps, stats=stats)
+    assert "https://sec.gov/top" in fetcher.read_urls
+    # ...and it was ranked against the WHOLE post-gate pool, not a prefix of it.
+    assert stats["n_candidates_prepool"] > stats["n_candidates"]
+    assert stats["n_candidates"] == 20                 # light candidate_pool
+
+
+class _FloodProvider(FakeProvider):
+    """4 of every 5 hits come from ONE domain — the 'one loud source owns the
+    pool' shape the diversity guard exists to break."""
+
+    async def search_ex(self, q):
+        from tests.test_funnel.conftest import FakeWebResult
+
+        self.calls.append(q.query)
+        slug = q.query.replace(" ", "_")
+        out = []
+        for i in range(4):
+            out.append(FakeWebResult(
+                url=f"https://flood.example/{slug}/{i}", title="flood",
+                content=f"flood {slug} {i} body " * 40,
+                serp_rank=i + 1, serp_provider=self.name))
+        out.append(FakeWebResult(
+            url=f"https://other-{slug}.example/p", title="report",
+            content=f"other {slug} body " * 40,
+            serp_rank=5, serp_provider=self.name))
+        return out
+
+
+async def test_one_domain_cannot_own_the_read_budget():
+    fetcher = FakeFetcher()
+    deps = _deps(providers=[_FloodProvider("sonar")], fetcher=fetcher)
+    await gather("topic", mode="light", deps=deps)
+    flood = [u for u in fetcher.read_urls if "flood.example" in u]
+    assert len(flood) <= 3                       # cfg.max_per_domain
+    assert len(fetcher.read_urls) > len(flood)   # the rest of the budget is spread
+
+
 async def test_light_mode_smaller_pool_and_no_chain():
     fetcher = FakeFetcher(hub_links={"x": ["y"]})
     deps = _deps(fetcher=fetcher)

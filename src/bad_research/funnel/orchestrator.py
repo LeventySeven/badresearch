@@ -19,6 +19,7 @@ from typing import Any, Literal
 
 from bad_research.funnel.config import FunnelConfig
 from bad_research.funnel.dedup import dedup
+from bad_research.funnel.diversity import cap_per_domain, diversify_pool
 from bad_research.funnel.fanout import _clamp_concurrency, fan_out, plan_queries
 from bad_research.funnel.filter import filter_and_store
 from bad_research.funnel.rank import rank_candidates
@@ -190,10 +191,27 @@ async def gather(
     # never fills the pool or spends one of the ≤80 reads.
     candidates = prefetch_garbage_gate(candidates, query)
 
-    candidates = candidates[: cfg.candidate_pool]   # cap the pool
-
-    # ── Stage C — RANK un-read candidates (RRF k=60 + utility) ─────────────
+    # ── Stage C — RANK the WHOLE post-gate pool (RRF k=60 + utility) ───────
+    # The pool cap USED to run HERE, one line above the rank, so a full-mode
+    # fan-out (up to 100 queries x 4 providers x 10 hits) was truncated to 120
+    # in raw fan-out order — first-seen, not best — and ~97% of the corpus was
+    # discarded before anything had scored it (issue #40). Ranking is pure and
+    # has no I/O (see rank_candidates' docstring), so scoring thousands instead
+    # of 120 costs microseconds and the cap below now cuts the WORST candidates
+    # instead of the last-arrived ones.
     ranked = rank_candidates(candidates, query, rrf_k=cfg.rrf_k)
+
+    # ── Stage C.5 — DIVERSITY, then cap the pool ───────────────────────────
+    # Both guards only re-order; `diversify_pool` is the single cut. Order
+    # matters: spread the domains first, so the per-provider reservation is
+    # measured against the already-spread list.
+    ranked = cap_per_domain(ranked, max_per_domain=cfg.max_per_domain)
+    ranked = diversify_pool(ranked, limit=cfg.candidate_pool,
+                            min_per_provider=cfg.min_per_provider)
+    if stats is not None:
+        # The width actually used, so a run's funnel shape is auditable.
+        stats["n_candidates_prepool"] = len(candidates)
+        stats["n_candidates"] = len(ranked)
 
     # ── Stage D — READ top-K (≤80 ceiling, batched, chained-crawl) ─────────
     pages = await read_top_k(

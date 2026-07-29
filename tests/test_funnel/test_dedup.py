@@ -66,6 +66,52 @@ def test_candidate_accumulates_all_provider_ranks():
     assert c.provider_ranks == {"sonar": 2, "exa": 5}
 
 
+# ---- multi-QUERY consensus survives dedup (issue #40) ----------------------
+
+def test_repeat_sightings_accumulate_into_the_rank_lists():
+    # The SAME url surfaced at rank 1 by three separate fan-out queries. The flat
+    # provider_ranks keeps one entry (it is the DISTINCT-provider count rank.py's
+    # Novelty dimension reads); the rank LISTS keep every sighting, which is what
+    # RRF actually fuses.
+    hits = [_hit("https://a.com/p", rank=1, provider="sonar") for _ in range(3)]
+    c = dedup(hits)[0]
+    assert c.provider_ranks == {"sonar": 1}
+    assert c.provider_rank_lists == {"sonar": [1, 1, 1]}
+
+
+def test_rank_lists_keep_every_provider_and_every_position():
+    hits = [
+        _hit("https://a.com/p", rank=1, provider="sonar"),
+        _hit("https://a.com/p", rank=4, provider="sonar"),
+        _hit("https://a.com/p", rank=2, provider="exa"),
+    ]
+    c = dedup(hits)[0]
+    assert c.provider_rank_lists == {"sonar": [1, 4], "exa": [2]}
+    # Novelty still sees exactly one entry per DISTINCT provider.
+    assert c.provider_ranks == {"sonar": 1, "exa": 2}
+    assert len(c.provider_ranks) == 2
+
+
+def test_unranked_sightings_stay_out_of_the_rank_lists():
+    # rank 0 = "unknown position"; rrf_fuse already refuses to score it, so it
+    # must not sneak in as a consensus vote either.
+    hits = [_hit("https://a.com/p", rank=0, provider="sonar") for _ in range(5)]
+    c = dedup(hits)[0]
+    assert c.provider_ranks == {"sonar": 0}
+    assert c.provider_rank_lists == {}
+
+
+def test_content_mirror_merges_its_rank_lists_onto_the_survivor():
+    same = "the exact same syndicated wire story " * 20
+    hits = [
+        _hit("https://ap.com/story", content=same, rank=1, provider="sonar"),
+        _hit("https://mirror.com/story", content=same, rank=3, provider="exa"),
+    ]
+    cands = dedup(hits)
+    assert len(cands) == 1
+    assert cands[0].provider_rank_lists == {"sonar": [1], "exa": [3]}
+
+
 def test_keeps_first_seen_webresult_as_representative():
     hits = [_hit("https://a.com/p", title="first"),
             _hit("https://a.com/p/", title="second")]

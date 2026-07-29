@@ -69,6 +69,21 @@ def test_strips_mobile_subdomain():
     assert canonicalize_url("https://m.a.com/p") == canonicalize_url("https://a.com/p")
 
 
+def test_strips_old_subdomain():
+    # old.reddit.com serves the SAME thread as reddit.com (issue #40).
+    assert canonicalize_url("https://old.reddit.com/r/x") == canonicalize_url(
+        "https://reddit.com/r/x")
+
+
+def test_keeps_a_registrable_domain_that_merely_starts_with_a_prefix():
+    # `m.com` / `old.com` are ordinary domains, not prefixed hosts — stripping
+    # the prefix would collapse them onto the bare TLD and collide with
+    # every other *.com.
+    assert canonicalize_url("https://m.com/p") == "https://m.com/p"
+    assert canonicalize_url("https://old.com/p") == "https://old.com/p"
+    assert canonicalize_url("https://amp.com/p") == "https://amp.com/p"
+
+
 def test_strips_trailing_amp_path_segment():
     assert canonicalize_url("https://a.com/story/amp") == canonicalize_url("https://a.com/story")
 

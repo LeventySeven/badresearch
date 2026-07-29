@@ -3,7 +3,12 @@ from __future__ import annotations
 from datetime import date
 
 from bad_research.funnel.dedup import Candidate, dedup
-from bad_research.funnel.rank import rank_candidates, rrf_fuse, utility_score
+from bad_research.funnel.rank import (
+    rank_candidates,
+    rrf_fuse,
+    rrf_fuse_lists,
+    utility_score,
+)
 from tests.test_funnel.conftest import FakeWebResult
 
 
@@ -25,6 +30,48 @@ def test_rrf_single_provider():
 def test_rrf_ignores_zero_ranks():
     # rank 0 means 'unknown position' — don't let it dominate (would be 1/60)
     assert rrf_fuse({"sonar": 0}, k=60) == 0.0
+
+
+# ---- RRF over every (query, provider) list (issue #40) ---------------------
+
+def test_rrf_fuse_lists_sums_every_sighting():
+    # 3 queries surfaced it at rank 1 on sonar, one at rank 5 on exa.
+    score = rrf_fuse_lists({"sonar": [1, 1, 1], "exa": [5]}, k=60)
+    assert abs(score - (3 / 61 + 1 / 65)) < 1e-9
+
+
+def test_rrf_fuse_lists_ignores_zero_ranks_like_rrf_fuse():
+    assert rrf_fuse_lists({"sonar": [0, 0]}, k=60) == 0.0
+
+
+def test_rrf_fuse_lists_empty_is_zero():
+    assert rrf_fuse_lists({}, k=60) == 0.0
+
+
+def test_multi_query_consensus_outranks_a_single_higher_authority_sighting():
+    # THE issue-#40 defect: dedup kept one (provider, rank) pair, so a URL that
+    # 40 separate queries surfaced at rank 1 fused to exactly 1/61 — identical to
+    # a URL one query surfaced once — and any utility tiebreak decided the pool.
+    # Here the rival is a sec.gov page, which wins the utility tiebreak outright,
+    # so ONLY the restored consensus signal can put the corroborated URL first.
+    hits = [FakeWebResult(url="https://consensus.example/p", title="p",
+                          content="AAA " * 60, serp_rank=1, serp_provider="sonar")
+            for _ in range(40)]
+    hits.append(FakeWebResult(url="https://sec.gov/p", title="p",
+                              content="BBB " * 60, serp_rank=1, serp_provider="sonar"))
+    ranked = rank_candidates(dedup(hits), query="topic", rrf_k=60)
+    assert ranked[0].url == "https://consensus.example/p"
+    assert ranked[1].url == "https://sec.gov/p"
+
+
+def test_rank_still_falls_back_to_the_flat_provider_ranks():
+    # Hand-built Candidates (and any caller that only fills the flat dict) must
+    # score exactly as before — no rank lists, no behaviour change.
+    cands = [_cand("https://low.blog/x", {"searxng": 9}, domain_title="opinion"),
+             _cand("https://sec.gov/x", {"sonar": 1, "exa": 2}, domain_title="SEC filing data")]
+    assert all(not c.provider_rank_lists for c in cands)
+    ranked = rank_candidates(cands, query="financial data", rrf_k=60)
+    assert ranked[0].url == "https://sec.gov/x"
 
 
 def test_utility_score_bounded_0_to_18():

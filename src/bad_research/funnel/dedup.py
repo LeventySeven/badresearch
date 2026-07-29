@@ -5,7 +5,8 @@ collapse uses sha256(content)[:16] (matches core/fetcher.py:137) to catch
 mirror/syndicated pages with different URLs but identical bodies.
 
 Output: list[Candidate] — the un-read candidate pool. Each Candidate carries
-the SERP signals (provider_ranks) the rank stage (Stage C) fuses via RRF.
+the SERP signals (provider_ranks + provider_rank_lists) the rank stage (Stage C)
+fuses via RRF.
 """
 
 from __future__ import annotations
@@ -25,7 +26,14 @@ class Candidate:
 
     canonical_url: str
     result: Any                          # the representative WebResult (un-read SERP shape)
-    provider_ranks: dict[str, int] = field(default_factory=dict)  # provider -> 1-based rank
+    provider_ranks: dict[str, int] = field(default_factory=dict)  # provider -> FIRST 1-based rank
+    # provider -> EVERY 1-based rank this URL was seen at, across all queries.
+    # `provider_ranks` keeps one entry per DISTINCT provider (rank.py's Novelty
+    # dimension counts it); this keeps the full multiset so Stage C can fuse
+    # ACROSS THE QUERY PLAN, not just across providers. A URL that every one of
+    # the ~100 fan-out queries surfaced at rank 1 must out-score a URL one query
+    # surfaced once — before this field they scored identically (issue #40).
+    provider_rank_lists: dict[str, list[int]] = field(default_factory=dict)
     # Age in days since publication, computed at build from result.metadata['year']
     # and/or the content layer's published_date. None ⇒ undatable (gate passes it,
     # rank scores it neutral). Read by quality/prefilter.py::passes_recency_gate.
@@ -78,9 +86,14 @@ def dedup(hits: list[Any], *, today: date | datetime | None = None) -> list[Cand
             existing = by_url[cu]
             if prov not in existing.provider_ranks:
                 existing.provider_ranks[prov] = rank
+            # ...but NEVER discard the repeat: every (query, provider) SERP is its
+            # own ranked list, so a repeat sighting is real fusion evidence.
+            if rank > 0:
+                existing.provider_rank_lists.setdefault(prov, []).append(rank)
         else:
             by_url[cu] = Candidate(canonical_url=cu, result=h,
-                                   provider_ranks={prov: rank} if rank else {prov: 0})
+                                   provider_ranks={prov: rank} if rank else {prov: 0},
+                                   provider_rank_lists={prov: [rank]} if rank > 0 else {})
 
     # Stage 2 — content-hash collapse across distinct URLs.
     by_hash: dict[str, Candidate] = {}
@@ -97,6 +110,10 @@ def dedup(hits: list[Any], *, today: date | datetime | None = None) -> list[Cand
             survivor = by_hash[ch]
             for p, r in cand.provider_ranks.items():
                 survivor.provider_ranks.setdefault(p, r)
+            # The mirror occupied its own slot in every list that surfaced it —
+            # that is the same page being corroborated, so the ranks accumulate.
+            for p, rl in cand.provider_rank_lists.items():
+                survivor.provider_rank_lists.setdefault(p, []).extend(rl)
         else:
             by_hash[ch] = cand
             out.append(cand)
