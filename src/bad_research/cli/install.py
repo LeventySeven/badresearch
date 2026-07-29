@@ -4,7 +4,10 @@ Default target is USER-GLOBAL (`~/.claude/`): the entry skill + agents +
 PreToolUse hook land once and `/bad-research` is available in every Claude Code
 session. `--project` opts into project-local `.claude/` + `./research/` and
 ships ALL step skills. `--steps-only` is the lazy per-project step-skill install
-the entry-skill bootstrap fires on first `/bad-research` invocation.
+the entry-skill bootstrap fires on first `/bad-research` invocation, and
+`--prune-steps` is its inverse — it removes those per-project step-skill dirs
+again (leaving the entry skill and any unrelated skill in the same directory
+untouched).
 """
 
 from __future__ import annotations
@@ -28,6 +31,14 @@ def install(
     steps_only: bool = typer.Option(
         False, "--steps-only", help="(internal) lazy step-skill install into a project .claude/.",
     ),
+    prune_steps: bool = typer.Option(
+        False, "--prune-steps",
+        help=(
+            "Remove the per-project bad-research step-skill dirs from "
+            "<path>/.claude/skills/ (leaves the entry skill and unrelated "
+            "skills alone). Takes precedence over --steps-only."
+        ),
+    ),
     codex: bool = typer.Option(
         False, "--codex",
         help="Install into Codex (~/.codex/skills/) instead of Claude Code (~/.claude/).",
@@ -37,6 +48,7 @@ def install(
     from bad_research.core.agent_docs import _resolve_executable
     from bad_research.core.hooks import (
         _install_bad_research_step_skills,
+        _prune_project_step_skills,
         install_global_hooks,
         install_hooks,
     )
@@ -48,6 +60,15 @@ def install(
 
         actions = install_codex(Path.home(), hpr_path=hpr)
         msg = "Ready. bad-research available as a Codex skill (~/.codex/skills/bad-research/)."
+    elif prune_steps:
+        root = Path(path).resolve()
+        result = _prune_project_step_skills(root)
+        actions = [result] if result else []
+        msg = (
+            f"Project step skills removed from {root / '.claude' / 'skills'}."
+            if result
+            else "No bad-research step skills to prune."
+        )
     elif steps_only:
         root = Path(path).resolve()
         result = _install_bad_research_step_skills(root)
