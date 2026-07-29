@@ -175,6 +175,29 @@ Before you invoke any step skill, do this:
 
    **CLI path.** Use `bad` for every command below. If a bare `bad …` call fails with "command not found" / exit 127 (common on a `uv tool` / global install where the binary is installed but not on PATH), use the absolute CLI path documented at the top of this project's CLAUDE.md (`**CLI path: `…`**`) for every command in this skill — the installer resolves and templates it there. Only if no such path exists, tell the user to run `pip install bad-research`. If both files already exist, both commands no-op cheaply — safe to run unconditionally.
 
+   - **Capability probe (run AFTER the vault/step-skills check, BEFORE step 1).** The two checks above only catch "binary not on PATH". They do NOT catch a **present-but-slim** build — a binary that resolves and runs but ships an older/reduced command surface (a `uv tool` install that wins PATH while exposing only `search` + `note show`, for instance, missing `fetch`/`assets`/`note new`/`note update`). Under `set -e`, the first downstream step that shells out to a missing subcommand HARD-FAILS the whole run at the first source. Detect the surface up front and record it. **Probe ONLY commands that exist on a current build** — probing an invented subcommand name records a permanent `false` and pins every run to the degraded path (that is the phantom-command class of bug this repo already paid for in issues #11/#16). The real surface is in `src/bad_research/cli/__init__.py`; `fetch`, `assets`, `note new`, `note update` and `doctor` are all part of it:
+
+     ```bash
+     bad doctor -j >/dev/null 2>&1 && echo doctor_ok || echo doctor_missing   # exists on EVERY build — confirms the binary runs
+     bad fetch --help  >/dev/null 2>&1 && echo fetch_ok  || echo fetch_missing
+     bad assets --help >/dev/null 2>&1 && echo assets_ok || echo assets_missing
+     ```
+
+     (Every probe line is `… >/dev/null 2>&1 && … || …` on purpose: a bare `bad doctor -j` is an unguarded command that aborts the whole probe under `set -e` on exactly the slim build it is meant to detect.)
+
+     Write the result to `research/cli-caps.json`, **overwriting any existing file unconditionally** (a stale snapshot from a previous run must never decide this run's path), so every downstream step + subagent can read it without re-probing:
+
+     ```json
+     { "fetch": true, "assets": true, "note_new": true, "note_update": true }
+     ```
+
+     Set each field from its `--help` exit (`note_new`/`note_update` from `bad note new --help` / `bad note update --help`). **The degrade decision is gated on `fetch` ALONE** — it is the only capability the native fallback replaces:
+
+     - `fetch: true` → the run proceeds on the full CLI path exactly as before — no behavior change. This is the normal case on a current build.
+     - `fetch: false` → **DEGRADE to the file-based fallback path — never abort.** Native `WebFetch`/`WebSearch` for retrieval and direct note writes (a `Write` to `research/notes/<id>.md` carrying the engine frontmatter, which `bad search`'s auto-sync then indexes) in place of `bad fetch` / `bad note new` / `bad note update`. **On this path the engine's SSRF choke point (`assert_url_safe`, run before the first byte of every `bad fetch`) is NOT in the loop**, so every agent doing a native fetch must apply the host/redirect refusal rules itself (see *Capability detection* in the fetcher agent prompt), and the run must say so in its report so a degraded report is identifiable.
+
+     The other fields are per-command niceties, not path switches: `assets: false` means "no saved figure PNG — ground the text layer and continue"; `note_new`/`note_update: false` mean "`Write`/`Edit` the note file instead". None of them force the fallback path on their own. Tell downstream steps to **read `research/cli-caps.json`** and branch on it; each step/agent that shells out to one of these subcommands gates on this file (or re-probes `bad <cmd> --help` itself) and takes its native fallback when that one capability is absent.
+
 0.5. **Archive any prior run's artifacts.** Run `bad archive-run --json`. If a previous `/hyperresearch` session left a scaffold, loci.json, comparisons.md, critic-findings, patch-log, polish-log, prompt-decomposition, or any `research/temp/*` scratch, this moves the whole set into `research/runs/archive-<prev-tag>-<UTC-timestamp>/` so the new run starts from a clean slate without losing the prior run's audit trail. Final reports (`research/notes/final_report_<tag>.md`) and canonical query files (`research/query-<tag>.md`) are already namespaced and stay in place. The command no-ops cheaply on a fresh vault — safe to run unconditionally. **Caveat:** this protects sequential runs only. Two `/hyperresearch` invocations that overlap in time still race on the new files they both write; if you need true parallel runs, namespace per-run artifacts under `research/runs/<vault_tag>/` instead.
 
 1. **Resolve the canonical research query.** Order of precedence:
@@ -250,6 +273,16 @@ step skills per the mode table above. For `fast`, invoke
 `Skill(skill: "bad-research-fast")` then run the slim citation-grounding pass and
 slim critic before step 15 polish + step 16 gate. After each step's exit criterion is met, mark its todo complete and move to
 the next.
+
+### Engine defects hit during a run
+
+When you hit an engine/CLI defect mid-run — a missing or broken subcommand, a crash, a
+slim-build capability gap — degrade per the capability rules above and **report it to the
+user in your final message**: the build, the exact failing command, and what the run did
+instead. **Do NOT file a GitHub issue, open a PR, or make any other outbound write on
+your own** — the user asked for research, not for a bug report to be published under
+their name. If the user explicitly asks you to file it, the maintainer-side process
+lives in the README, not in this prompt.
 
 ---
 
