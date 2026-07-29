@@ -1,5 +1,6 @@
-"""Keyless browse subsystem: AgentBrowserProvider (local agent-browser CLI), the AQL parser
-+ resolver, the LLM extractor, and the 4-rung keyless ladder."""
+"""Keyless browse subsystem: SilverProvider (local silver CLI, the default) and
+AgentBrowserProvider (local agent-browser CLI, the fallback), the AQL parser + resolver,
+the LLM extractor, and the 4-rung keyless ladder."""
 
 from __future__ import annotations
 
@@ -27,12 +28,14 @@ from bad_research.browse.base import (
     get_extract_provider,
 )
 from bad_research.browse.extract_llm import LLMExtractProvider
-from bad_research.browse.ladder import fetch_tiered
+from bad_research.browse.ladder import BrowseEngine, TieredFetcher, fetch_tiered
+from bad_research.browse.silver import SilverProvider
 
 __all__ = [
     "AGENT_LOOP_SYSTEM_PROMPT",
     "AgentBrowserProvider",
     "AqlExtractProvider",
+    "BrowseEngine",
     "BrowseProvider",
     "BrowseStep",
     "ContainerListNode",
@@ -42,7 +45,9 @@ __all__ = [
     "IdNode",
     "LLMExtractProvider",
     "QuerySyntaxError",
+    "SilverProvider",
     "Snapshot",
+    "TieredFetcher",
     "fetch_tiered",
     "get_browse_provider",
     "get_extract_provider",

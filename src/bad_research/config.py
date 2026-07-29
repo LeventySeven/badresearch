@@ -51,7 +51,10 @@ class BadResearchConfig:
     reranker: Literal["host", "local", "light", "zerank2", "none"] = "host"
     neural_recall: bool = False                            # opt-in local bi-encoder lane ([local])
     searxng_endpoint: str = "http://localhost:8080"        # self-host T1; no key
-    browse_engine: Literal["lightpanda", "chrome"] = "lightpanda"  # rung-2.5 default (dossier 14)
+    # rung-2.5/3 backend: "silver" (default — DNS-resolved entry gate + read-only unless
+    # `--enable-actions`; it does NOT gate intermediate redirect hops, see browse/ladder.py)
+    # or the two agent-browser engines kept as a fallback for machines without silver.
+    browse_engine: Literal["silver", "lightpanda", "chrome"] = "silver"
     effort: Literal["minimal", "low", "medium", "high"] = "medium"  # KR-6 effort continuum
     max_tokens: int | None = None                          # KR-6 per-run ceiling (opt-in)
     # Retrieval knobs (Plan 02; default to the frozen constants). The engine
@@ -107,6 +110,8 @@ class BadResearchConfig:
             cfg.neural_recall = _parse_bool(v)
         if (v := os.environ.get("BAD_RESEARCH_SEARXNG_ENDPOINT")) is not None:
             cfg.searxng_endpoint = v
+        if (v := os.environ.get("BAD_RESEARCH_BROWSE_ENGINE")) is not None:
+            cfg.browse_engine = v  # type: ignore[assignment]  # the one-line rollback switch
         if (v := os.environ.get("BAD_RESEARCH_EFFORT")) is not None:
             cfg.effort = v  # type: ignore[assignment]
         if (v := os.environ.get("BAD_RESEARCH_MAX_TOKENS")) is not None:

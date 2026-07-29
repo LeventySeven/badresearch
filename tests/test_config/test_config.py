@@ -21,7 +21,7 @@ def test_defaults_match_interfaces() -> None:
     assert cfg.reranker == "host"
     assert cfg.neural_recall is False
     assert cfg.searxng_endpoint == "http://localhost:8080"
-    assert cfg.browse_engine == "lightpanda"
+    assert cfg.browse_engine == "silver"
     assert cfg.effort == "medium"
     assert cfg.max_tokens is None
     assert cfg.budget_usd is None

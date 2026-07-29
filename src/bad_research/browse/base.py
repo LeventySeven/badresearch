@@ -49,6 +49,7 @@ class ExtractProvider(Protocol):
 
 
 from bad_research.browse.agent_browser import is_available  # re-export for test monkeypatch
+from bad_research.browse.silver import is_available as silver_is_available  # ditto
 
 
 def get_extract_provider(name: str | None = None) -> ExtractProvider | None:
@@ -65,9 +66,19 @@ def get_extract_provider(name: str | None = None) -> ExtractProvider | None:
 
 
 def get_browse_provider(name: str | None = None) -> BrowseProvider | None:
-    """Resolve a BrowseProvider. Default = the keyless AgentBrowserProvider iff the
-    agent-browser CLI is installed; else None (the ladder degrades to crawl4ai/httpx).
-    No env var, no API key — agent-browser drives a LOCAL Chrome over CDP (dossier 14 §1)."""
+    """Resolve a BrowseProvider. Both backends are keyless local-Chromium drivers with
+    the same @eN grounding contract; the default prefers silver and falls back to
+    agent-browser, so a machine with only one of the two still gets a browse rung.
+
+    Returns None when the requested CLI (or, for the default, neither CLI) is installed —
+    the ladder then degrades to crawl4ai/httpx. No env var, no API key.
+    """
+    if name in (None, "silver"):
+        if silver_is_available():
+            from bad_research.browse.silver import SilverProvider
+            return SilverProvider()
+        if name == "silver":
+            return None  # explicitly asked for silver and it is not installed
     if name in (None, "agent-browser"):
         if not is_available():
             return None

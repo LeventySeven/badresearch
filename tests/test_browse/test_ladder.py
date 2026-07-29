@@ -62,17 +62,35 @@ def test_tier_max_caps_at_rung1() -> None:
     t1.fetch.assert_not_called()
 
 
-def test_bot_wall_escalates_to_agent_browser() -> None:
+def test_bot_wall_escalates_to_browse_rung() -> None:
     t0 = MagicMock()
     t0.fetch.return_value = _empty()
     t1 = MagicMock()
     t1.fetch.return_value = _bot()
     ab = MagicMock()
-    ab.browse.return_value = make_result("Recovered behind cloudflare. " * 20)
+    ab.browse.return_value = make_result("The recovered article body. " * 20)
     r = fetch_tiered("https://x.test", tier_max=3,
                      _tier0=t0, _tier1_factory=lambda: t1, _browse=ab)
-    assert "Recovered behind cloudflare" in r.content
+    assert "The recovered article body" in r.content
     ab.browse.assert_called_once()
+
+
+def test_bot_wall_that_survives_the_browse_rung_is_not_stored() -> None:
+    # Escalating to beat a wall and landing on the same wall is a FAILED fetch: the
+    # interstitial must not be handed back as if it were the source.
+    t0 = MagicMock()
+    t0.fetch.return_value = _empty()
+    t1 = MagicMock()
+    t1.fetch.return_value = _bot()
+    ab = MagicMock()
+    ab.browse.return_value = make_result(
+        "Performing security verification. Ray ID: a224d90e. Cloudflare. " * 10
+    )
+    r = fetch_tiered("https://x.test", tier_max=3,
+                     _tier0=t0, _tier1_factory=lambda: t1, _browse=ab)
+    ab.browse.assert_called_once()
+    assert "Ray ID" not in r.content          # the browse wall was rejected
+    assert r.content == t1.fetch.return_value.content   # kept the lower-tier result
 
 
 def test_login_wall_escalates_to_agent_browser_with_instruction() -> None:
@@ -102,6 +120,9 @@ def test_instruction_triggers_rung3_browse() -> None:
 
 
 def test_no_browse_provider_stays_on_lower_tier() -> None:
+    # `_browse=None` means "the caller resolved a provider and found none" — the rung is
+    # skipped. (It must NOT fall through to resolving a real CLI off PATH, or this test
+    # drives a live browser on any machine that has one installed.)
     t0 = MagicMock()
     t0.fetch.return_value = _good()
     r = fetch_tiered("https://x.test", tier_max=3, instruction="paginate",
@@ -162,3 +183,83 @@ def test_ssrf_browse_lands_on_internal_url_is_discarded() -> None:
     r = fetch_tiered("https://public.test/", tier_max=3, instruction="read it",
                      _tier0=t0, _tier1_factory=lambda: None, _browse=ab)
     assert "leaked internal page" not in r.content   # landed-URL re-validation discarded it
+
+
+def test_instruction_does_not_waive_the_wall_check() -> None:
+    """`rescue` is computed from the LOWER-TIER result, never from `instruction`.
+
+    So when the lower rung was itself a bot wall, a browse result that is the same wall
+    is still rejected even though an instruction was supplied. Pins the contract
+    `_accept_browse`'s docstring states, which previously claimed the opposite.
+    """
+    t0 = MagicMock()
+    t0.fetch.return_value = _bot()
+    ab = MagicMock()
+    ab.browse.return_value = make_result(
+        "Performing security verification. Ray ID: a224d90e. Cloudflare. " * 10
+    )
+    r = fetch_tiered("https://x.test", tier_max=3, instruction="load all reviews",
+                     _tier0=t0, _tier1_factory=lambda: None, _browse=ab)
+    ab.browse.assert_called_once()
+    assert "Ray ID" not in r.content
+    assert r.content == t0.fetch.return_value.content
+
+
+# ---------------------------------------------------------------------------
+# TieredFetcher._browse_seam — the shipped production path (cli/research.py builds
+# TieredFetcher(engine=config.browse_engine), which now defaults to "silver").
+# ---------------------------------------------------------------------------
+
+
+def test_silver_engine_falls_back_to_agent_browser_when_silver_is_absent(monkeypatch):
+    """engine="silver" + silver NOT installed + agent-browser installed must still
+    bind a browse provider. Building silver-or-nothing here would silently delete the
+    browse rung on every machine predating silver (it is an npm CLI, not a pip dep)."""
+    import bad_research.browse.base as browse_base
+    from bad_research.browse.agent_browser import AgentBrowserProvider
+    from bad_research.browse.ladder import TieredFetcher
+
+    monkeypatch.setattr(browse_base, "silver_is_available", lambda program="silver": False)
+    monkeypatch.setattr(browse_base, "is_available", lambda program="agent-browser": True)
+
+    prov = TieredFetcher(engine="silver")._browse_seam()
+    assert isinstance(prov, AgentBrowserProvider), (
+        "the default engine dropped the browse rung instead of falling back to "
+        "agent-browser — get_browse_provider()'s silver->agent-browser->None chain "
+        "must be the single source of truth"
+    )
+
+
+def test_silver_engine_prefers_silver_when_it_is_installed(monkeypatch):
+    import bad_research.browse.base as browse_base
+    from bad_research.browse.ladder import TieredFetcher
+    from bad_research.browse.silver import SilverProvider
+
+    monkeypatch.setattr(browse_base, "silver_is_available", lambda program="silver": True)
+    monkeypatch.setattr(browse_base, "is_available", lambda program="agent-browser": True)
+
+    assert isinstance(TieredFetcher(engine="silver")._browse_seam(), SilverProvider)
+
+
+def test_silver_engine_degrades_to_none_when_neither_cli_is_present(monkeypatch):
+    import bad_research.browse.base as browse_base
+    from bad_research.browse.ladder import TieredFetcher
+
+    monkeypatch.setattr(browse_base, "silver_is_available", lambda program="silver": False)
+    monkeypatch.setattr(browse_base, "is_available", lambda program="agent-browser": False)
+
+    assert TieredFetcher(engine="silver")._browse_seam() is None
+
+
+def test_explicit_agent_browser_engine_is_still_honoured(monkeypatch):
+    """A configured lightpanda/chrome engine must NOT be rerouted through the
+    silver-preferring default resolver — the engine choice is the point."""
+    import bad_research.browse.agent_browser as ab
+    from bad_research.browse.agent_browser import AgentBrowserProvider
+    from bad_research.browse.ladder import TieredFetcher
+
+    monkeypatch.setattr(ab, "is_available", lambda program="agent-browser": True)
+
+    prov = TieredFetcher(engine="chrome")._browse_seam()
+    assert isinstance(prov, AgentBrowserProvider)
+    assert prov.engine == "chrome"
