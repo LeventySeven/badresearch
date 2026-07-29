@@ -101,6 +101,11 @@ class SemanticCache:
         )
         self.conn.commit()
 
+    def close(self) -> None:
+        """Release the SQLite handle (issue #35 §7). Idempotent — sqlite3 tolerates
+        a repeated close, and every `put` already commits, so nothing is lost."""
+        self.conn.close()
+
 
 # ── Keyless token-set cache (dossier 15 §6.2) — the FTS-default backend ───────
 
@@ -183,6 +188,11 @@ class LexicalCacheBackend:
              json.dumps(markers), json.dumps(payload)),
         )
         self.conn.commit()
+
+    def close(self) -> None:
+        """Release the SQLite handle (issue #35 §7). Idempotent — sqlite3 tolerates
+        a repeated close, and every `put` already commits, so nothing is lost."""
+        self.conn.close()
 
 
 def get_cache(db_path: Path, *, embedder: EmbedProvider | None = None) -> Any:
