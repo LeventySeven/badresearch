@@ -10,6 +10,7 @@ spawned via the Task tool.
 from __future__ import annotations
 
 import json
+import shutil
 from pathlib import Path
 
 # Scaffold-only section headers that must NEVER appear in a final_report draft.
@@ -3400,40 +3401,77 @@ def install_global_hooks(home: Path | None = None, hpr_path: str = "bad") -> lis
     return actions
 
 
+def _is_step_skill_dir_name(name: str) -> bool:
+    """True only for a skill dir that bad-research itself installs as a step.
+
+    Deliberately NOT a `bad-research-*` prefix match. Two things must survive a
+    prune: the entry skill at `.claude/skills/bad-research/` (no trailing `-`,
+    so it can never be in the roster), and any skill the USER happens to have
+    named with our prefix (`bad-research-notes` is a perfectly plausible
+    personal skill). So the only matches are exact membership in the roster,
+    plus the legacy `hyperresearch-<N>-*` step dirs from the pre-rename layout
+    that `_prune_global_step_skills` has always cleaned up.
+    """
+    if name in set(_BAD_RESEARCH_STEP_SKILLS):
+        return True
+    return (
+        name.startswith("hyperresearch-")
+        and name[len("hyperresearch-"):][:1].isdigit()
+    )
+
+
+def _prune_step_skill_dirs(skills_root: Path) -> list[str]:
+    """Delete every bad-research step-skill dir under `skills_root`.
+
+    Shared body for the global and per-project pruners so the two can't drift
+    into different notions of "ours to delete". Returns the removed dir names
+    (sorted); a missing `skills_root` is a no-op, not an error.
+    """
+    if not skills_root.is_dir():
+        return []
+
+    pruned: list[str] = []
+    for child in sorted(skills_root.iterdir()):
+        if not child.is_dir() or child.is_symlink():
+            continue
+        if not _is_step_skill_dir_name(child.name):
+            continue
+        # rmtree, not an iterdir()/unlink() loop: a step dir that picked up a
+        # nested `references/` folder would otherwise raise on the unlink.
+        shutil.rmtree(child)
+        pruned.append(child.name)
+    return pruned
+
+
 def _prune_global_step_skills(home: Path) -> str | None:
     """Remove hyperresearch-N-* step skill dirs from ~/.claude/skills/.
 
     Used by install_global_hooks to clean up after older versions (≤0.8.2)
     that installed step skills globally. Step skills now live per-project.
     """
-    skills_root = home / ".claude" / "skills"
-    if not skills_root.is_dir():
-        return None
-
-    pruned: list[str] = []
-    step_set = set(_BAD_RESEARCH_STEP_SKILLS)
-    for child in skills_root.iterdir():
-        if not child.is_dir():
-            continue
-        # Prune any step-skill dir (bad-research-* / hyperresearch-* in the
-        # roster, or a stale numbered step) but NEVER the entry skill at
-        # .claude/skills/bad-research/.
-        name = child.name
-        is_roster_step = name in step_set
-        is_legacy_numbered = (
-            name.startswith("hyperresearch-")
-            and name[len("hyperresearch-"):][:1].isdigit()
-        )
-        if not (is_roster_step or is_legacy_numbered):
-            continue
-        for f in child.iterdir():
-            f.unlink()
-        child.rmdir()
-        pruned.append(name)
-
+    pruned = _prune_step_skill_dirs(home / ".claude" / "skills")
     if not pruned:
         return None
     return f"Pruned {len(pruned)} global step-skill dirs (now per-project): {', '.join(pruned[:3])}{'...' if len(pruned) > 3 else ''}"
+
+
+def _prune_project_step_skills(vault_root: Path) -> str | None:
+    """Remove the per-project step-skill dirs from <root>/.claude/skills/.
+
+    The counterpart to `_prune_global_step_skills`, and the only way to undo a
+    `bad install --steps-only` / `--project` step-skill materialization: the
+    installer's own prune deliberately keeps every CURRENT-roster name, so
+    without this the 20 project skill dirs are created and never removed.
+
+    Unlike the installer's prune this DOES delete current-roster names — that
+    is the point. It still leaves the entry skill and every unrelated skill in
+    the same directory alone (see `_is_step_skill_dir_name`). Not wired into
+    any installer: removal is an explicit user action, never a side effect.
+    """
+    pruned = _prune_step_skill_dirs(vault_root / ".claude" / "skills")
+    if not pruned:
+        return None
+    return f"Pruned {len(pruned)} project step-skill dirs: {', '.join(pruned)}"
 
 
 def _write_hook_script(vault_root: Path, hpr_path: str, *, global_install: bool = False) -> Path:

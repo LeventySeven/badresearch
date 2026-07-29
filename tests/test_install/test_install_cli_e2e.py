@@ -1,3 +1,5 @@
+import json
+
 from typer.testing import CliRunner
 
 from bad_research.cli import app
@@ -32,3 +34,34 @@ def test_bad_install_project(tmp_path, monkeypatch):
     assert res.exit_code == 0, res.output
     assert (proj / ".claude" / "skills" / "bad-research" / "SKILL.md").exists()
     assert (proj / ".claude" / "skills" / "bad-research-fast" / "SKILL.md").exists()
+
+
+def test_bad_install_prune_steps(tmp_path):
+    proj = tmp_path / "proj"
+    proj.mkdir()
+    assert runner.invoke(app, ["install", str(proj), "--steps-only", "--json"]).exit_code == 0
+    step = proj / ".claude" / "skills" / "bad-research-1-decompose"
+    assert step.exists()
+
+    # an unrelated skill living in the same directory must survive
+    other = proj / ".claude" / "skills" / "my-notes"
+    other.mkdir()
+    (other / "SKILL.md").write_text("# mine\n", encoding="utf-8")
+
+    res = runner.invoke(app, ["install", str(proj), "--prune-steps", "--json"])
+    assert res.exit_code == 0, res.output
+    payload = json.loads(res.stdout.strip().splitlines()[-1])
+    assert payload["ok"] is True
+    assert payload["actions"]
+    assert not step.exists()
+    assert (other / "SKILL.md").exists()
+
+
+def test_bad_install_prune_steps_on_clean_project_is_a_noop(tmp_path):
+    proj = tmp_path / "proj"
+    proj.mkdir()
+    res = runner.invoke(app, ["install", str(proj), "--prune-steps", "--json"])
+    assert res.exit_code == 0, res.output
+    payload = json.loads(res.stdout.strip().splitlines()[-1])
+    assert payload["ok"] is True
+    assert payload["actions"] == []
