@@ -100,7 +100,7 @@ def test_funnel_gather_cmd_passes_search_plan_through(monkeypatch, tmp_path: Pat
     seen: dict = {}
 
     def _fake_run_funnel(q, *, mode, vault_tag, search_plan=None, max_queries=None,
-                         read_top_k=None, concurrency=None):
+                         read_top_k=None, concurrency=None, raw=False):
         seen["search_plan"] = search_plan
         seen["max_queries"] = max_queries
         return {"note_ids": [], "top_chunks": [], "n_read": 0}

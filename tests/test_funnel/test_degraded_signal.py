@@ -74,7 +74,12 @@ def test_every_lane_returning_zero_hits_is_flagged_degraded():
     """
     stats: dict = {}
     asyncio.run(gather("topic", mode="light", deps=_deps([_EmptyProvider()]), stats=stats))
-    assert stats["provider_outcomes"] == {"ddgs": "empty"}
+    # Issue #39 renamed this outcome "empty" -> "no-results". The rename is the
+    # point: "no-results" is now the ONLY value that licenses a report sentence
+    # like "there was nothing published on X", and it sits beside rate-limited /
+    # timeout / unreachable, which do not. "empty" stays accepted as an input
+    # alias in _OUTCOME_RANK, but it is no longer emitted.
+    assert stats["provider_outcomes"] == {"ddgs": "no-results"}
     assert stats["degraded"] is True
     assert "no_search_results_from_any_provider" in stats["degraded_reasons"]
 
@@ -159,7 +164,7 @@ def test_degraded_run_exits_nonzero_so_a_shell_caller_can_branch(monkeypatch, tm
     from bad_research.cli import app
 
     def _fake_run_funnel(q, *, mode, vault_tag, search_plan=None, max_queries=None,
-                         read_top_k=None, concurrency=None):
+                         read_top_k=None, concurrency=None, raw=False):
         return {"note_ids": [], "top_chunks": [], "n_read": 0, "n_stored": 0,
                 "ok": False, "degraded": True,
                 "degraded_reasons": ["no_search_provider_available"]}
@@ -178,7 +183,7 @@ def test_genuinely_empty_run_still_exits_zero(monkeypatch, tmp_path):
     from bad_research.cli import app
 
     def _fake_run_funnel(q, *, mode, vault_tag, search_plan=None, max_queries=None,
-                         read_top_k=None, concurrency=None):
+                         read_top_k=None, concurrency=None, raw=False):
         return {"note_ids": [], "top_chunks": [], "n_read": 0, "n_stored": 0,
                 "ok": True, "degraded": False, "degraded_reasons": []}
 

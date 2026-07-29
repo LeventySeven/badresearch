@@ -86,9 +86,48 @@ def plan_queries(query: str, *, m_queries: int, k_per_query: int) -> list[Search
 # A provider's MOST INFORMATIVE outcome across its queries wins. "ok" tops the
 # table (one query returning hits proves the lane works), but a raised error
 # outranks a clean empty: a lane that threw on 9 of 10 queries and returned []
-# on the 10th is broken infrastructure, not a sourceless topic. Ranking "empty"
-# above "error" reintroduced the exact empty-vs-broken confusion one layer down.
-_OUTCOME_RANK = {"empty": 0, "unavailable": 1, "error": 2, "ok": 3}
+# on the 10th is broken infrastructure, not a sourceless topic. Ranking
+# "no-results" above "error" reintroduced the exact empty-vs-broken confusion one
+# layer down.
+#
+# Issue #39 widened this from 4 values to the OBSERVABLE subset. The ordering
+# above "no-results" is "more specific diagnosis wins": a confirmed 429 is more
+# actionable than a generic error, and every failure outranks a clean empty.
+# `auth-failed` and `schema-drift` are deliberately absent — see
+# web/search/status.py for why neither can ever fire on a keyless stack.
+_OUTCOME_RANK = {
+    "skipped-unconfigured": 0,  # the lane was never built (recorded by the CLI)
+    "no-results": 1,            # searched, found nothing — the ONLY clean empty
+    "empty": 1,                 # legacy alias for "no-results"; still accepted
+    "unavailable": 2,           # cannot run in THIS context (host-tool adapter)
+    "error": 3,                 # raised something we could not classify
+    "unreachable": 4,           # DNS / connect failure
+    "timeout": 5,
+    "rate-limited": 6,          # confirmed 429 — the most actionable failure
+    "ok": 7,
+}
+
+# The value `fan_out` records for "ran clean, returned nothing". Named because
+# it is load-bearing downstream: it is the ONE outcome that licenses a report
+# sentence like "there was nothing published on X".
+NO_RESULTS = "no-results"
+
+# Outcomes that mean a lane could not answer, as opposed to answering "nothing".
+# `orchestrator.gather` turns these into `coverage_gaps` even when another lane
+# carried the run.
+#
+# "unavailable" is EXCLUDED on purpose: `WebSearchToolProvider` is appended to
+# every CLI run and always raises NotImplementedError in a subprocess (that is
+# its documented contract), so including it would put a gap on literally every
+# run and train the reader to ignore the field.
+COVERAGE_GAP_OUTCOMES = frozenset({
+    "rate-limited", "timeout", "unreachable", "error", "skipped-unconfigured",
+})
+
+# Outcomes that mean the lane never produced a searchable answer at all. Used by
+# the orchestrator to pick between "no provider could run" and "every provider
+# ran and found nothing" — the two degraded reasons the skills branch on.
+NON_ANSWERING_OUTCOMES = frozenset({"unavailable", *COVERAGE_GAP_OUTCOMES})
 
 
 # Ceiling on SIMULTANEOUS provider calls. The fan-out is (queries x providers),
@@ -127,6 +166,27 @@ def _clamp_concurrency(n: int | None) -> int:
     return max(1, min(int(n), _FANOUT_CONCURRENCY_MAX))
 
 
+def _outcome_of(provider: Any, results: list[Any]) -> str:
+    """The outcome one completed provider call earns.
+
+    Hits always win. On an EMPTY return we ask the provider what happened —
+    `last_status` is the note it left on the way out of `search()`. Only a
+    provider that reports nothing (or reports success) collapses to
+    "no-results"; a rate limit, a timeout, or a dead host keeps its name.
+
+    `last_status` is a per-INSTANCE attribute and the same instance serves many
+    concurrent queries, so a read here can pick up a sibling call's status. That
+    is benign by construction: `_mark` keeps the highest-ranked outcome per
+    provider, which is the same aggregation the attribute race can produce.
+    """
+    if results:
+        return "ok"
+    status = getattr(provider, "last_status", None)
+    if isinstance(status, str) and status in _OUTCOME_RANK and status != "ok":
+        return status
+    return NO_RESULTS
+
+
 async def fan_out(queries: list[Any], providers: list[Any],
                   outcomes: dict[str, str] | None = None,
                   concurrency: int = _FANOUT_CONCURRENCY) -> list[Any]:
@@ -140,7 +200,7 @@ async def fan_out(queries: list[Any], providers: list[Any],
     multiplicative — see `_FANOUT_CONCURRENCY`.
 
     `outcomes` (optional): opt-in instrumentation. When a dict is passed it is
-    filled with {provider_name: "ok" | "empty" | "unavailable" | "error"}.
+    filled with {provider_name: <one of _OUTCOME_RANK's keys>}.
 
     "ok" means the provider RETURNED AT LEAST ONE HIT — not merely that it
     failed to raise. That distinction is load-bearing: the keyless providers
@@ -149,6 +209,13 @@ async def fan_out(queries: list[Any], providers: list[Any],
     so a dead network reaches this layer looking exactly like a clean empty
     SERP. Treating "did not raise" as success made a fully offline run report
     itself healthy. Omitting `outcomes` leaves behaviour byte-identical.
+
+    Providers may now leave a note behind: a `last_status` attribute set on the
+    way out of `search()` (see `web/search/status.py`). When a call comes back
+    EMPTY and the provider reported a failure status, that status is recorded
+    instead of the coarse "no-results" — this is what finally separates "we
+    searched and there is nothing" from "we could not search". A provider
+    without the attribute behaves exactly as before.
     """
     if not providers or not queries:
         return []
@@ -156,6 +223,11 @@ async def fan_out(queries: list[Any], providers: list[Any],
     def _mark(name: str, status: str) -> None:
         if outcomes is None:
             return
+        if status not in _OUTCOME_RANK:
+            # A provider is free to invent a `last_status`; an unranked value
+            # must not KeyError the whole fan-out. Degrade to the generic
+            # failure rather than dropping the row.
+            status = "error"
         prev = outcomes.get(name)
         # `prev is None` must be handled explicitly: defaulting an unseen
         # provider to "error" made the first "error" mark fail its own
@@ -183,7 +255,7 @@ async def fan_out(queries: list[Any], providers: list[Any],
         except Exception:
             _mark(getattr(provider, "name", "?"), "error")
             return []  # degrade: a dead provider drops out, never aborts the run
-        _mark(getattr(provider, "name", "?"), "ok" if results else "empty")
+        _mark(getattr(provider, "name", "?"), _outcome_of(provider, results))
         for i, r in enumerate(results):
             if not getattr(r, "serp_provider", ""):
                 r.serp_provider = provider.name

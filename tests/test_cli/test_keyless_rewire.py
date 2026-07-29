@@ -450,7 +450,7 @@ def test_run_query_nonempty_corpus_on_real_funnel(monkeypatch, tmp_path):
 
     deps_box: dict = {}
 
-    def _wired_run_funnel(query, *, mode, vault_tag):
+    def _wired_run_funnel(query, *, mode, vault_tag, raw=False, **kw):
         import asyncio
         from dataclasses import asdict, is_dataclass
 

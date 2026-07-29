@@ -20,7 +20,13 @@ from typing import Any, Literal
 from bad_research.funnel.config import FunnelConfig
 from bad_research.funnel.dedup import dedup
 from bad_research.funnel.diversity import cap_per_domain, diversify_pool
-from bad_research.funnel.fanout import _clamp_concurrency, fan_out, plan_queries
+from bad_research.funnel.fanout import (
+    COVERAGE_GAP_OUTCOMES,
+    NON_ANSWERING_OUTCOMES,
+    _clamp_concurrency,
+    fan_out,
+    plan_queries,
+)
 from bad_research.funnel.filter import filter_and_store
 from bad_research.funnel.rank import rank_candidates
 from bad_research.funnel.read import read_top_k
@@ -161,7 +167,7 @@ async def gather(
         # SPEC §13 failover), so we only flag when NOTHING came back at all.
         if not any(v == "ok" for v in seen_outcomes.values()):
             if not seen_outcomes or all(
-                v in {"unavailable", "error"} for v in seen_outcomes.values()
+                v in NON_ANSWERING_OUTCOMES for v in seen_outcomes.values()
             ):
                 # Every lane refused to run — unambiguous infrastructure failure.
                 reasons.append("no_search_provider_available")
@@ -178,6 +184,19 @@ async def gather(
         stats["provider_outcomes"] = dict(seen_outcomes)
         stats["degraded_reasons"] = reasons
         stats["degraded"] = bool(reasons)
+        # COVERAGE GAPS — orthogonal to `degraded`, exactly as `warnings` is.
+        #
+        # The all-lanes check above cannot see PARTIAL degradation: one lane
+        # rate-limited while another returned hits yields degraded:false and, as
+        # shipped, no signal anywhere. The run is genuinely usable — so this must
+        # NOT flip `degraded`, whose contract is a hard STOP the skills branch on
+        # — but the corpus is missing whatever that lane would have found. The
+        # report may not turn that silence into "there is nothing on X".
+        stats["coverage_gaps"] = [
+            {"provider": name, "outcome": status}
+            for name, status in sorted(seen_outcomes.items())
+            if status in COVERAGE_GAP_OUTCOMES
+        ]
 
     # ── Stage B — DEDUP (URL-canonical + content-hash, free) ───────────────
     # dedup also DATES each survivor (metadata['age_days'] + published_days_ago).
@@ -214,6 +233,9 @@ async def gather(
         stats["n_candidates"] = len(ranked)
 
     # ── Stage D — READ top-K (≤80 ceiling, batched, chained-crawl) ─────────
+    # Opt-in read instrumentation, same shape as the fan-out's: only allocated
+    # when the caller asked for stats, so the un-instrumented path is unchanged.
+    read_outcomes: dict[str, Any] | None = {} if stats is not None else None
     pages = await read_top_k(
         ranked,
         fetcher=deps.fetcher,
@@ -229,7 +251,13 @@ async def gather(
         max_links_per_hub=cfg.max_links_per_hub,
         query=query,
         ceiling=FunnelConfig.READ_CEILING,
+        outcomes=read_outcomes,
     )
+    if stats is not None and read_outcomes is not None:
+        # A corpus short because the web refused us reads identically to a corpus
+        # short because the topic is thin — unless we say so (issue #39).
+        stats["read_outcomes"] = dict(read_outcomes)
+        stats["n_fetch_failed"] = int(read_outcomes.get("n_fetch_failed", 0))
 
     # ── Stage E — FILTER (junk + >60% redundancy) + STORE to vault ─────────
     # `notes` is list[Note] — the EXACT type Stage F's RetrievalEngine.index
