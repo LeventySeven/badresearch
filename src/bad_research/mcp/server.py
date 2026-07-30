@@ -483,9 +483,13 @@ def retrieve_chunks(query: str, mode: str = "full", top_k: int = 20) -> str:
     from bad_research.config import BadResearchConfig
     from bad_research.core.vault import Vault
     cfg = BadResearchConfig.load()
-    engine = _build_engine(cfg, Vault.discover())
     norm_mode = "full" if mode == "full" else "light"
-    chunks = engine.search(query, mode=norm_mode, top_k=top_k)
+    # `with`: an MCP server is a LONG-LIVED process, so the two SQLite handles a
+    # RetrievalEngine owns (chunk-meta/FTS + the cache backend) would otherwise leak
+    # once per tool call — the same defect as issue #35 §7, but compounding here
+    # rather than ending with the CLI process.
+    with _build_engine(cfg, Vault.discover()) as engine:
+        chunks = engine.search(query, mode=norm_mode, top_k=top_k)
     rows = [asdict(c) for c in chunks]
     # An MCP client is a MODEL, so this is a model-facing seam like `bad retrieve`.
     _fence_chunk_dicts(rows, raw=False)
