@@ -115,3 +115,39 @@ def test_prune_project_step_skills_is_a_noop_without_skills_dir(tmp_path):
     root = tmp_path / "proj"
     root.mkdir()
     assert _prune_project_step_skills(root) is None
+
+
+def test_prune_removes_retired_step_skills_too(tmp_path):
+    """A RETIRED step skill is the stalest thing on disk and must be prunable.
+
+    Found in the wild: 7 projects still carried `bad-research-ultrafast` weeks
+    after the route was folded into `fast`. Because exact-roster matching is the
+    safety property, a name dropped FROM the roster became unreachable — the
+    prune reported success while leaving the worst drift in place.
+    """
+    from bad_research.core.hooks import (
+        _BAD_RESEARCH_STEP_SKILLS,
+        _RETIRED_STEP_SKILLS,
+        _prune_project_step_skills,
+    )
+
+    skills = tmp_path / ".claude" / "skills"
+    skills.mkdir(parents=True)
+    for name in _RETIRED_STEP_SKILLS:
+        (skills / name).mkdir()
+        (skills / name / "SKILL.md").write_text("stale", encoding="utf-8")
+    # The three things that must still survive alongside it.
+    for survivor in ("bad-research", "bad-research-notes", "my-skill"):
+        (skills / survivor).mkdir()
+        (skills / survivor / "SKILL.md").write_text("keep", encoding="utf-8")
+
+    _prune_project_step_skills(tmp_path)
+
+    for name in _RETIRED_STEP_SKILLS:
+        assert not (skills / name).exists(), f"retired {name} survived the prune"
+    for survivor in ("bad-research", "bad-research-notes", "my-skill"):
+        assert (skills / survivor / "SKILL.md").exists(), f"{survivor} was destroyed"
+
+    # A retired name must never also sit in the live roster — that would mean a
+    # skill we still install is listed as removable.
+    assert not (_RETIRED_STEP_SKILLS & set(_BAD_RESEARCH_STEP_SKILLS))

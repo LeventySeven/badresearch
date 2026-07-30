@@ -3576,6 +3576,17 @@ def install_global_hooks(home: Path | None = None, hpr_path: str = "bad") -> lis
     return actions
 
 
+# Step skills this engine used to install and has since RETIRED. They are no longer
+# in `_BAD_RESEARCH_STEP_SKILLS`, so exact-roster matching alone can never reach them
+# — which left the STALEST dirs on disk as unreachable orphans (found in the wild:
+# 7 projects still carrying `bad-research-ultrafast` weeks after the route was folded
+# into `fast`). Same explicit-name discipline as `_RETIRED_AGENT_FILES`: a retired
+# step is removed because it is named here, never because it matched a glob.
+_RETIRED_STEP_SKILLS: frozenset[str] = frozenset({
+    "bad-research-ultrafast",  # route folded into `fast` (d562f87, 3 routes -> 2)
+})
+
+
 def _is_step_skill_dir_name(name: str) -> bool:
     """True only for a skill dir that bad-research itself installs as a step.
 
@@ -3584,10 +3595,13 @@ def _is_step_skill_dir_name(name: str) -> bool:
     so it can never be in the roster), and any skill the USER happens to have
     named with our prefix (`bad-research-notes` is a perfectly plausible
     personal skill). So the only matches are exact membership in the roster,
-    plus the legacy `hyperresearch-<N>-*` step dirs from the pre-rename layout
-    that `_prune_global_step_skills` has always cleaned up.
+    RETIRED step names we once installed ourselves, plus the legacy
+    `hyperresearch-<N>-*` step dirs from the pre-rename layout that
+    `_prune_global_step_skills` has always cleaned up.
     """
     if name in set(_BAD_RESEARCH_STEP_SKILLS):
+        return True
+    if name in _RETIRED_STEP_SKILLS:
         return True
     return (
         name.startswith("hyperresearch-")
