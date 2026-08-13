@@ -26,6 +26,18 @@ from bad_research.core.similarity import jaccard, shingle
 from bad_research.models.note import Note, NoteMeta
 
 
+def _is_prefetched(page: Any) -> bool:
+    """A page whose body came from the provider, not from a fetch of ours.
+
+    The junk filter judges FETCHES: a login wall, a Cloudflare interstitial, a
+    near-empty body that means the fetch failed. None of those verdicts are
+    meaningful for content that was never fetched — and its length rule is
+    actively wrong there, because a 200-character Reddit comment with 1,485
+    upvotes is short on purpose, not truncated.
+    """
+    return bool((getattr(page, "metadata", None) or {}).get("prefetched"))
+
+
 def filter_and_store(
     pages: list[Any],
     *,
@@ -34,8 +46,8 @@ def filter_and_store(
     redundancy_overlap: float,
     shingle_n: int,
 ) -> list[Note]:
-    # 1. Junk filter (Plan 05).
-    clean = [p for p in pages if postfetch_filter(p) is None]
+    # 1. Junk filter (Plan 05) — post-FETCH, so it does not judge prefetched bodies.
+    clean = [p for p in pages if _is_prefetched(p) or postfetch_filter(p) is None]
 
     # 2. Redundancy clustering (brute Jaccard over shingles, n=3).
     kept: list[Any] = []

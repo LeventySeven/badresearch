@@ -120,18 +120,39 @@ async def read_top_k(
                         outcomes["failed_urls"].append(url)
                 return None
 
-    async def _try_read(url: str) -> Any:
+    async def _claim(url: str) -> bool:
+        """Take one read from the budget for `url`, or refuse it (already seen,
+        or the budget is spent)."""
         nonlocal reads_done
         async with lock:
             if url in seen or reads_done >= budget:
-                return None
+                return False
             seen.add(url)
             reads_done += 1
-        return await _fetch(url)
+            return True
+
+    async def _try_read(url: str) -> Any:
+        return await _fetch(url) if await _claim(url) else None
+
+    async def _read_candidate(cand: Any) -> Any:
+        """Fetch the candidate, unless it already arrived with its body.
+
+        A prefetched candidate comes from a provider that had already read the
+        content at SERP time (the social lane: the thread, its top comments, the
+        transcript). Re-fetching its permalink is worse than useless — reddit.com
+        and x.com answer an anonymous fetch with a login wall, which Stage E then
+        drops as junk, so the evidence would be gathered and discarded one stage
+        later. It still spends a read from the budget: the budget bounds how much
+        content enters the corpus, not how many HTTP calls we make.
+        """
+        result = getattr(cand, "result", None)
+        if not (getattr(result, "metadata", None) or {}).get("prefetched"):
+            return await _try_read(cand.canonical_url)
+        return result if await _claim(cand.canonical_url) else None
 
     # Primary wave: the top-budget ranked candidates, batched.
     primaries = ranked[:budget]
-    primary_results = await asyncio.gather(*[_try_read(c.canonical_url) for c in primaries])
+    primary_results = await asyncio.gather(*[_read_candidate(c) for c in primaries])
     results.extend(r for r in primary_results if r is not None)
 
     # Chained crawl: follow the best outbound links of hub pages, bounded.

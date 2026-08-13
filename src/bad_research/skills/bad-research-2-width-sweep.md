@@ -195,6 +195,41 @@ After the funnel returns, jump to **Step 2.5** (coverage check) — the funnel
 already executed the search/fetch/dedup/filter/store waves that the legacy
 hand-dispatch steps 2.2(legacy)–2.4 describe.
 
+### The social lane (Lens E — what people actually said)
+
+Lenses A–D find what was *published*. When the question is about reception,
+adoption, or lived experience, the primary source is the thread and the blog
+post about it is the derivative — so a corpus built only from articles is
+missing its best evidence, not merely some of it.
+
+The `last30days` vertical covers that: Reddit, Hacker News, YouTube transcripts,
+GitHub and Polymarket, ranked by native engagement. It is **keyless, optional
+and off unless installed** (github.com/mvanhorn/last30days-skill, or point
+`LAST30DAYS_SCRIPT` at its `last30days.py`); `bad doctor` shows whether it
+resolved. When it is absent the funnel behaves exactly as before — do not
+mention it in the report and do not treat its absence as a coverage gap.
+
+`detect_intent` routes it automatically on an explicit social signal ("what do
+users say about X", "reddit reception of X", "backlash", "sentiment"). To force
+the lane for a sub-question whose phrasing does not carry one, add a
+reformulation row to the search plan that does — `Lens E | social` — rather than
+reaching for a flag.
+
+Two things to know before you plan around it:
+
+- **It costs minutes, not seconds.** One call runs a dozen searches behind the
+  scenes. The route table fires it on at most 2 seed queries for that reason. If
+  the lane reports `timeout` in `provider_outcomes`, that is a coverage gap, not
+  an absence of community evidence — never write "nothing on Reddit" from it.
+- **Its notes are prefetched.** The body you get is the engine's own read of the
+  thread, so it is not re-fetched and the post-fetch junk rules do not apply.
+  A short body is the source's real length. Cite the engagement counts in
+  `metadata.engagement_summary` when you use one as evidence: "1,485 upvotes"
+  is what makes a comment load-bearing rather than one person's opinion.
+
+Its notes are ordinary vault sources — Step 4 loci analysis, Step 5 depth
+investigation, and the Step 11.5 citation verifier read them like any other.
+
 ---
 
 ## Step 2.2 (legacy) — Execute searches and build URL queue

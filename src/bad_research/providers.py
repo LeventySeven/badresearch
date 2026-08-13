@@ -48,6 +48,7 @@ PROVIDERS: tuple[Provider, ...] = (
     Provider("europepmc", None, None, "(base)", "search"),
     Provider("pubmed", None, None, "(base)", "search"),
     Provider("wikipedia", None, None, "(base)", "search"),
+    Provider("last30days", None, None, "(base)", "search"),        # social vertical, external engine
     Provider("bge-local", None, "sentence_transformers", "local", "embed"),
     Provider("ms-marco-local", None, "sentence_transformers", "local", "rerank"),
     Provider("nli-deberta", None, "sentence_transformers", "local", "nli"),
@@ -110,10 +111,29 @@ def _host_bridge_live(name: str) -> bool:
     return False
 
 
+# Providers backed by an EXTERNAL ENGINE rather than an in-process import: there
+# is no module to check, so `import_present` is vacuously True and only a
+# filesystem probe can answer whether the lane can actually run. Same honesty
+# contract as _HOST_BRIDGE_PROVIDERS (issue #35 §2) — doctor must not promise a
+# capability the engine cannot deliver.
+_EXTERNAL_ENGINE_PROVIDERS = frozenset({"last30days"})
+
+
+def _external_engine_live(name: str) -> bool:
+    """Is the external engine backing `name` installed? Stat only, no subprocess."""
+    if name == "last30days":
+        from bad_research.web.search.social import resolve_engine
+
+        return resolve_engine() is not None
+    return False
+
+
 def provider_status() -> list[ProviderStatus]:
     """Status for every registered provider. No network, no config-file read.
 
-    Keyless: `requires_key` is False everywhere, so `active == import_present`.
+    Keyless: `requires_key` is False everywhere, so `active == import_present`
+    — except the two lanes whose availability is not an import: the host bridge
+    and the external social engine.
     """
     out: list[ProviderStatus] = []
     for p in PROVIDERS:
@@ -123,6 +143,8 @@ def provider_status() -> list[ProviderStatus]:
         active = key_present and import_present
         if p.name in _HOST_BRIDGE_PROVIDERS:
             active = active and _host_bridge_live(p.name)
+        if p.name in _EXTERNAL_ENGINE_PROVIDERS:
+            active = active and _external_engine_live(p.name)
         out.append(
             ProviderStatus(
                 name=p.name,

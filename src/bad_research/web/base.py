@@ -264,8 +264,18 @@ def get_provider(
 
         return cast("WebProvider", getattr(v, _verticals[name])())
 
+    # keyless social vertical — external engine, absent by default (raises
+    # FileNotFoundError when it is not installed, which _build_vertical_providers
+    # treats as "skip this lane" like any other build failure).
+    if name == "last30days":
+        from typing import cast
+
+        from bad_research.web.search.social import Last30DaysProvider
+
+        return cast("WebProvider", Last30DaysProvider())
+
     raise ValueError(
         f"Unknown keyless web provider: {name!r}. Available: websearch (default), "
         f"ddgs, searxng, builtin, crawl4ai, arxiv, openalex, crossref, "
-        f"semantic_scholar, europepmc, pubmed, wikipedia"
+        f"semantic_scholar, europepmc, pubmed, wikipedia, last30days"
     )

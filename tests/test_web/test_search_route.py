@@ -19,6 +19,32 @@ def test_detect_intent_regex_fallback():
     assert detect_intent("best pizza in town") == "general"
 
 
+def test_social_route_is_the_last30days_lane():
+    assert VERTICAL_ROUTES["social"] == ["last30days"]
+
+
+def test_detect_intent_reads_reception_questions_as_social():
+    assert detect_intent("what do users say about the new pricing") == "social"
+    assert detect_intent("reddit reception of the rewrite") == "social"
+    assert detect_intent("is there backlash to the rebrand") == "social"
+    assert detect_intent("hacker news sentiment on rust in the kernel") == "social"
+
+
+def test_social_never_outranks_a_more_specific_intent():
+    # A question that is both literature and reception gets the papers; the
+    # always-on WebSearch baseline still carries the commentary, and the social
+    # lane costs minutes we should not spend on a hunch.
+    assert detect_intent("what do people say about the arxiv preprint") == "academic"
+    assert detect_intent("patients complain about the therapy") == "medical"
+
+
+def test_a_general_query_is_still_general():
+    # Regression guard: the social cues must stay narrow enough that the
+    # byte-identical no-verticals path survives for ordinary queries.
+    for q in ("best pizza in town", "weather in Lisbon next week", "how tall is Everest"):
+        assert detect_intent(q) == "general"
+
+
 def test_route_query_baseline_websearch_on_every_query():
     tasks = route_query("q", ["a", "b", "c"], "general")
     ws = [(q, p) for (q, p) in tasks if p == "websearch"]
