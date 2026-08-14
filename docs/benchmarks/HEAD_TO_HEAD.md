@@ -69,9 +69,16 @@ For each query in the set:
 1. **bad-research side (automatable).** Run bad-research on the query. Run it once
    per route you want to benchmark — the competitive middle tier and the full
    pipeline are both fair entrants, recorded separately:
-   - `ultrafast`: `bad route "<query>" --ultrafast` then the ultrafast pipeline,
-     or invoke the `bad-research-ultrafast` skill. Save the final report to a file.
-   - `full`: the default full pipeline. Save the final report to a file.
+   Invoke `/bad-research <query>` and **pin the route** at step 1.5 rather than
+   letting the heuristic pick, so every query is benchmarked at the same depth:
+   - `fast`: `bad route --decomposition research/prompt-decomposition.json --fast
+     --apply --json` — the bounded-ReAct middle tier (`bad-research-fast`).
+     Save the final report to a file.
+   - `full`: same command with `--full`. The full pipeline. Save the report to a file.
+
+   These are the only two routes (`bad route --help`). The former third route,
+   `ultrafast`, was folded into `fast` on 2026-07-06 — there is no `--ultrafast`
+   flag and no `bad-research-ultrafast` skill.
    Record the wall-clock seconds and (from `bad calibrate`'s cost meter, or your
    own timing) the USD cost for each.
 2. **competitor side (MANUAL — needs a human).** Open the commercial Deep Research
@@ -157,9 +164,9 @@ Keyless, offline default (deterministic `RubricJudge`):
 # Single-query smoke (one bad report vs one pasted competitor report):
 bad headtohead \
   --query-id h2h_02_comparison \
-  --bad-report runs/bad/02_ultrafast.md \
+  --bad-report runs/bad/02_fast.md \
   --competitor-report runs/gemini/02.md \
-  --bad-name bad-research-ultrafast \
+  --bad-name bad-research-fast \
   --competitor-name gemini-deep-research \
   --out runs/scorecards/
 
@@ -175,11 +182,11 @@ the manifest's directory):
 
 ```json
 {
-  "bad_name": "bad-research-ultrafast",
+  "bad_name": "bad-research-fast",
   "competitor_name": "gemini-deep-research",
   "entrants": {
     "h2h_02_comparison": [
-      {"name": "bad-research-ultrafast", "report_file": "bad/02.md",
+      {"name": "bad-research-fast", "report_file": "bad/02.md",
        "corpus_file": "bad/02_corpus.json", "cost_usd": 0.018, "latency_s": 530},
       {"name": "gemini-deep-research", "report_file": "gemini/02.md",
        "cost_usd": 0.0, "latency_s": 295}
@@ -196,7 +203,7 @@ per-axis mean rail-credit breakdown).
 
 1. Run each query through the chosen commercial Deep Research product and paste
    its report into a file. *(The harness cannot reach those products.)*
-2. Run each query through bad-research (`ultrafast` and/or `full`), saving the
+2. Run each query through bad-research (`fast` and/or `full`), saving the
    report and recording cost + wall-clock.
 3. Optionally hand-build a competitor corpus JSON (or run `--llm`) so
    `source_quality` is scored fairly rather than failing for lack of a corpus.

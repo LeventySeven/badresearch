@@ -152,7 +152,7 @@ For each entry:
 1. Read the `issue` field to understand which H2 in the draft needs to move, be added, or be renamed.
 2. Apply the restructure via hand-written Edit calls on `research/notes/final_report_<vault_tag>.md`. You have Write and Edit access — the tool lock applies only to the patcher and polish auditor subagents.
 3. Preserve the body content within each H2 section — you are moving / renaming / inserting headings, not regenerating prose. If a new heading is added and its body needs fresh content, write a short evidence-grounded paragraph for it.
-4. Log changes in `research/orchestrator-restructure-log.md` (plain markdown, one bullet per change) so downstream lint rules can see this step happened.
+4. Log changes in `research/orchestrator-restructure-log.md` (plain markdown, one bullet per change). Nothing reads this file programmatically — no lint rule and no later step opens it. It is the audit trail for edits you made by hand outside the patcher's tool-lock, and it is what the exit criterion below checks you against.
 5. Never regenerate a whole section or the whole draft. The "patch not regenerate" invariant still binds you — broader tools but not broader license.
 
 ---
