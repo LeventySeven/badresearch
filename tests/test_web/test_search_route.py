@@ -19,6 +19,73 @@ def test_detect_intent_regex_fallback():
     assert detect_intent("best pizza in town") == "general"
 
 
+def test_social_route_is_the_last30days_lane():
+    assert VERTICAL_ROUTES["social"] == ["last30days"]
+
+
+def test_detect_intent_reads_reception_questions_as_social():
+    assert detect_intent("what do users say about the new pricing") == "social"
+    assert detect_intent("reddit reception of the rewrite") == "social"
+    assert detect_intent("is there backlash to the rebrand") == "social"
+    assert detect_intent("hacker news sentiment on rust in the kernel") == "social"
+
+
+def test_social_never_outranks_a_more_specific_intent():
+    # A question that is both literature and reception gets the papers; the
+    # always-on WebSearch baseline still carries the commentary, and the social
+    # lane costs minutes we should not spend on a hunch.
+    assert detect_intent("what do people say about the arxiv preprint") == "academic"
+    assert detect_intent("patients complain about the therapy") == "medical"
+
+
+def test_a_general_query_is_still_general():
+    # Regression guard: the social cues must stay narrow enough that the
+    # byte-identical no-verticals path survives for ordinary queries.
+    for q in ("best pizza in town", "weather in Lisbon next week", "how tall is Everest"):
+        assert detect_intent(q) == "general"
+
+
+# The generic tokens (`community`, `sentiment`, `reception`, `what do people …`)
+# used to fire on their own, so 19 of 22 ordinary questions flipped to the lane
+# that costs 3.5 minutes. Each row below is a query whose only "social" word is
+# being used in its ordinary sense.
+NOT_SOCIAL = (
+    "what do people eat in Okinawa",                  # what (do) (people) …, no reception verb
+    "community detection algorithms in large graphs",  # `community` as a graph term
+    "history of the European Community",               # `community` as an institution
+    "sentiment analysis of earnings calls",            # `sentiment` as an NLP task
+    "reception theory in literary criticism",          # `reception` as a school of thought
+    "what are people paid in Lisbon",
+    "trending topics in materials science",
+)
+
+
+def test_generic_tokens_alone_do_not_buy_the_social_lane():
+    for q in NOT_SOCIAL:
+        assert detect_intent(q) == "general", q
+
+
+def test_a_reception_context_still_routes_social():
+    # The same generic words, anchored to a platform or a real reception phrase.
+    assert detect_intent("what do people eat in Okinawa, according to reddit") == "social"
+    assert detect_intent("community reaction to the license change") == "social"
+    assert detect_intent("public reception of the rebrand") == "social"
+    assert detect_intent("customer reviews of the new keyboard") == "social"
+
+
+def test_the_progressive_forms_are_the_common_phrasing_and_must_route_social():
+    # Anchoring the generic tokens is right, but the first attempt put `\w*` on
+    # `complain` only, so the -ing forms — the way people actually ask this —
+    # silently fell back to `general`. A table of must-stay-GENERAL queries cannot
+    # catch that; only a must-stay-SOCIAL row can.
+    assert detect_intent("what are people saying about the new pricing") == "social"
+    assert detect_intent("what are users saying about the rebrand") == "social"
+    assert detect_intent("what are developers thinking about the new SDK") == "social"
+    assert detect_intent("what are devs complaining about in the new SDK") == "social"
+    # `community react*` covers the verb, not just the noun `reaction`.
+    assert detect_intent("how did the community react to the license change") == "social"
+
+
 def test_route_query_baseline_websearch_on_every_query():
     tasks = route_query("q", ["a", "b", "c"], "general")
     ws = [(q, p) for (q, p) in tasks if p == "websearch"]

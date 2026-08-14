@@ -52,13 +52,34 @@ def test_active_reduces_to_import_present_for_self_contained_providers():
     bootstrap reads doctor to decide whether it can run at all (issue #35 §2).
     They stay KEYLESS (`requires_key` False); they are simply reported honestly
     as unreachable from here.
+
+    EXTERNAL-ENGINE providers are the same exception for the same reason: the
+    social lane shells out to an engine installed out-of-band, so no import can
+    tell you whether it is there.
     """
-    from bad_research.providers import _HOST_BRIDGE_PROVIDERS
+    from bad_research.providers import _EXTERNAL_ENGINE_PROVIDERS, _HOST_BRIDGE_PROVIDERS
 
     for s in provider_status():
-        if s.name in _HOST_BRIDGE_PROVIDERS:
+        if s.name in _HOST_BRIDGE_PROVIDERS | _EXTERNAL_ENGINE_PROVIDERS:
             continue
         assert s.active == s.import_present
+
+
+def test_external_engine_provider_is_inactive_when_not_installed(monkeypatch, tmp_path):
+    """An uninstalled social engine reports inactive — never a phantom lane."""
+    monkeypatch.setenv("LAST30DAYS_SCRIPT", str(tmp_path / "absent.py"))
+    by_name = {s.name: s for s in provider_status()}
+    assert by_name["last30days"].active is False
+    assert by_name["last30days"].requires_key is False   # still keyless
+
+
+def test_external_engine_provider_is_active_once_installed(monkeypatch, tmp_path):
+    """…and the probe has teeth: point it at a real file and it flips."""
+    script = tmp_path / "last30days.py"
+    script.write_text("")
+    monkeypatch.setenv("LAST30DAYS_SCRIPT", str(script))
+    by_name = {s.name: s for s in provider_status()}
+    assert by_name["last30days"].active is True
 
 
 def test_host_bridge_providers_are_inactive_in_a_subprocess(monkeypatch):

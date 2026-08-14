@@ -48,6 +48,11 @@ def _content_hash(content: str) -> str:
     return hashlib.sha256((content or "").encode("utf-8")).hexdigest()[:16]
 
 
+def _is_prefetched(result: Any) -> bool:
+    """Did this hit arrive with the body its provider had already read?"""
+    return bool((getattr(result, "metadata", None) or {}).get("prefetched"))
+
+
 def _stamp_candidate_age(cand: Candidate, today: date | datetime | None) -> None:
     """Compute age_days from the survivor's WebResult and stamp BOTH consumers.
 
@@ -90,6 +95,14 @@ def dedup(hits: list[Any], *, today: date | datetime | None = None) -> list[Cand
             # own ranked list, so a repeat sighting is real fusion evidence.
             if rank > 0:
                 existing.provider_rank_lists.setdefault(prov, []).append(rank)
+            # First-seen wins EXCEPT on the one asymmetry that matters: a hit that
+            # already carries its body beats a snippet. Base lanes are fanned before
+            # the verticals, so for any popular thread the snippet is seen first and
+            # the prefetched body would be thrown away — after which Stage D refetches
+            # the permalink into a login wall and Stage E drops it as junk. The merged
+            # SERP signals above stay on the Candidate; only the body changes hands.
+            if _is_prefetched(h) and not _is_prefetched(existing.result):
+                existing.result = h
         else:
             by_url[cu] = Candidate(canonical_url=cu, result=h,
                                    provider_ranks={prov: rank} if rank else {prov: 0},
