@@ -7,13 +7,16 @@ latency ≈ max single search, not the sum (dossier 10 §1.3, §5.1).
 A dead provider degrades to the survivors (SPEC §13 provider failover) — one
 provider's exception never aborts the fan-out.
 
-Every provider call is routed through funnel._async.acall so the SYNCHRONOUS
-real providers (Plan 03 blocking httpx) and the async test fakes both work.
+Every provider call goes through `_search_with_status`, which offloads the
+SYNCHRONOUS real providers (Plan 03 blocking httpx) via funnel._async.acall,
+awaits the async test fakes directly, and — either way — samples the provider's
+`last_status` note at the call rather than after it.
 """
 
 from __future__ import annotations
 
 import asyncio
+import inspect
 from dataclasses import dataclass
 from typing import Any, Literal
 
@@ -166,25 +169,44 @@ def _clamp_concurrency(n: int | None) -> int:
     return max(1, min(int(n), _FANOUT_CONCURRENCY_MAX))
 
 
-def _outcome_of(provider: Any, results: list[Any]) -> str:
+def _outcome_of(status: Any, results: list[Any]) -> str:
     """The outcome one completed provider call earns.
 
-    Hits always win. On an EMPTY return we ask the provider what happened —
-    `last_status` is the note it left on the way out of `search()`. Only a
-    provider that reports nothing (or reports success) collapses to
-    "no-results"; a rate limit, a timeout, or a dead host keeps its name.
-
-    `last_status` is a per-INSTANCE attribute and the same instance serves many
-    concurrent queries, so a read here can pick up a sibling call's status. That
-    is benign by construction: `_mark` keeps the highest-ranked outcome per
-    provider, which is the same aggregation the attribute race can produce.
+    Hits always win. On an EMPTY return we use what the provider reported —
+    `status` is the note it left on `last_status` on the way out of `search()`,
+    sampled by `_search_with_status` at the call itself. Only a provider that
+    reports nothing (or reports success) collapses to "no-results"; a rate
+    limit, a timeout, or a dead host keeps its name.
     """
     if results:
         return "ok"
-    status = getattr(provider, "last_status", None)
     if isinstance(status, str) and status in _OUTCOME_RANK and status != "ok":
         return status
     return NO_RESULTS
+
+
+def _sync_search_with_status(provider: Any, q: Any) -> tuple[Any, Any]:
+    """One BLOCKING provider call plus its note, read in the same worker thread.
+
+    Reading `last_status` back on the event loop is too late: it is one
+    per-INSTANCE slot, the fan-out points m_queries at the same instance
+    concurrently, and every completed call overwrites it. The throttled query's
+    "rate-limited" was routinely overwritten by a sibling's honest empty before
+    anyone read it, so the lane reached the envelope as `no-results` — the ONE
+    outcome that licenses "there was nothing on X" (issue #39). Sampling here,
+    where the call returned, keeps the note with the query that earned it.
+    """
+    return provider.search_ex(q), getattr(provider, "last_status", None)
+
+
+async def _search_with_status(provider: Any, q: Any) -> tuple[Any, Any]:
+    """(results, last_status) for one provider call, sampled AT the call."""
+    if inspect.iscoroutinefunction(provider.search_ex):
+        # Async seam (test fakes): no thread hop, so the read is already adjacent.
+        return await provider.search_ex(q), getattr(provider, "last_status", None)
+    # Sync seam (every real provider) — still routed through acall, which owns
+    # the offload; the sample rides back with the results instead of trailing it.
+    return await acall(_sync_search_with_status, provider, q)
 
 
 async def fan_out(queries: list[Any], providers: list[Any],
@@ -243,7 +265,7 @@ async def fan_out(queries: list[Any], providers: list[Any],
 
     async def _call(provider: Any, q: Any) -> list[Any]:
         try:
-            results = await acall(provider.search_ex, q)
+            results, status = await _search_with_status(provider, q)
         except NotImplementedError:
             # A provider that cannot run in THIS context (e.g. the host
             # WebSearch tool adapter invoked from a CLI subprocess) raises
@@ -255,7 +277,7 @@ async def fan_out(queries: list[Any], providers: list[Any],
         except Exception:
             _mark(getattr(provider, "name", "?"), "error")
             return []  # degrade: a dead provider drops out, never aborts the run
-        _mark(getattr(provider, "name", "?"), _outcome_of(provider, results))
+        _mark(getattr(provider, "name", "?"), _outcome_of(status, results))
         for i, r in enumerate(results):
             if not getattr(r, "serp_provider", ""):
                 r.serp_provider = provider.name

@@ -24,11 +24,22 @@ class SSRFError(ValueError):
 _BLOCKED_HOSTNAMES = frozenset({"localhost", "ip6-localhost", "ip6-loopback"})
 
 
+# Ranges `ipaddress` calls neither private nor reserved, but that an egress guard must
+# still refuse. Blocking them is also what the PreToolUse hook has always done, and the
+# two are pinned to each other by tests/test_core/test_pretooluse_ssrf_guard.py.
+_EXTRA_BLOCKED_NETWORKS = (
+    ipaddress.ip_network("100.64.0.0/10"),  # CGNAT — someone else's internal network
+    ipaddress.ip_network("192.0.0.0/24"),   # IETF protocol block (192.0.0.9/.10 anycast)
+    ipaddress.ip_network("fec0::/10"),      # site-local: deprecated, still internal
+)
+
+
 def _is_blocked_ip(ip: ipaddress.IPv4Address | ipaddress.IPv6Address) -> bool:
     """True if `ip` is loopback / private / link-local / metadata / reserved.
 
     Covers 127.0.0.0/8, 10/8, 172.16/12, 192.168/16, 169.254.0.0/16 (cloud
-    metadata at 169.254.169.254), ::1, and IPv4-mapped IPv6 forms of all of them.
+    metadata at 169.254.169.254), ::1, and IPv4-mapped IPv6 forms of all of them,
+    plus `_EXTRA_BLOCKED_NETWORKS`.
     """
     # Unwrap IPv4-mapped IPv6 (e.g. ::ffff:127.0.0.1) so the v4 rules apply.
     mapped = getattr(ip, "ipv4_mapped", None)
@@ -41,6 +52,7 @@ def _is_blocked_ip(ip: ipaddress.IPv4Address | ipaddress.IPv6Address) -> bool:
         or ip.is_reserved
         or ip.is_unspecified
         or ip.is_multicast
+        or any(ip in net for net in _EXTRA_BLOCKED_NETWORKS)  # mismatched family: False
     )
 
 

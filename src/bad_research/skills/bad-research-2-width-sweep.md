@@ -374,14 +374,38 @@ items (same well/adequate/thin/uncovered logic as before):
 
 3. **Gap fetch — a second, smaller funnel call for gaps.** For every `thin` or
    `uncovered` item, fire one more, gap-targeted `funnel-gather` (do NOT
-   hand-dispatch fetchers):
+   hand-dispatch fetchers).
+
+   **First, YOU write the gap plan.** No earlier step writes it — the gap wave is
+   the only consumer, so write `research/temp/gap-search-plan.md` here, now, from
+   the thin/uncovered list you just built. It is a fresh, smaller table in the SAME
+   shape as the step-2.1 plan (a handful of rows per gap item, not a re-run of the
+   original 40–100):
+
+   ```markdown
+   | Atomic item | Search query | Type | Lens | Target |
+   |---|---|---|---|---|
+   | Sub-Q4 (thin) | "rugged tablet enterprise deployment 2025" | web | breadth | factual |
+   | Sub-Q7 (uncovered) | "field-service device failure rates study" | academic | depth | canonical |
+   ```
+
+   **The `Search query` header is load-bearing.** `parse_search_plan` locates the
+   query column by header NAME (`Search query` or `Query`) — never by position. A
+   table with no such header parses to zero queries, and the funnel silently falls
+   back to generic suffix expansion; the envelope says so via the
+   `search_plan_empty_or_unparseable` warning. Escape any literal `|` inside a
+   query as `\|`.
+
+   Then fire the wave:
    ```bash
    bad funnel-gather --query-file research/query-<vault_tag>.md \
        --search-plan research/temp/gap-search-plan.md \
        --mode <light|full> --vault-tag <vault_tag> --json
    ```
    This wave is smaller (a gap-targeted query plan) but surgically targeted at
-   the thin/uncovered items.
+   the thin/uncovered items. Check the returned `warnings` for
+   `search_plan_empty_or_unparseable` — if it fired, your gap plan did not apply;
+   fix the header row and re-run before moving on.
 
 4. **Write coverage report** to `research/temp/coverage-gaps.md`:
    - List every atomic item with its coverage status and source count

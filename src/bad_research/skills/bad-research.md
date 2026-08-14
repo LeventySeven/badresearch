@@ -198,7 +198,7 @@ Before you invoke any step skill, do this:
 
      The other fields are per-command niceties, not path switches: `assets: false` means "no saved figure PNG — ground the text layer and continue"; `note_new`/`note_update: false` mean "`Write`/`Edit` the note file instead". None of them force the fallback path on their own. Tell downstream steps to **read `research/cli-caps.json`** and branch on it; each step/agent that shells out to one of these subcommands gates on this file (or re-probes `bad <cmd> --help` itself) and takes its native fallback when that one capability is absent.
 
-0.5. **Archive any prior run's artifacts.** Run `bad archive-run --json`. If a previous `/hyperresearch` session left a scaffold, loci.json, comparisons.md, critic-findings, patch-log, polish-log, prompt-decomposition, or any `research/temp/*` scratch, this moves the whole set into `research/runs/archive-<prev-tag>-<UTC-timestamp>/` so the new run starts from a clean slate without losing the prior run's audit trail. Final reports (`research/notes/final_report_<tag>.md`) and canonical query files (`research/query-<tag>.md`) are already namespaced and stay in place. The command no-ops cheaply on a fresh vault — safe to run unconditionally. **Caveat:** this protects sequential runs only. Two `/hyperresearch` invocations that overlap in time still race on the new files they both write; if you need true parallel runs, namespace per-run artifacts under `research/runs/<vault_tag>/` instead.
+0.5. **Archive any prior run's artifacts.** Run `bad archive-run --json`. If a previous `/hyperresearch` session left a scaffold, loci.json, comparisons.md, critic-findings, patch-log, polish-log, prompt-decomposition, or any `research/temp/*` scratch, this moves the whole set into `research/runs/archive-<prev-tag>-<UTC-timestamp>/` so the new run starts from a clean slate without losing the prior run's audit trail. Final reports (`research/notes/final_report_<tag>.md`) and canonical query files (`research/query-<tag>.md`) are already namespaced and stay in place. The command no-ops cheaply on a fresh vault. **It is not unconditional:** if the newest run has no `research/notes/final_report_<tag>.md`, that run was interrupted (a session-limit kill mid-pipeline is the usual cause) and its scratch IS the resume state, so `archive-run` refuses and returns `{"archived": false, "interrupted_run": "<tag>"}`. When you see that, do NOT pass `--force` — go to *Recovery: if you wake up uncertain where you are* below, find the highest-numbered step whose artifact exists, and resume that run from the next step. Use `bad archive-run --force --json` only when the user has explicitly asked to abandon that run and start clean. **Caveat:** this protects sequential runs only. Two `/hyperresearch` invocations that overlap in time still race on the new files they both write; if you need true parallel runs, namespace per-run artifacts under `research/runs/<vault_tag>/` instead.
 
 1. **Resolve the canonical research query.** Order of precedence:
    - If `research/prompt.txt` exists (legacy harness / wrapped run), read it. Its contents are the canonical research query. GOSPEL.
@@ -226,12 +226,22 @@ Before you invoke any step skill, do this:
    - **compare**: proportionate per-entity depth + a committed recommendation
    - **forecast**: predictive claims grounded in past + present, explicit time horizon
 
-5. **Write the scaffold.** Write `research/scaffold.md` (your private planning document — it MUST NOT appear anywhere in the final report). Include in scaffold:
-   - User Prompt (VERBATIM — gospel)
-   - Run config (vault_tag, query_file_path, modality, wrapper requirements)
-   - Modality classification rationale
-   - Tier rationale (filled in after step 1)
-   - Wrapper requirements (save path, citation format, terminal sections)
+5. **Write the scaffold.** Write `research/scaffold.md` (your private planning document — it MUST NOT appear anywhere in the final report). Each item below is a `##` **markdown heading** with its content underneath — not a bullet. `bad lint --rule scaffold-prompt` looks for a `#`-prefixed `User Prompt` heading followed by non-empty content, and the polish auditor + critics detect scaffold leakage by matching those header lines, so a bulleted scaffold fails the gate:
+   ```markdown
+   ## User Prompt (VERBATIM — gospel)
+   > <the verbatim query, character-for-character>
+
+   ## Run config
+   - vault_tag / query_file_path / modality / citation_style
+
+   ## Modality classification rationale
+   ## Tier rationale
+   (filled in after step 1)
+
+   ## Session wrapper requirements
+   - save path, citation format, terminal sections
+   ```
+   Keep the `## User Prompt (VERBATIM` and `## Session wrapper requirements` headers verbatim — they are two of the scaffold-only headers the leak detectors key on (`hooks.SCAFFOLD_ONLY_SECTION_HEADERS`).
 
 6. **Seed the TodoWrite list (seed-then-lazy).** The route is only known after step 1.5, so seed in two passes. **First**, seed just the pre-route steps that always run, in order:
    - `Step 0.5 — Skill: bad-research-0.5-clarify`
