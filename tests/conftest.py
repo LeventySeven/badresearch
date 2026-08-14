@@ -32,7 +32,6 @@ def _clear_provider_keys(monkeypatch: pytest.MonkeyPatch) -> None:
     """Ensure no real provider keys leak into tests from the host environment."""
     for var in (
         "ANTHROPIC_API_KEY",
-        "BAD_RESEARCH_BUDGET_USD",
         "BAD_RESEARCH_CHEAP",
         "BAD_RESEARCH_VAULT_ROOT",
     ):

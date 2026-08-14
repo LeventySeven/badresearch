@@ -88,7 +88,17 @@ Read:
    - **edit** → collect the user's edits to the sub-question set (add / drop /
      reword / reorder), then **patch `research/prompt-decomposition.json`**: rewrite
      the `sub_questions` (and `entities` if the user changed the entity set) to the
-     approved list, preserving every other field. **Do NOT touch `route` or
+     approved list, preserving every other field — **except
+     `required_section_headings`, which you must re-derive (or explicitly re-confirm
+     with the user) in the SAME patch.** That array is DERIVED from the sub-questions
+     (step 1, `bad-research-1-decompose` §3: "generate headings from the sub-questions
+     you extracted"), and step 12's instruction critic then enforces it element-wise
+     against the draft as a `"severity": "critical"` structural-mirror finding. Carry
+     it over unchanged and you hand the drafter a STALE heading contract for
+     sub-questions nobody is researching any more — then fail the drafter against it.
+     Apply step 1's own population rule (one ordered H2 per approved sub-question,
+     declarative phrasing) and **never leave the array empty**; re-show the new
+     headings with the patched plan. **Do NOT touch `route` or
      `query_shape`** — an edit changes WHAT is researched, not the route/depth. If the
      edited set materially changes breadth, you MAY re-run step 1.5 (`bad route
      --apply`) to re-derive the route from the new sub-questions — but only as an
@@ -105,8 +115,9 @@ Read:
 ## Exit criterion
 
 - On a gated run: the user has chosen approve/edit/proceed; if edited, the
-  `sub_questions` in `research/prompt-decomposition.json` reflect the approved set
-  and `route`/`query_shape` are unchanged by the edit itself.
+  `sub_questions` in `research/prompt-decomposition.json` reflect the approved set,
+  `required_section_headings` covers exactly those sub-questions (no stale heading
+  contract), and `route`/`query_shape` are unchanged by the edit itself.
 - On a skipped run (`would_gate == false`): no pause occurred, the decomposition is
   untouched, and `research/scaffold.md` records `## Plan gate: skipped (...)`.
 - The `route` classification is identical to what step 1.5 wrote (this gate never

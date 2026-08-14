@@ -22,6 +22,30 @@ def test_entry_skill_has_two_route_sequences(skills_dir):
     assert "uncited" in body.lower()
 
 
+def test_entry_skill_wires_the_run_level_wallclock_deadline(skills_dir):
+    """The terminal `short_circuit_to_synthesis` degrade step was UNREACHABLE on a
+    default full run: its only trigger was the opt-in `--max-tokens` ceiling plus a
+    cumulative token count no phase accounts for. The entry skill must also wire the
+    wall-clock trigger — no flag, no token ledger, and observable: a model can
+    misreport its token spend, it cannot misreport the clock."""
+    body = (skills_dir / "bad-research.md").read_text(encoding="utf-8")
+    assert "should_short_circuit_wallclock" in body
+    assert "FULL_TIMEOUT_S" in body
+    assert "RESERVE_FOR_SYNTHESIS_S" in body
+    # elapsed is measured against a timestamp WRITTEN AT BOOTSTRAP, never estimated
+    assert "elapsed" in body
+    assert "created" in body and "query-<vault_tag>.md" in body
+
+
+def test_entry_skill_effort_table_has_no_unconsumed_drafters_column(skills_dir):
+    """The effort table's `drafters` column (Haiku-/Sonnet-/Opus-tier) was the prose
+    face of EFFORT_MAP's `tier` — and nothing applied either: no call site takes its
+    model tier from `--effort`, and the map's "default" was not even a member of the
+    triage/work/heavy vocabulary. The column promised behaviour the pipeline never had."""
+    body = (skills_dir / "bad-research.md").read_text(encoding="utf-8")
+    assert "drafters" not in body
+
+
 def test_entry_skill_bootstrap_uses_bad_not_bare_hyperresearch(skills_dir):
     # issue #12: the bootstrap called bare `hyperresearch archive-run` / `vault-tag`,
     # which exits 127 on a uv-tool install where only `bad` is on PATH. The whole

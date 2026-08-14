@@ -121,6 +121,25 @@ def test_light_under_max_interactive_does_not_fire():
     assert plan_gate_fires(d, interactive=True, wrapped=False, auto=False) is False
 
 
+# ── The edit branch must leave a SELF-CONSISTENT decomposition ───────────────
+
+
+def test_plan_gate_edit_rederives_the_heading_contract(skills_dir):
+    """The gate's edit branch rewrites `sub_questions`, "preserving every other field"
+    — but `required_section_headings` is DERIVED from the sub-questions
+    (bad-research-1-decompose step 3) and is then enforced element-wise by the step-12
+    instruction critic as a `"severity": "critical"` structural-mirror finding
+    (core/hooks.py). Preserving it verbatim across a sub-question edit hands the
+    drafter a STALE heading contract and then fails the drafter against it, so the
+    edit must re-derive (or explicitly re-confirm) the headings in the same patch."""
+    body = (skills_dir / "bad-research-1.6-plan-gate.md").read_text(encoding="utf-8")
+    assert "required_section_headings" in body
+    # ...and specifically inside the **edit** branch, not merely somewhere in the file
+    edit_clause = body.split("**edit**", 1)[1].split("Reuse the 0.5-clarify", 1)[0]
+    assert "required_section_headings" in edit_clause
+    assert "re-derive" in edit_clause.lower() or "re-confirm" in edit_clause.lower()
+
+
 # ── It must NOT change classify_route ─────────────────────────────────────────
 
 

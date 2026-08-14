@@ -37,7 +37,11 @@ def test_effort_levels_are_the_openai_four():
         assert row["route"] in ("fast", "full")
         assert isinstance(row["fetchers_max"], int)
         assert isinstance(row["loci_max"], int)
-        assert row["tier"] in ("triage", "work", "heavy", "default")
+        # No `tier` key: it was a computed dial NOTHING consumed, and its "default"
+        # value was not even a member of the model-tier vocabulary
+        # (config.model_tiers = triage/work/heavy), so it could never have been
+        # applied. Shipping a dial that does nothing is worse than not shipping it.
+        assert "tier" not in row
 
 
 def test_effort_monotonic_fanout():
@@ -56,12 +60,12 @@ def test_effort_overrides_minimal_forces_fast_single_draft():
     assert ov["single_draft"] is True
 
 
-def test_effort_overrides_high_forces_full_opus():
+def test_effort_overrides_high_forces_full_max_width():
     ov = effort_overrides("high")
     assert ov["route"] == "full"
-    assert ov["tier"] == "heavy"
     assert ov["fetchers_max"] == 12
     assert ov["loci_max"] == 6
+    assert "tier" not in ov   # the unconsumed model-tier dial is gone
 
 
 def test_effort_overrides_unknown_returns_none():
@@ -127,6 +131,77 @@ def test_short_circuit_inert_when_no_ceiling():
     # the --max-tokens ceiling is opt-in; with no ceiling there is nothing to reserve.
     assert should_short_circuit(999_999, None) is False
     assert should_short_circuit(999_999, 0) is False
+
+
+# ── The RUN-LEVEL wall-clock deadline — the SECOND, independent trigger for the
+#    same terminal short_circuit_to_synthesis step, and the only one reachable on a
+#    default `full` run (the token twin above is opt-in AND needs a cumulative token
+#    count no phase accounts for). ──────────────────────────────────────────────
+from bad_research.skills.router import should_short_circuit_wallclock
+
+
+def test_full_timeout_and_wallclock_reserve_constants_present():
+    # The full route's run-level net — the twin of FAST_TIMEOUT_S (600s on a <10-min
+    # target). The net must not fire inside the route's own advertised band: the
+    # full run never trips it; it fires only on the long tail.
+    assert R.FULL_TIMEOUT_S == 10800
+    # The TRIGGER point — not the deadline — is what must clear the advertised top
+    # of 2.5 h (9000 s), because "compose now" fires a full reserve early.
+    assert R.FULL_TIMEOUT_S - R.RESERVE_FOR_SYNTHESIS_S == 9000
+    assert R.FULL_TIMEOUT_S > R.FAST_TIMEOUT_S
+    # the wall-clock twin of RESERVE_FOR_SYNTHESIS — it must fit inside the deadline
+    assert 0 < R.RESERVE_FOR_SYNTHESIS_S < R.FULL_TIMEOUT_S
+    # and reserve more than ONE depth-investigator window: the synthesis seam the
+    # short-circuit jumps to is several stages (10 -> 11 -> 11.5 -> 15/16), not one subagent.
+    assert R.RESERVE_FOR_SYNTHESIS_S > R.INVESTIGATOR_TIMEOUT_S
+
+
+def test_wallclock_short_circuit_needs_no_opt_in():
+    """The whole point: the terminal degrade step must be REACHABLE on a default full
+    run. The token twin is inert without `--max-tokens`; the wall-clock trigger has a
+    default deadline and needs no flag and no token accounting."""
+    assert should_short_circuit(999_999, None) is False              # token twin: inert
+    assert should_short_circuit_wallclock(R.FULL_TIMEOUT_S) is True  # wall-clock: fires
+
+
+def test_wallclock_fires_when_remaining_below_reserve():
+    elapsed = R.FULL_TIMEOUT_S - R.RESERVE_FOR_SYNTHESIS_S + 1   # 1s short of the reserve
+    assert should_short_circuit_wallclock(elapsed) is True
+
+
+def test_wallclock_does_not_fire_early_in_the_run():
+    assert should_short_circuit_wallclock(60) is False
+
+
+def test_wallclock_at_exact_reserve_boundary_does_not_fire():
+    # remaining == the reserve is exactly enough — STRICT shortfall only, mirroring
+    # should_short_circuit's boundary.
+    assert should_short_circuit_wallclock(
+        R.FULL_TIMEOUT_S - R.RESERVE_FOR_SYNTHESIS_S) is False
+
+
+def test_wallclock_honours_an_explicit_deadline():
+    assert should_short_circuit_wallclock(
+        100, deadline_s=R.RESERVE_FOR_SYNTHESIS_S + 200) is False
+    assert should_short_circuit_wallclock(
+        100, deadline_s=R.RESERVE_FOR_SYNTHESIS_S + 50) is True
+
+
+def test_wallclock_explicit_zero_deadline_opts_out():
+    # An explicit 0/negative deadline is the deliberate "no wall-clock net" opt-out.
+    # `None` means "use the default deadline", NOT "no deadline" — that asymmetry
+    # with the token predicate IS the fix.
+    assert should_short_circuit_wallclock(999_999, deadline_s=0) is False
+    assert should_short_circuit_wallclock(999_999, deadline_s=-1) is False
+    assert should_short_circuit_wallclock(999_999, deadline_s=None) is True
+
+
+def test_wallclock_adds_no_new_degrade_step():
+    # Two independent triggers, ONE already-sanctioned terminal step — the wall-clock
+    # net must not grow DEGRADE_ORDER.
+    order = degrade_order()
+    assert order[-1] == "short_circuit_to_synthesis"
+    assert len(order) == 4
 
 
 def test_fetcher_toolcall_cap_is_two_route_light_and_full():

@@ -439,7 +439,7 @@ def effort_overrides(effort: str | None) -> dict[str, Any] | None:
     router overrides the orchestrator applies on top of the auto-classified route.
 
     Returns None for an absent/invalid effort (the auto-route is left untouched).
-    The returned dict pins {route, tier, fetchers_max, loci_max, extended_thinking,
+    The returned dict pins {route, fetchers_max, loci_max, extended_thinking,
     single_draft} — OpenAI's 4-level continuum expressed as a host-side config
     (dossier 16 §6.1). This is the wiring for the stub flag in cli/research.py.
     """
@@ -453,8 +453,10 @@ def degrade_order() -> tuple[str, ...]:
     redundancy, then fan-out width, then model tier, then — as the TERMINAL action
     (E10 / STEAL_LIST #6c) — short_circuit_to_synthesis. NEVER the synthesis/grounding
     token budget itself (the 80%-variance core). The orchestrator walks this list when
-    a run approaches its --max-tokens ceiling; the terminal step is taken when
-    should_short_circuit() fires."""
+    a run approaches its --max-tokens ceiling OR its run-level wall-clock deadline; the
+    terminal step is taken when EITHER should_short_circuit() (token, opt-in) or
+    should_short_circuit_wallclock() (wall-clock, always on for `full`) fires. Two
+    independent triggers, one terminal step."""
     return R.DEGRADE_ORDER
 
 
@@ -477,3 +479,36 @@ def should_short_circuit(cumulative_tokens: int, ceiling: int | None) -> bool:
     if not ceiling:   # None or 0 → no opt-in ceiling, never short-circuit
         return False
     return (ceiling - cumulative_tokens) < R.RESERVE_FOR_SYNTHESIS
+
+
+def should_short_circuit_wallclock(
+    elapsed_s: float, deadline_s: float | None = None
+) -> bool:
+    """The RUN-LEVEL wall-clock "compose now" predicate — the SECOND, independent
+    trigger for the same terminal ``short_circuit_to_synthesis`` step (it adds no new
+    degrade step).
+
+    The orchestrator calls this after each retrieval/critic ROUND with the run's
+    elapsed wall-clock (now - the run's start timestamp, written at bootstrap). It
+    returns True when the time left has fallen below the reserved synthesis +
+    grounding window — ``deadline - elapsed < RESERVE_FOR_SYNTHESIS_S`` — at which
+    point the orchestrator stops stepping and jumps to step 10/11 with whatever's
+    gathered, shipping a smaller-corpus grounded report instead of being killed
+    mid-pipeline with its in-flight agents.
+
+    **Why this exists next to `should_short_circuit`:** that twin is opt-in
+    (``--max-tokens``) and needs a cumulative token count no phase accounts for, so on
+    a default `full` run the terminal degrade step was unreachable. Here the deadline
+    DEFAULTS: ``deadline_s=None`` means ``FULL_TIMEOUT_S``, not "no deadline". Elapsed
+    wall-clock is also the one budget the model cannot misreport (the fast route's
+    "loop counters, not model claims" discipline).
+
+    An explicit ``deadline_s <= 0`` is the deliberate opt-OUT (a run that wants no
+    wall-clock net); a positive value overrides the default. The comparison is STRICT,
+    mirroring the token twin: time left exactly equal to the reserve is still enough.
+    """
+    if deadline_s is None:
+        deadline_s = R.FULL_TIMEOUT_S
+    if deadline_s <= 0:   # explicit opt-out — the only way to have no wall-clock net
+        return False
+    return (deadline_s - elapsed_s) < R.RESERVE_FOR_SYNTHESIS_S

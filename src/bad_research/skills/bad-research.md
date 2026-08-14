@@ -121,7 +121,7 @@ degraded full run; do NOT add the full-tier stages "to be thorough." `full` ALWA
 no-uncited-claim gate in step 16 is a **ship-block for ALL routes**. If
 uncertain, route up — but never silently upgrade every query to `full`.
 
-### Reasoning-effort continuum + token ceiling
+### Reasoning-effort continuum + token ceiling + wall-clock deadline
 
 The `--effort` flag is a 4-level dial — `minimal` /
 `low` / `medium` / `high` — that nudges the route + per-step fan-out on top of
@@ -134,34 +134,61 @@ plan-gate fires only on an interactive non-`--auto` run. `router.py::plan_gate_f
 defaults `interactive=False` and returns `True` only when the CLI context is
 interactive (surfaced by `bad route --interactive --json` as `plan_gate.would_gate`).
 
-| `--effort` | route | drafters | fetcher fan-out | extended thinking |
-|---|---|---|---|---|
-| `minimal` | fast, single draft | Haiku-tier | ≤4 | off |
-| `low` | fast | Sonnet-tier | ≤8 | off |
-| `medium` (default) | full | default | 10–12, loci ≤4 | on |
-| `high` | full, max | Opus-tier | 12, loci ≤6 | on |
+| `--effort` | route | fetcher fan-out | extended thinking |
+|---|---|---|---|
+| `minimal` | fast, single draft | ≤4 | off |
+| `low` | fast | ≤8 | off |
+| `medium` (default) | full | 10–12, loci ≤4 | on |
+| `high` | full, max | 12, loci ≤6 | on |
+
+(There is no per-effort *model* column: every step skill pins its own subagent tier
+(`tier: "work"` etc.) and nothing in the pipeline re-tiers a model from `--effort`.)
 
 When the user passes `--max-tokens <N>`, track the cumulative token total in
-`research/temp/orchestrator-notes.md`. As the run approaches the ceiling, degrade
-in **Claude's order — cut tokens LAST** (`skills/router.py::degrade_order`):
+`research/temp/orchestrator-notes.md`. As the run approaches the ceiling — **or its
+run-level wall-clock deadline** — degrade in **Claude's order — cut tokens LAST**
+(`skills/router.py::degrade_order`):
 
 1. cut tool-call redundancy first (skip the redundancy-audit sub-step)
 2. then cut fan-out width (fewer fetchers / fewer loci)
 3. then cut model tier (heavy → light on non-critical steps)
 4. **terminal — short-circuit to synthesis** (`short_circuit_to_synthesis`): after
-   **each retrieval/critic round**, call
-   `skills/router.py::should_short_circuit(cumulative_tokens, ceiling)`. When it
-   returns true — i.e. `ceiling − cumulative < RESERVE_FOR_SYNTHESIS`
-   (`skills/routing_constants.py::RESERVE_FOR_SYNTHESIS`) — **stop stepping**: skip
-   the remaining retrieval/critic stages and jump straight to step 10/11 (synthesis)
-   with whatever's been gathered. You ship a smaller-corpus *grounded* report rather
-   than dying mid-pipeline. This is Perplexity's "reserve budget for synthesis."
+   **each retrieval/critic round**, evaluate **both** triggers below. They are
+   independent; **either one firing takes this same terminal step** (there is no
+   second, separate degrade action):
+   - **token ceiling (opt-in)** — `skills/router.py::should_short_circuit(cumulative_tokens, ceiling)`.
+     Fires when `ceiling − cumulative < RESERVE_FOR_SYNTHESIS`
+     (`skills/routing_constants.py::RESERVE_FOR_SYNTHESIS`). Inert without `--max-tokens`.
+   - **wall-clock deadline (always on for `full`)** —
+     `skills/router.py::should_short_circuit_wallclock(elapsed_s)`. Compute
+     `elapsed_s` as `now − created`, where `created` is the ISO-8601 timestamp in
+     `research/query-<vault_tag>.md` (written at Bootstrap step 3 — **read it off
+     disk with `date -u +%s`; never estimate elapsed time**). It fires when
+     `FULL_TIMEOUT_S − elapsed < RESERVE_FOR_SYNTHESIS_S` — i.e. the run has only
+     the reserved synthesis window left of its 3 h budget — i.e. it has already run
+     past the 2.5 h top of its own advertised ETA. This is the trigger that is
+     *reachable on a default run*: no flag, no token ledger, and a clock the model
+     cannot misreport. (`fast` needs none of this — its own `FAST_TIMEOUT_S`
+     deadline lives inside the bounded loop.)
+
+   On either: **stop stepping** — skip the remaining retrieval/critic stages and jump
+   straight to step 10/11 (synthesis) with whatever's been gathered. You ship a
+   smaller-corpus *grounded* report rather than dying mid-pipeline and losing every
+   in-flight agent. This is Perplexity's "reserve budget for synthesis." Record which
+   trigger fired in `research/temp/orchestrator-notes.md` and name the shortened
+   corpus as a limitation in the report.
+
+   A **resumed** interrupted run inherits the original `created` timestamp, so the
+   wall-clock trigger may fire on its first check — that is correct, not a bug: the
+   run has already spent its budget, so it composes what exists instead of re-opening
+   retrieval.
 5. NEVER cut the synthesis / grounding token budget itself — that's the 80%-variance
    core. The short-circuit above *protects* that reserved budget; it never spends it
    on more retrieval.
 
-The ceiling is opt-in; the default is the existing per-tier budget. We surface a
-count, not a billing system.
+The token ceiling is opt-in; the default is the existing per-tier budget. We surface a
+count, not a billing system. The wall-clock deadline is NOT opt-in — every `full` run
+has one.
 
 ---
 

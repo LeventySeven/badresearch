@@ -37,8 +37,7 @@ class BadResearchConfig:
             "heavy": "claude-opus-4-7",
         }
     )
-    budget_usd: float | None = None        # None = uncapped
-    cheap: bool = False                    # demote heavy->work
+    cheap: bool = False                    # demote heavy->work (llm/anthropic.py)
     # E7 — append-only prompt-cache discipline (headless AnthropicProvider only).
     # When True (default) the provider stamps a cache_control breakpoint on the
     # STABLE system-prompt prefix so repeated headless calls hit the Anthropic
@@ -56,7 +55,12 @@ class BadResearchConfig:
     # or the two agent-browser engines kept as a fallback for machines without silver.
     browse_engine: Literal["silver", "lightpanda", "chrome"] = "silver"
     effort: Literal["minimal", "low", "medium", "high"] = "medium"  # KR-6 effort continuum
-    max_tokens: int | None = None                          # KR-6 per-run ceiling (opt-in)
+    # NOTE: `max_tokens` / `budget_usd` used to live here. Both were parsed from TOML
+    # + env and read by NOTHING — this package has no token or cost meter, and the
+    # run-level ceiling the orchestrator honours is the `--max-tokens` value it tracks
+    # in prose (entry skill), never a config field. They were removed rather than
+    # faked: a dial that silently does nothing is worse than no dial. A config or env
+    # that still carries them loads fine (unknown keys are ignored).
     # Retrieval knobs (Plan 02; default to the frozen constants). The engine
     # reads these (not the constants module directly) so config overrides apply.
     retrieval_alpha: float = 0.7
@@ -92,10 +96,6 @@ class BadResearchConfig:
                 cfg.browse_engine = section["browse_engine"]
             if "effort" in section:
                 cfg.effort = section["effort"]
-            if "max_tokens" in section:
-                cfg.max_tokens = int(section["max_tokens"])
-            if "budget_usd" in section:
-                cfg.budget_usd = float(section["budget_usd"])
             if "cheap" in section:
                 cfg.cheap = bool(section["cheap"])
             if "prompt_cache" in section:
@@ -114,10 +114,6 @@ class BadResearchConfig:
             cfg.browse_engine = v  # type: ignore[assignment]  # the one-line rollback switch
         if (v := os.environ.get("BAD_RESEARCH_EFFORT")) is not None:
             cfg.effort = v  # type: ignore[assignment]
-        if (v := os.environ.get("BAD_RESEARCH_MAX_TOKENS")) is not None:
-            cfg.max_tokens = int(v)
-        if (v := os.environ.get("BAD_RESEARCH_BUDGET_USD")) is not None:
-            cfg.budget_usd = float(v)
         if (v := os.environ.get("BAD_RESEARCH_CHEAP")) is not None:
             cfg.cheap = _parse_bool(v)
         if (v := os.environ.get("BAD_RESEARCH_PROMPT_CACHE")) is not None:

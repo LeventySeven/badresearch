@@ -191,18 +191,24 @@ INVESTIGATOR_TIMEOUT_S = 900  # depth stage scaled (Grok 200s x cost)
 SUBAGENT_SOURCE_KILL = 100    # hard stop on sources touched (Claude)
 
 # Reasoning-effort continuum — OpenAI's 4-level dial (dossier 16 §6.1) mapped onto
-# the existing route + LLM-tier + per-stage fan-out levers. Wiring the stub
-# --effort flag (research.py) into a real config the router consumes.
+# the existing route + per-stage fan-out levers. Wiring the stub --effort flag
+# (research.py) into a real config the router consumes.
+#
+# There is deliberately NO `tier` (model) column. It used to name a model tier per
+# effort level, but nothing ever applied it: every step skill pins its own subagent
+# tier (`tier: "work"` in the spawn contract), the orchestrator cannot re-tier itself,
+# and the map's own "default" value was not even a member of the model-tier vocabulary
+# (config.model_tiers = triage/work/heavy) — so it could not have been honoured as
+# written. The live model-cost lever is `config.cheap` (heavy→work, llm/anthropic.py).
 EFFORT_LEVELS = ("minimal", "low", "medium", "high")
 EFFORT_MAP = {
-    "minimal": {"route": "fast", "tier": "triage", "fetchers_max": 4,  "loci_max": 0,
+    "minimal": {"route": "fast", "fetchers_max": 4,  "loci_max": 0,
                 "extended_thinking": False, "single_draft": True},
-    "low":     {"route": "fast", "tier": "work",   "fetchers_max": 8,  "loci_max": 0,
+    "low":     {"route": "fast", "fetchers_max": 8,  "loci_max": 0,
                 "extended_thinking": False, "single_draft": True},
-    "medium":  {"route": "full",  "tier": "default", "fetchers_max": 12, "loci_max": 4,
+    "medium":  {"route": "full", "fetchers_max": 12, "loci_max": 4,
                 "extended_thinking": True,  "single_draft": False},
-    "high":    {"route": "full",  "tier": "heavy",  "fetchers_max": 12,
-                "loci_max": LOCI_MAX,
+    "high":    {"route": "full", "fetchers_max": 12, "loci_max": LOCI_MAX,
                 "extended_thinking": True,  "single_draft": False},
 }
 
@@ -230,3 +236,37 @@ DEGRADE_ORDER = (
 # DEGRADE_ORDER to its terminal `short_circuit_to_synthesis` step. Perplexity-style
 # "reserve budget for synthesis" (PERPLEXITY_COMPUTER.md:434).
 RESERVE_FOR_SYNTHESIS = 40_000  # tokens; ~10K synth context + draft output + grounding
+
+# ── The RUN-LEVEL wall-clock deadline for the `full` route ────────────────────
+# The SECOND, independent trigger for the SAME terminal `short_circuit_to_synthesis`
+# step above — not a new degrade step. The token trigger is opt-in (`--max-tokens`)
+# AND needs a cumulative token count no phase actually accounts for, so on a default
+# full run the terminal step was unreachable: a long run died mid-pipeline (losing
+# every in-flight agent) instead of degrading to a shipped, grounded, smaller-corpus
+# report. The full route's ONLY other deadline is per-wave (FETCHER_TIMEOUT_S), which
+# bounds one fetcher wave and says nothing about the run.
+#
+# Wall-clock is the right denominator precisely because it is OBSERVABLE and the model
+# cannot fake it — the same discipline the fast loop applies to its stop rule ("loop
+# counters, not model claims — the stop is auditable even if the model lies",
+# bad-research-fast.md). A model-written token estimate has neither property.
+#
+# The net must not fire inside the route's OWN advertised band. The entry skill
+# announces "Route: full (~1.5-2.5 h)", i.e. up to 9000 s is a healthy run — and the
+# predicate fires a whole RESERVE_FOR_SYNTHESIS_S EARLY, because "compose now" has to
+# leave room to actually compose. So the deadline is the top of the band PLUS that
+# reserve: 9000 + 1800 = 10800 s. The trigger point is then exactly 9000 s = 2.5 h —
+# the first moment a run has provably outlived its own worst-case estimate — and the
+# whole job is bounded at 3 h. Setting this to 9000 instead would have fired at
+# 7200 s = 2.0 h, in the middle of the advertised band, degrading healthy runs.
+# This is the full-route twin of FAST_TIMEOUT_S (600 s on a <10-min target) — a
+# safety net over the structural caps, never a replacement for them.
+FULL_TIMEOUT_S = 10800  # seconds; run-level wall-clock net for `full` (3 h)
+
+# Wall-clock twin of RESERVE_FOR_SYNTHESIS: the slice of the deadline held back for
+# the stages the short-circuit jumps TO (10 drafts → 11 synthesis → 11.5 grounding →
+# 15/16 gate). Deliberately larger than one INVESTIGATOR_TIMEOUT_S (900 s) because
+# that seam is several stages, not one subagent. "Compose now" fires while this much
+# time is still LEFT, so synthesis still fits inside the deadline — reserving it after
+# the deadline passes would reserve nothing.
+RESERVE_FOR_SYNTHESIS_S = 1800  # seconds; ~30 min of drafting + synthesis + grounding
