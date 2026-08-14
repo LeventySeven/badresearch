@@ -150,6 +150,11 @@ def vault_tag_cmd(
 _SCRATCH_NAMES = {
     "scaffold.md",
     "loci.json",
+    # The two loci-analyst instances write these before step 4 merges them into
+    # loci.json. Same lifetime as loci.json — left behind they leak one run's
+    # loci into the next.
+    "loci-a.json",
+    "loci-b.json",
     "comparisons.md",
     "corpus-critic-gaps.json",
     "patch-log.json",
@@ -169,7 +174,37 @@ _SCRATCH_PREFIXES = (
 )
 
 
+def _interrupted_run_tag(research_dir: Path, notes_dir: Path) -> str | None:
+    """Return the newest run's tag when that run never produced a final report.
+
+    A run with `research/notes/final_report_<tag>.md` is finished; one without it
+    was interrupted (a session-limit kill mid-pipeline is the common case) and its
+    scaffold / loci / prompt-decomposition / research/temp/ tree is precisely what
+    the Recovery path in the entry skill reads to resume. Archiving that away is
+    what makes Recovery find nothing, so it needs consent (`--force`).
+
+    Only the NEWEST run is judged: `research/query-*.md` files are namespaced and
+    never archived, so an older abandoned run would otherwise block every future
+    archive. Returns None when no run has reached step 3 yet — there is nothing
+    named to protect at that point.
+    """
+    queries = sorted(
+        (p for p in research_dir.glob("query-*.md") if p.is_file()),
+        key=lambda p: (p.stat().st_mtime, p.name),
+    )
+    if not queries:
+        return None
+    tag = queries[-1].name[len("query-"):-len(".md")]
+    if (notes_dir / f"final_report_{tag}.md").exists():
+        return None
+    return tag
+
+
 def archive_run_cmd(
+    force: bool = typer.Option(
+        False, "--force",
+        help="Archive even when the newest run has no final report (interrupted).",
+    ),
     json_output: bool = typer.Option(False, "--json", "-j", help="Emit JSON"),
 ) -> None:
     """Archive prior-run scratch files into research/runs/archive-<ts>/.
@@ -181,7 +216,9 @@ def archive_run_cmd(
     Final reports (research/notes/final_report_*.md) and canonical query files
     (research/query-*.md) are already namespaced and are left in place.
 
-    No-ops cleanly on a fresh vault — safe to run unconditionally.
+    No-ops cleanly on a fresh vault, and REFUSES (without --force) when the newest
+    run has no final report — that run was interrupted and its scratch is the
+    Recovery path's resume state, not a prior run's leftovers.
     """
     vault = _discover_vault()
     research_dir = vault.research_dir
@@ -208,6 +245,23 @@ def archive_run_cmd(
         data: dict[str, Any] = {
             "archived": False,
             "reason": "nothing to archive",
+            "moved_files": [],
+            "archive_dir": None,
+        }
+        _emit_success(data, json_mode=json_output, vault=str(vault.root))
+        return
+
+    # There IS scratch to move — so make sure it belongs to a FINISHED run.
+    interrupted = None if force else _interrupted_run_tag(research_dir, vault.notes_dir)
+    if interrupted is not None:
+        data = {
+            "archived": False,
+            "reason": (
+                f"run {interrupted} has no final report — it was interrupted, and "
+                "this scratch is its resume state. Resume it (see Recovery in the "
+                "bad-research skill), or re-run with --force for a clean slate."
+            ),
+            "interrupted_run": interrupted,
             "moved_files": [],
             "archive_dir": None,
         }

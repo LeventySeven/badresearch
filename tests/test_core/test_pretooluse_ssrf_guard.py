@@ -16,7 +16,7 @@ import subprocess
 
 import pytest
 
-from bad_research.core.fetcher import is_blocked_url
+from bad_research.core.fetcher import _host_block_reason, is_blocked_url
 from bad_research.core.hooks import HOOK_SCRIPT_TEMPLATE
 
 pytestmark = pytest.mark.skipif(shutil.which("node") is None, reason="node not installed")
@@ -79,6 +79,80 @@ def test_internal_targets_are_blocked(hook, tmp_path, url):
 def test_the_hook_agrees_with_the_python_denylist(url):
     """One denylist, two enforcement points — they must not drift apart."""
     assert is_blocked_url(url), f"{url} blocked by the hook but NOT by is_blocked_url"
+
+
+# ------------------------------------------------------------------ the parity table
+#
+# ONE table, TWO enforcement points. Every row below is asserted against BOTH the JS
+# matcher inside the hook (end to end: exit 2 = blocked) and the Python
+# `_host_block_reason`, so neither can gain or lose a range without the other going
+# red. Without this the hook drifted silently: it missed every IPv4-embedding IPv6
+# form (NAT64 64:ff9b::/96, 6to4 2002::/16, Teredo 2001::/32, IPv4-translated
+# ::ffff:0:0/96) that the Python denylist blocks, while blocking CGNAT that Python
+# allowed.
+#
+# Literal IPs and the fixed hostnames only — no row depends on what DNS answers today.
+PARITY: list[tuple[str, bool]] = [
+    # --- IPv4 ---------------------------------------------------------------
+    ("http://169.254.169.254/latest/meta-data/", True),   # cloud metadata
+    ("http://127.0.0.1:8080/admin", True),                # 127/8   loopback
+    ("http://10.0.0.5/", True),                           # 10/8    private
+    ("http://172.16.0.1/", True),                         # 172.16/12 private
+    ("http://172.15.0.1/", False),                        # just below it
+    ("http://172.32.0.1/", False),                        # just above it
+    ("http://192.168.1.1/", True),                        # 192.168/16 private
+    ("http://0.0.0.0/", True),                            # 0/8     this-network
+    ("http://100.64.0.1/", True),                         # 100.64/10 CGNAT
+    ("http://100.63.255.255/", False),                    # just below CGNAT
+    ("http://192.0.0.9/", True),                          # 192.0.0/24 IETF protocol
+    ("http://198.18.0.1/", True),                         # 198.18/15 benchmarking
+    ("http://203.0.113.9/", True),                        # TEST-NET-3
+    ("http://224.0.0.1/", True),                          # multicast
+    ("http://255.255.255.255/", True),                    # broadcast (240/4)
+    ("http://8.8.8.8/", False),                           # public
+    # --- IPv6 ---------------------------------------------------------------
+    ("http://[::1]/", True),                              # loopback
+    ("http://[::]/", True),                               # unspecified
+    ("http://[::ffff:127.0.0.1]/", True),                 # IPv4-mapped loopback
+    ("http://[::ffff:169.254.169.254]/", True),           # IPv4-mapped metadata
+    ("http://[::ffff:8.8.8.8]/", False),                  # IPv4-mapped public
+    ("http://[64:ff9b::7f00:1]/", True),                  # NAT64 -> 127.0.0.1
+    ("http://[64:ff9b::a9fe:a9fe]/", True),               # NAT64 -> 169.254.169.254
+    ("http://[2002:7f00:1::]/", True),                    # 6to4 -> 127.0.0.1
+    ("http://[2001:0:5ef5:79fd::1]/", True),              # Teredo
+    ("http://[::ffff:0:7f00:1]/", True),                  # IPv4-translated 127.0.0.1
+    ("http://[::808:808]/", True),                        # IPv4-compatible (deprecated)
+    ("http://[fe80::1]/", True),                          # link-local
+    ("http://[fc00::1]/", True),                          # unique-local
+    ("http://[fd00::1]/", True),                          # unique-local
+    ("http://[fec0::1]/", True),                          # site-local (deprecated)
+    ("http://[ff02::1]/", True),                          # multicast
+    ("http://[2001:db8::1]/", True),                      # documentation
+    ("http://[3fff::1]/", True),                          # documentation
+    ("http://[2001:4860:4860::8888]/", False),            # public
+    ("http://[2620:fe::fe]/", False),                     # public
+    # --- names and non-hosts -------------------------------------------------
+    ("http://localhost/", True),
+    ("file:///etc/passwd", True),                         # no host at all
+]
+
+PARITY_IDS = [url for url, _ in PARITY]
+
+
+@pytest.mark.parametrize("url,blocked", PARITY, ids=PARITY_IDS)
+def test_python_denylist_matches_the_parity_table(url, blocked):
+    reason = _host_block_reason(url)
+    assert (reason is not None) is blocked, f"{url}: _host_block_reason -> {reason!r}"
+
+
+@pytest.mark.parametrize("url,blocked", PARITY, ids=PARITY_IDS)
+def test_the_hook_matches_the_parity_table(hook, tmp_path, url, blocked):
+    """The hook is the enforcement point; a range it misses is a range that ships."""
+    r = run(hook, webfetch(url), tmp_path)
+    assert (r.returncode == BLOCK) is blocked, (
+        f"{url}: hook exit {r.returncode} (expected {BLOCK if blocked else 0}) — "
+        "the hook has drifted from core.fetcher._host_block_reason"
+    )
 
 
 def test_a_public_url_is_allowed(hook, tmp_path):

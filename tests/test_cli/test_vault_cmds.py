@@ -130,6 +130,101 @@ def test_archive_run_moves_scratch_files(tmp_path, monkeypatch):
     assert archive_dir and (research / "scaffold.md").parent == research
 
 
+def test_archive_run_moves_the_per_analyst_loci_files(tmp_path, monkeypatch):
+    """`loci-a.json`/`loci-b.json` are step-4 scratch like `loci.json`.
+
+    Left behind they leak the previous run's loci into the next one.
+    """
+    _init_vault(tmp_path)
+    monkeypatch.chdir(tmp_path)
+    research = tmp_path / "research"
+    (research / "loci-a.json").write_text("[]", encoding="utf-8")
+    (research / "loci-b.json").write_text("[]", encoding="utf-8")
+    res = runner.invoke(app, ["archive-run", "--json"])
+    assert res.exit_code == 0, res.stdout
+    out = json.loads(res.stdout)
+    assert {"loci-a.json", "loci-b.json"} <= set(out["data"]["moved_files"])
+    assert not (research / "loci-a.json").exists()
+    assert not (research / "loci-b.json").exists()
+
+
+# --- issue #43: archive-run must not archive over an INTERRUPTED run ---------
+# A session-limit kill leaves a run mid-pipeline. The next invocation runs step
+# 0.5 (`bad archive-run`) first, and archiving the scaffold / loci /
+# prompt-decomposition / research/temp/ tree is exactly what makes the documented
+# step-granular Recovery path find nothing.
+
+def _start_run(tmp_path, tag):
+    """Write the artifacts a run has on disk once it is past step 3."""
+    research = tmp_path / "research"
+    (research / f"query-{tag}.md").write_text(f"# {tag}\n", encoding="utf-8")
+    (research / "scaffold.md").write_text("scaffold", encoding="utf-8")
+    (research / "prompt-decomposition.json").write_text("{}", encoding="utf-8")
+    (research / "temp" / "coverage-matrix.md").write_text("m", encoding="utf-8")
+    return research
+
+
+def test_archive_run_refuses_to_bury_an_interrupted_run(tmp_path, monkeypatch):
+    _init_vault(tmp_path)
+    monkeypatch.chdir(tmp_path)
+    research = _start_run(tmp_path, "efield-dft-sac-a3f9b7")  # no final report
+
+    res = runner.invoke(app, ["archive-run", "--json"])
+
+    assert res.exit_code == 0, res.stdout
+    out = json.loads(res.stdout)
+    assert out["data"]["archived"] is False
+    assert out["data"]["interrupted_run"] == "efield-dft-sac-a3f9b7"
+    assert "--force" in out["data"]["reason"]
+    # The Recovery ledger's artifacts are all still where it looks for them.
+    assert (research / "scaffold.md").exists()
+    assert (research / "prompt-decomposition.json").exists()
+    assert (research / "temp" / "coverage-matrix.md").exists()
+
+
+def test_archive_run_force_archives_an_interrupted_run(tmp_path, monkeypatch):
+    _init_vault(tmp_path)
+    monkeypatch.chdir(tmp_path)
+    research = _start_run(tmp_path, "efield-dft-sac-a3f9b7")
+
+    res = runner.invoke(app, ["archive-run", "--force", "--json"])
+
+    assert res.exit_code == 0, res.stdout
+    out = json.loads(res.stdout)
+    assert out["data"]["archived"] is True
+    assert not (research / "scaffold.md").exists()
+
+
+def test_archive_run_archives_a_finished_run(tmp_path, monkeypatch):
+    """The normal case: the previous run has a final report, so it is done."""
+    notes = _init_vault(tmp_path)
+    monkeypatch.chdir(tmp_path)
+    research = _start_run(tmp_path, "efield-dft-sac-a3f9b7")
+    (notes / "final_report_efield-dft-sac-a3f9b7.md").write_text("r", encoding="utf-8")
+
+    res = runner.invoke(app, ["archive-run", "--json"])
+
+    assert res.exit_code == 0, res.stdout
+    out = json.loads(res.stdout)
+    assert out["data"]["archived"] is True
+    assert not (research / "scaffold.md").exists()
+
+
+def test_archive_run_only_judges_the_newest_run(tmp_path, monkeypatch):
+    """An older abandoned run must not block archiving after a finished one."""
+    notes = _init_vault(tmp_path)
+    monkeypatch.chdir(tmp_path)
+    research = tmp_path / "research"
+    (research / "query-old-abandoned-000000.md").write_text("old\n", encoding="utf-8")
+    _start_run(tmp_path, "newer-run-111111")
+    (notes / "final_report_newer-run-111111.md").write_text("r", encoding="utf-8")
+
+    res = runner.invoke(app, ["archive-run", "--json"])
+
+    assert res.exit_code == 0, res.stdout
+    assert json.loads(res.stdout)["data"]["archived"] is True
+
+
 # ── search ────────────────────────────────────────────────────────────────────
 
 def test_search_empty_vault_returns_empty_results(tmp_path, monkeypatch):

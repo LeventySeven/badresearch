@@ -14,16 +14,30 @@ A complete worked example (two sample reports + the scorecard they produce) live
   breadth-list, numeric). Use all 12, or a subset by editing a copy.
 - **Competitor:** pick ONE commercial DR product to start (e.g. Gemini Deep Research). One fair,
   blinded comparison beats four sloppy ones.
-- **Tier:** run bad-research's `ultrafast` (closest to the commercial "Deep Research" button).
+- **Route:** the pipeline has exactly **two** routes — `fast` and `full` (`bad route --help`).
+  Benchmark `fast`: the bounded-ReAct middle tier is the closest analog to the commercial
+  "Deep Research" button. (The old third route, `ultrafast`, was folded into `fast` on
+  2026-07-06 — see `skills/routing_constants.py`; there is no `--ultrafast` flag and no
+  `bad-research-ultrafast` skill.) Run `full` as a second entrant if you also want the
+  ceiling number.
 
 ## 1. Produce bad-research's reports (you, in a research workdir)
 
-For each query, in your research working dir (e.g. `~/Desktop/researchfms`), run the skill in
-Claude Code with the `ultrafast` route and save the final report:
+For each query, in your research working dir (e.g. `~/Desktop/researchfms`), invoke the skill in
+Claude Code and save the final report:
 
 ```
-/bad-research ultrafast mode: <paste the query text>
+/bad-research <paste the query text>
 # → research/notes/final_report_<tag>.md  → copy to runs/bad/<query_id>.md
+```
+
+The route is chosen at step 1.5 by `bad-research-query-router`. **Pin it** so every query in the
+set is benchmarked at the same depth — at step 1.5, force it instead of letting the heuristic
+decide:
+
+```
+bad route --decomposition research/prompt-decomposition.json --fast --apply --json
+#                                                            ^^^^^^ or --full
 ```
 
 Record wall-clock minutes and (if you track it) cost per run — they become scorecard columns.
@@ -56,11 +70,11 @@ bad headtohead \
 **4b — full set (a manifest):** create `manifest.json`:
 ```json
 {
-  "bad_name": "bad-research-ultrafast",
+  "bad_name": "bad-research-fast",
   "competitor_name": "gemini-deep-research",
   "entrants": {
     "h2h_01_causal": [
-      {"name": "bad-research-ultrafast", "report_file": "runs/bad/h2h_01_causal.md", "cost_usd": 0.0, "latency_s": 540},
+      {"name": "bad-research-fast", "report_file": "runs/bad/h2h_01_causal.md", "cost_usd": 0.0, "latency_s": 540},
       {"name": "gemini-deep-research",   "report_file": "runs/competitor/h2h_01_causal.md", "cost_usd": 0.20, "latency_s": 300}
     ]
   }
