@@ -40,8 +40,8 @@ class FakeWebResult:
     def looks_like_login_wall(self, original_url: str) -> bool:
         return "login" in (self.title or "").lower()
 
-    def looks_like_junk(self) -> str | None:
-        if len((self.content or "").strip()) < 300:
+    def looks_like_junk(self, *, min_chars: int = 300) -> str | None:
+        if len((self.content or "").strip()) < min_chars:
             return "Empty or near-empty content"
         return None
 

@@ -27,15 +27,36 @@ from bad_research.models.note import Note, NoteMeta
 
 
 def _is_prefetched(page: Any) -> bool:
-    """A page whose body came from the provider, not from a fetch of ours.
-
-    The junk filter judges FETCHES: a login wall, a Cloudflare interstitial, a
-    near-empty body that means the fetch failed. None of those verdicts are
-    meaningful for content that was never fetched — and its length rule is
-    actively wrong there, because a 200-character Reddit comment with 1,485
-    upvotes is short on purpose, not truncated.
-    """
+    """A page whose body came from the provider, not from a fetch of ours."""
     return bool((getattr(page, "metadata", None) or {}).get("prefetched"))
+
+
+def _prefetched_reject_reason(page: Any) -> str | None:
+    """The junk floor a PREFETCHED body still has to clear.
+
+    Exactly ONE junk verdict is wrong for content nobody fetched: the <300-char
+    length rule, which exists to catch a failed fetch and reads a 200-character
+    Reddit comment with 1,485 upvotes as truncated. So we lower that floor to 1
+    and keep the rest — an EMPTY body is still junk (the engine documents its
+    summary as possibly empty, and an empty body is exempt from the content-hash
+    collapse, so it reached the vault as a zero-byte note), and so are a bot
+    wall, an error page and binary garbage.
+
+    The login-wall / paywall / language gates stay off: those read the SHAPE of
+    a fetch, and nothing was fetched here.
+
+    KNOWN COLLATERAL, deliberately not fixed here. The bot-wall and error-page
+    rules keyword-match the body, so a thread ABOUT one reads as one: "Cloudflare
+    outage megathread" is dropped as a bot wall, and a dev thread containing "an
+    error occurred" as an error page (both measured). Exempting those rules for
+    prefetched bodies was tried and reverted — it breaks the deliberate contract
+    that a bot wall the ENGINE hit must still die, which is a real failure this
+    lane has to catch. The right fix is narrowing the signals themselves (a bare
+    brand name is a poor bot-wall signal), which is a change to the fetched path
+    for every provider and belongs in its own review, not smuggled in here.
+    """
+    reason: str | None = page.looks_like_junk(min_chars=1)
+    return reason
 
 
 def filter_and_store(
@@ -46,8 +67,12 @@ def filter_and_store(
     redundancy_overlap: float,
     shingle_n: int,
 ) -> list[Note]:
-    # 1. Junk filter (Plan 05) — post-FETCH, so it does not judge prefetched bodies.
-    clean = [p for p in pages if _is_prefetched(p) or postfetch_filter(p) is None]
+    # 1. Junk filter (Plan 05). A prefetched body gets the same content floor
+    #    minus the one fetch-specific rule (<300 chars) — never a free pass.
+    clean = [
+        p for p in pages
+        if (_prefetched_reject_reason(p) if _is_prefetched(p) else postfetch_filter(p)) is None
+    ]
 
     # 2. Redundancy clustering (brute Jaccard over shingles, n=3).
     kept: list[Any] = []

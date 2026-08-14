@@ -45,6 +45,47 @@ def test_a_general_query_is_still_general():
         assert detect_intent(q) == "general"
 
 
+# The generic tokens (`community`, `sentiment`, `reception`, `what do people …`)
+# used to fire on their own, so 19 of 22 ordinary questions flipped to the lane
+# that costs 3.5 minutes. Each row below is a query whose only "social" word is
+# being used in its ordinary sense.
+NOT_SOCIAL = (
+    "what do people eat in Okinawa",                  # what (do) (people) …, no reception verb
+    "community detection algorithms in large graphs",  # `community` as a graph term
+    "history of the European Community",               # `community` as an institution
+    "sentiment analysis of earnings calls",            # `sentiment` as an NLP task
+    "reception theory in literary criticism",          # `reception` as a school of thought
+    "what are people paid in Lisbon",
+    "trending topics in materials science",
+)
+
+
+def test_generic_tokens_alone_do_not_buy_the_social_lane():
+    for q in NOT_SOCIAL:
+        assert detect_intent(q) == "general", q
+
+
+def test_a_reception_context_still_routes_social():
+    # The same generic words, anchored to a platform or a real reception phrase.
+    assert detect_intent("what do people eat in Okinawa, according to reddit") == "social"
+    assert detect_intent("community reaction to the license change") == "social"
+    assert detect_intent("public reception of the rebrand") == "social"
+    assert detect_intent("customer reviews of the new keyboard") == "social"
+
+
+def test_the_progressive_forms_are_the_common_phrasing_and_must_route_social():
+    # Anchoring the generic tokens is right, but the first attempt put `\w*` on
+    # `complain` only, so the -ing forms — the way people actually ask this —
+    # silently fell back to `general`. A table of must-stay-GENERAL queries cannot
+    # catch that; only a must-stay-SOCIAL row can.
+    assert detect_intent("what are people saying about the new pricing") == "social"
+    assert detect_intent("what are users saying about the rebrand") == "social"
+    assert detect_intent("what are developers thinking about the new SDK") == "social"
+    assert detect_intent("what are devs complaining about in the new SDK") == "social"
+    # `community react*` covers the verb, not just the noun `reaction`.
+    assert detect_intent("how did the community react to the license change") == "social"
+
+
 def test_route_query_baseline_websearch_on_every_query():
     tasks = route_query("q", ["a", "b", "c"], "general")
     ws = [(q, p) for (q, p) in tasks if p == "websearch"]

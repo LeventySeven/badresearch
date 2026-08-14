@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import unicodedata
 from dataclasses import dataclass, field
 from datetime import UTC, date, datetime, timedelta
 from typing import Literal, Protocol, runtime_checkable
@@ -56,17 +57,23 @@ class WebResult:
 
         return title_match or content_match or url_redirected
 
-    def looks_like_junk(self) -> str | None:
+    def looks_like_junk(self, *, min_chars: int = 300) -> str | None:
         """Check if the result is junk that shouldn't be saved.
 
         Returns a reason string if junk, None if OK.
+
+        `min_chars` is the FETCH-FAILURE floor and the only rule here that judges
+        the fetch rather than the text: a body this short means the fetch came
+        back empty. A caller holding content that was never fetched — the social
+        lane's prefetched thread bodies — lowers it (funnel/filter.py), which
+        leaves every rule below still judging that text.
         """
         content = self.content or ""
         title_lower = (self.title or "").lower()
         content_lower = content[:2000].lower()
 
         # Empty or near-empty content
-        if len(content.strip()) < 300:
+        if len(content.strip()) < min_chars:
             return "Empty or near-empty content"
 
         # Cloudflare / bot detection pages
@@ -102,7 +109,20 @@ class WebResult:
         if any(m in sample for m in pdf_binary_signals):
             return "Binary PDF garbage in content"
 
-        non_printable = sum(1 for c in sample if ord(c) > 127 or c in '\x00\x01\x02\x03\x04\x05')
+        # NON-PRINTABLE means non-printable, NOT non-ASCII. This counted every
+        # `ord(c) > 127` char, so any source more than 15% Cyrillic, CJK or emoji
+        # was discarded as "binary garbage" — measured: a Russian Reddit thread and
+        # a Japanese one both died here, in a tool whose whole job is gathering
+        # evidence. Unicode categories starting with `C` are the genuinely
+        # unprintable ones (Cc control, Cf format, Cs surrogate, Co private-use,
+        # Cn unassigned); `�` is the decoder's own "this was mojibake" marker.
+        # Real binary garbage is still caught — it is dense in control bytes — while
+        # every human script now passes.
+        non_printable = sum(
+            1
+            for c in sample
+            if (unicodedata.category(c).startswith("C") and c not in "\t\n\r") or c == "�"
+        )
         if non_printable > len(sample) * 0.15:
             return "High ratio of binary/non-printable content"
 

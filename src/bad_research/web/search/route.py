@@ -22,11 +22,24 @@ _MEDICAL = re.compile(r"\b(disease|drug|gene|clinical trial|patients?|mg/kg|in v
 _TECHNICAL = re.compile(r"\b(error|stack trace|api|library|framework|protocol|how to (implement|configure))\b", re.I)
 # Reception, not literature: the answer lives in threads and comments, and the
 # blog post about them is the derivative. Kept narrow on purpose — the social
-# lane costs minutes, so it fires on an explicit signal, never on a hunch.
+# lane costs minutes (p50 3.5 MINUTES), so it fires on an explicit signal, never
+# on a hunch.
+#
+# Every generic token is ANCHORED. Bare `community`, `sentiment`, `reception` and
+# `what do people …` are ordinary English — they matched "community detection
+# algorithms", "history of the European Community" and "what do people eat in
+# Okinawa", which flipped 19 of 22 ordinary questions onto the slow lane. So a
+# match now needs either a PLATFORM name or a real RECEPTION PHRASE.
 _SOCIAL = re.compile(
-    r"\b(reddit|hacker ?news|subreddit|upvot\w*|twitter|tiktok|community|"
-    r"sentiment|reception|backlash|complain\w*|what (do|are) (people|users|devs|developers)|"
-    r"trending|word of mouth|user reviews?)\b",
+    r"\b("
+    r"reddit|hacker ?news|subreddit|upvot\w*|twitter|x\.com|tiktok"      # platforms
+    r"|community (react\w*|response|sentiment)"                          # reception phrases
+    r"|public (reception|sentiment|backlash)"
+    r"|(user|customer|reader) reviews?"
+    r"|backlash (to|against)"
+    r"|word of mouth"
+    r"|what (do|are) (people|users|devs|developers) (say|think|complain)\w*"
+    r")\b",
     re.I,
 )
 
