@@ -259,8 +259,9 @@
         {
           "id": "S5-8",
           "does": "END TO END: each lane answers its own question or reports an explicit, honest zero",
-          "status": "todo",
-          "is_check": true
+          "status": "passed",
+          "is_check": true,
+          "evidence": "passed \u2014 the slice check made re-runnable as scripts/lane-probes.sh and driven as a user. All 8 lanes named a state, none returned silence: local-corpus WORKING (teardowns 407 / transcripts 41 / articles 190 / x-guides 67, enumerated live), artifact-re WORKING (left-pad@1.3.0), delta-vs-pinned-ref WORKING, terms-and-pricing WORKING (code=200 chars=18907 datemarks=1), web-live WORKING, practitioner-video WORKING, live-instrument WORKING (461 events), people-track-record WORKING (roster=45 gh=simonw). PROVEN RED TWICE, because a check that can only pass is not one. (1) Repointed the local roots and the roster at /tmp/nope: local-corpus -> MISSING, people-track-record -> MISSING, practitioner-video -> BLOCKED, and the script still exits 0 \u2014 correct by design, since a probe reporting BLOCKED or MISSING is telling the truth, not failing. (2) Shimmed npm to print unanticipated text: artifact-re -> UNCLASSIFIED and exit 1. Only an unclassifiable result fails the run, which is the one thing the four-kinds taxonomy cannot absorb."
         }
       ]
     }
