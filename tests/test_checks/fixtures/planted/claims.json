@@ -1,0 +1,9 @@
+[
+  {"subject": "h200 rental", "value": "2.49", "unit": "usd/hr", "source": "broker-listing"},
+  {"subject": "H200  rental", "value": "6.31", "unit": "USD/hr", "source": "cloud-price-page"},
+  {"subject": "h200 rental", "value": "1800", "unit": "usd/month", "source": "reseller-quote"},
+  {"subject": "export licence", "value": "required", "unit": "", "source": "vendor-faq"},
+  {"subject": "export licence", "value": "not required", "unit": "", "source": "counsel-memo"},
+  {"subject": "rack density", "value": "12.0", "unit": "kw", "source": "operator-interview"},
+  {"subject": "rack density", "value": "12.00", "unit": "kw", "source": "site-survey"}
+]
