@@ -114,9 +114,10 @@ from bad_research.cli.lanes import lane_local_cmd as _lane_local_cmd
 
 app.command("lane-local")(_lane_local_cmd)
 
-from bad_research.cli.frontier_cmds import frontier_gate_cmd
+from bad_research.cli.frontier_cmds import frontier_gate_cmd, frontier_observe_cmd
 
 app.command("frontier-gate")(frontier_gate_cmd)
+app.command("frontier-observe")(frontier_observe_cmd)
 
 # ── deterministic report checks (research rebuild, slice 1) ───────────────────
 from bad_research.cli.checks import no_source_claim_gate_cmd as _no_source_claim_cmd

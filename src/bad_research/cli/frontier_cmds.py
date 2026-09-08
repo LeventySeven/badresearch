@@ -58,3 +58,39 @@ def frontier_gate_cmd(
 
     if not allowed:
         raise typer.Exit(code=1)
+
+
+def frontier_observe_cmd(
+    state: Path = typer.Option(..., "--state", help="Path to the run's frontier JSON."),
+    domains: str = typer.Option("", "--domains", help="Comma-separated domains this round returned."),
+    entities: str = typer.Option("", "--entities", help="Comma-separated entities this round produced."),
+    json_out: bool = typer.Option(False, "--json", help="Emit the counters as JSON."),
+) -> None:
+    """Record what a retrieval round brought back and compute the stop signal.
+
+    The signal is COMPUTED here, before the next prompt is built, so it is auditable
+    from the run's own counters rather than taken from the model's account of its own
+    diminishing returns. Every stopping rule surveyed for this rebuild was either
+    absent, a constant someone picked, or a convergence check that could never fire.
+    """
+    st = FrontierState.load(state)
+    d = {x.strip() for x in domains.split(",") if x.strip()}
+    e = {x.strip() for x in entities.split(",") if x.strip()}
+    st.observe_round(d, e)
+    st.save(state)
+
+    payload = {
+        "step": st.steps,
+        "new_domains": st.last_new_domains,
+        "new_entities": st.last_new_entities,
+        "should_stop": st.should_stop(),
+        "seen_domains": len(st.seen_domains),
+    }
+    if json_out:
+        typer.echo(_json.dumps(payload))
+    else:
+        verdict = "STOP — this round added nothing new" if payload["should_stop"] else "continue"
+        typer.echo(
+            f"step {st.steps} | +{st.last_new_domains} domains "
+            f"+{st.last_new_entities} entities | {verdict}"
+        )

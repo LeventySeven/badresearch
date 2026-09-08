@@ -97,7 +97,8 @@
         {
           "id": "S2-4",
           "does": "stop counters are computed in code before the prompt; the model never self-reports diminishing returns",
-          "status": "todo"
+          "status": "passed",
+          "evidence": "passed — RED first: 5 of 6 tests failed, incl. 'StopCounters is defined but called from nowhere in src/'. Wired into FrontierState.observe_round (frontier.py:116) and exposed as `bad frontier-observe`. DRIVEN AS A USER: round 1 +3 domains/+2 entities -> continue; round 2 +1/+1 -> continue; round 3 +0/+0 -> STOP. The signal is computed from set differences before the next prompt is built and persisted per-round in the state file, so the stop is auditable from the run's own counters rather than from the model's account of its diminishing returns — every stopping rule surveyed for this rebuild was absent, a hand-picked constant, or a convergence check that could never fire."
         },
         {
           "id": "S2-5",

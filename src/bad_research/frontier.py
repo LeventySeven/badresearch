@@ -98,6 +98,42 @@ class FrontierState:
     seen_domains: set[str] = field(default_factory=set)
     seen_entities: set[str] = field(default_factory=set)
     log: list[dict[str, object]] = field(default_factory=list)
+    rounds: list[dict[str, object]] = field(default_factory=list)
+    steps: int = 0
+    last_new_domains: int = 0
+    last_new_entities: int = 0
+
+    def observe_round(self, domains: set[str], entities: set[str]) -> None:
+        """Record what a retrieval round actually brought back, in code.
+
+        This runs BEFORE the next prompt is built, so the stop signal is auditable
+        from the run's own counters even if the model would rather keep going. Every
+        surveyed system either has no stopping rule, a constant a human picked, or a
+        convergence check that cannot fire; the common failure is asking the model
+        whether it is done, and a model that wants to keep searching is not a
+        reliable witness to diminishing returns.
+        """
+        c = StopCounters(
+            seen_domains=set(self.seen_domains),
+            seen_entities=set(self.seen_entities),
+            steps=self.steps,
+        )
+        c.observe(domains, entities)
+        self.seen_domains, self.seen_entities = c.seen_domains, c.seen_entities
+        self.steps = c.steps
+        self.last_new_domains, self.last_new_entities = c.last_new_domains, c.last_new_entities
+        self.rounds.append({
+            "step": self.steps,
+            "new_domains": self.last_new_domains,
+            "new_entities": self.last_new_entities,
+            "should_stop": self.should_stop(),
+        })
+
+    def should_stop(self) -> bool:
+        """True when the last round added nothing worth another round."""
+        if self.steps < 2:
+            return False
+        return self.last_new_domains < MIN_NEW_DOMAINS and self.last_new_entities == 0
 
     @property
     def frontier(self) -> Frontier:
@@ -120,6 +156,10 @@ class FrontierState:
                     "seen_domains": sorted(self.seen_domains),
                     "seen_entities": sorted(self.seen_entities),
                     "log": self.log,
+                    "rounds": self.rounds,
+                    "steps": self.steps,
+                    "last_new_domains": self.last_new_domains,
+                    "last_new_entities": self.last_new_entities,
                 },
                 indent=2,
             ),
@@ -136,6 +176,10 @@ class FrontierState:
             seen_domains=set(d.get("seen_domains", [])),
             seen_entities=set(d.get("seen_entities", [])),
             log=list(d.get("log", [])),
+            rounds=list(d.get("rounds", [])),
+            steps=int(d.get("steps", 0)),
+            last_new_domains=int(d.get("last_new_domains", 0)),
+            last_new_entities=int(d.get("last_new_entities", 0)),
         )
 
 
