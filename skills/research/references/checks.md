@@ -158,3 +158,44 @@ The two failures are not equivalent and a system measuring only accuracy sees th
 **distortion** turns a correct answer into a confident wrong one; **loss** turns it into an abstention.
 Keep a regression set of previously-correct claims and re-check it after ingesting a major source —
 "did adding this break something I already knew" is currently nobody's metric.
+
+---
+
+# Assert that the stop FIRED, not that the run ended
+
+A shipped product built a genuinely computed stop — a stateful predicate re-evaluated after every
+page, holding the set of things still wanted, returning true only when that set empties. Exactly the
+right shape. And in one of its two instantiations it is **dead**: the removal call casefolds the key
+while the set was populated un-casefolded, so it never matches, the miss is swallowed by a
+`suppress(KeyError)`, the predicate never fires, and stopping silently degrades to a full scan bounded
+only by a 30-second timeout.
+
+Nothing fails. The run terminates, the results look fine, and the computed stop has quietly become a
+wall clock. **A timeout backstop makes a broken stop predicate indistinguishable from a working one** —
+which is the same shape as a check that can only pass.
+
+So a saturation or frontier stop needs a test asserting the predicate went from *continue* to *stop*
+for the right reason, not a test that the loop exited. (Checked here: `should_stop()` is asserted
+across the False→True transition in two test files, and there is no timeout backstop that could mask
+it.)
+
+# Track residual failures as a vector, not a score
+
+The most complete accretion mechanism found in the corpus keeps, per archived attempt, an
+**instance-level outcome vector** — which specific cases passed and failed — rather than a scalar
+score. That is what makes *"target what the last attempt specifically failed at"* computable at all;
+with a single number you can rank attempts but you cannot ask what any of them left uncovered.
+Selection then draws two candidates deliberately: one for highest complementary coverage, one aimed at
+the parent's residual failures.
+
+It also writes down, and **persists**, a label per direction — effective / saturated / underexplored —
+which survives into the next round's prompt instead of being re-derived. A frontier that records which
+lanes are exhausted is doing the same job.
+
+The honest limit, stated by its own teardown: the *direction* is computed, but the tempo is not — the
+review cadence and the exploration rate are still constants a human picked. So this extends "stopping
+is usually a picked constant" rather than refuting it.
+
+**For a research run:** carry which sub-questions remain unanswered, not just how many new entities
+arrived. A round that added three entities and closed no promised cell has not advanced, and a scalar
+counter cannot tell you that.
