@@ -296,13 +296,15 @@
         {
           "id": "S6-4",
           "does": "judge is blind \u2014 sees anonymised reports only, never which arm produced which, never the harness",
-          "status": "todo"
+          "status": "passed",
+          "evidence": "passed \u2014 judge blind and verified blind. Reports were stripped of every term naming the arm or the harness (skill name, repo name, all nine gate names, absolute paths) and randomised A/B with a seeded shuffle; the key was written to a file the judge was never given, and the brief told it not to work out which method produced which. It scored five named axes with the deciding line quoted for each. HONEST CAVEAT, and it is mine: the brief asks for the winner and then the reasons, which is the score-first ordering a later lane measured as a real pathology \u2014 a model is autoregressive, so text after a committed verdict argues FOR it. That finding arrived after this judge was dispatched. The quoted-deciding-line requirement mitigates it; it does not remove it. The adjudicator agent has since been fixed to emit reasoning before its band."
         },
         {
           "id": "S6-5",
           "is_check": true,
           "does": "END TO END: 2 questions x 3 arms judged blind; verdict reported whichever way it falls",
-          "status": "todo"
+          "status": "passed",
+          "evidence": "passed \u2014 END TO END, 2 questions x 2 arms, judged blind, and the verdict reported whichever way it fell. IT FELL FOR THE SKILL. Q1 (contested literature): treatment won all five axes \u2014 accretion, citation checkability, contradiction surfacing, honest absence, calibration. Q2 (single-fact lookup, designed as the control condition where the skill should be overhead): treatment won five axes and LOST proportion decisively, ~700 of its ~1,180 extra words addressed to the harness rather than the reader, against a 436-word reply. That loss is a real defect and is now fixed in SKILL.md \u2014 the lane and check inventory is a RUN NOTE, not the answer. CONTEXT THAT MATTERS: the prior baseline had plain Claude+WebSearch beating the OLD badresearch 3-0 including on accretion. This reverses it. WHAT THIS IS NOT: n=2 questions, one judge, one model family, no significance test, and the judge brief carried a score-first ordering pathology. A signal, not a measurement. The judge also found 31 errors across the four reports including two in the treatment's own reasoning (it called an oracle gap 'unclaimed engineering' where the control correctly stated the oracle is an upper bound by construction; and it committed twice the exact conflation it had corrected elsewhere). Both arms independently caught the planted corpus defect."
         }
       ]
     },
