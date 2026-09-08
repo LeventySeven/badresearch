@@ -13,7 +13,18 @@ htmlcov/
 .DS_Store
 
 # dev-only build artifacts — not shipped (kept on disk for dev, out of the prod repo)
-docs/plans/
+# NB: `docs/plans/*`, not `docs/plans/` — git does not descend into an excluded
+# DIRECTORY, so a `!` re-include below it can never fire. Excluding the contents
+# instead is what makes the negation on the next line work at all.
+docs/plans/*
+# ...except the rebuild plans. A plan is the review baseline: the recheck pass greps
+# its Deferred list and rules findings blocking against its Verification Plan, and both
+# report clean against a plan git cannot see — a criterion can then be softened with no
+# diff to read. Tracking costs nothing here: the wheel packages only src/bad_research
+# (pyproject `[tool.hatch.build.targets.wheel] packages`), verified 0 docs/ entries in
+# the built wheel, so this exclusion never affected what ships. `docs/superpowers/plans/`
+# is already tracked, so this also restores consistency rather than setting a precedent.
+!docs/plans/2026-09-*.md
 docs/investigation/
 docs/INTERFACES.md
 docs/INTERFACES_KEYLESS.md
