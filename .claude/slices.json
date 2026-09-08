@@ -235,7 +235,8 @@
         {
           "id": "S5-4",
           "does": "terms-and-pricing lane: verbatim clause + section + URL + as-of date, with a what-would-flip-this row",
-          "status": "todo"
+          "status": "passed",
+          "evidence": "passed \u2014 lane driven as a user, probe first per its own rules. Both targets WORKING: anthropic.com/legal/aup code=200 chars=18907 money=0 datemarks=1 (money=0 is CORRECT for an AUP and the probe says so explicitly), vercel.com/docs/pricing code=200 chars=19339 money=40 datemarks=1. All four evidence fields obtained from the pages themselves: verbatim dateline 'Effective September 15, 2025' (Anthropic Usage Policy, 279 text lines, 'Previous Version' link present) and 'Last updated September 3, 2026' with Image transformations $0.05 / $0.0812 under its own heading (Vercel). Both match what the lane file recorded, so the recipe's own citations are still valid \u2014 UNCHANGED, checked rather than assumed. The row's fifth requirement, a what-would-flip-this line, was ABSENT from the lane file; found by reading the row against the file rather than by running anything, and added as its own section with the re-check recipe and the no-dateline fallback (Wayback digest count)."
         },
         {
           "id": "S5-5",
@@ -246,7 +247,8 @@
         {
           "id": "S5-6",
           "does": "web-live lane: silver only, user's cookies, probe outcome becomes a row in the report",
-          "status": "todo"
+          "status": "passed",
+          "evidence": "passed \u2014 silver only, its own persistent profile, no Playwright, no token minted, the user's browser never touched. Probe outcome became a row in the report rather than a silent zero, and that mattered: the lane produced a FALSE ABSENCE that three independent-looking signals agreed on. cloudflare.com/plans/developer-platform/ \u2014 curl 6209 chars/0 prices, `silver read` immediately after navigating 1718 chars/0 prices, `silver snapshot` on a fresh navigation 19,526 bytes of nav+footer with ZERO currency glyphs. Every step said 'not there'. A second `silver read` in the same session moments later returned 7910 chars and 10 prices ($0.50/GB-month, $0.30/million requests per month), reproducing the lane file's recorded 7996/10. The content hydrates late and an early read is byte-indistinguishable from a page that lacks it. I had drafted a 'the recipe's example is stale' finding and it would have been WRONG \u2014 kept going instead of shipping it. Two further findings: `read` then a bare `snapshot` is not guaranteed to be one session (the browser ceiling stopped an idle browser and the snapshot described about:blank \u2014 silver WARNED, so read the warning rather than counting hits), and the session is read-only by default (`silver click @e19` exited 1 naming --enable-actions). All three written back into the lane file."
         },
         {
           "id": "S5-7",

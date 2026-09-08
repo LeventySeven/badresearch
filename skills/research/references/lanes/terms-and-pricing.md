@@ -58,6 +58,33 @@ Four fields or it is not evidence: **verbatim clause (or figure)** + **section/h
 - Where a doc has no numbers (Cloudflare's does not), cite the **heading**. Never invent `§2.8`.
 - A rate cites the plan name too: `€5.99 max/mo, "Shared vCPU / Regular Performance", hetzner.com/cloud/, read 2026-09-08 (a11y snapshot; digits split "€ 5 ." + "99")`.
 
+## The fifth field: what would flip this
+
+A clause and a rate are the two things in a research answer with a **known expiry**. Every other
+finding is wrong or right; these are right *until the vendor edits a page*, and the URL does not
+change when they do. So a terms/pricing finding ships a fifth field beyond the four above — one line
+naming what would overturn it and how a reader re-checks in under a minute:
+
+```
+flip-check: re-run the probe; if the page's own dateline is later than the as-of below, this row is stale.
+  "Effective September 15, 2025" — Anthropic Usage Policy, anthropic.com/legal/aup, read 2026-09-08
+  (18,907 chars / 279 text lines; a "Previous Version" link is present, so edits are dated and diffable)
+```
+
+Two reasons this is not ceremony. **It survives the answer.** The reader who acts on your number is
+often reading months later, and a bare "as of 2026-09-08" tells them the finding is old without
+telling them how to fix it. **And it forces you to look for the dateline**, which is the field agents
+skip — a page with no dateline at all is a materially weaker citation, and writing this row is where
+you find that out rather than discovering it after the number is load-bearing.
+
+Where a page carries no dateline of its own, say so in the row and substitute the Wayback digest
+count (command 5): "no vendor dateline; 728 distinct snapshots, latest digest read 2026-09-08."
+
+Re-verified 2026-09-08 by re-running this lane against its own citations: the Anthropic AUP is
+unchanged (same dateline, same 18,907 chars / 279 lines) and Vercel's pricing still reads "Last
+updated September 3, 2026" with Image transformations at $0.05 / $0.0812. UNCHANGED, checked rather
+than assumed — which is the only way that sentence is worth anything.
+
 ## Traps
 - **JS-rendered tables.** Plain fetch returns marketing copy with zero numbers, and an empty fetch is byte-identical in shape to a fabricated quote. Measured here: cloudflare plans curl=6209 chars/0 prices vs silver=7996/10 prices; cf terms curl=nav-only vs silver=23073 chars with the clause. (Prior measured case: curl 15 chars vs silver 9,921 on one URL.)
 - **`silver read` drops nested price nodes.** hetzner.com/cloud/ renders "starting from ___ max/mo." because the integer sits in a `generic` and the decimals in a child `StaticText`; the markdown flattener loses them. `silver snapshot` recovers `€ 5 .` + `99`. A blank where a price belongs is a *retrieval failure*, never a free plan.

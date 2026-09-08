@@ -48,6 +48,39 @@ ability to externally communicate in a way that could be used to steal your data
 Unreachable sources cite as `URL (probed 2026-09-08, curl): HTTP=403, 0 bytes body — BLOCKED`.
 A WebFetch answer is never a quote; it cites as `(WebFetch summary)` and cannot carry quotation marks.
 
+## The trap that produced a false absence here, measured 2026-09-08
+
+Driving this lane on `cloudflare.com/plans/developer-platform/` produced four readings of one page,
+and the first three all pointed the wrong way:
+
+| step | result | what it looked like |
+|---|---|---|
+| `curl` | 6,209 chars, **0** price tokens | "JS-rendered — escalate to silver" |
+| `silver read` immediately after navigating | 1,718 chars, **0** prices | "silver failed too; maybe gated" |
+| `silver snapshot`, fresh navigation | 19,526 bytes, nav+footer only, **0** currency glyphs anywhere | "genuinely not in the DOM" |
+| `silver read` again, same session, moments later | **7,910 chars, 10 prices** — `$0.50/GB-month`, `$0.30/million requests per month` | they were there the whole time |
+
+**The content hydrates late, and a read that arrives early is byte-indistinguishable from a page
+that does not have the content.** Three independent-looking signals agreed on an absence that was
+not real. So: **re-read the same session before you conclude absence** — this is "widen before you
+conclude" applied to *time* rather than to query terms, and it is the cheapest correction on this
+page. A single sample of a hydrating page is not evidence of absence, however many different tools
+produced it.
+
+Two smaller findings from the same run, both worth having:
+
+- **`silver read <url>` then a bare `silver snapshot` is not guaranteed to be one session.** The
+  browser ceiling can stop an idle browser between the two, and the snapshot then describes
+  `about:blank`. Silver *says so* — `warning: page_empty: … likely a blank shell, an anti-bot
+  interstitial, or a throttled response` — so read the warning rather than counting hits on the
+  output. A script that only counted matches would have recorded a confident EMPTY here. Use
+  `silver open <url>` and then `snapshot`, and check the returned `url`/`title`/`status`.
+- **The session is read-only by default and refuses to act.** `silver click @e19` exited 1 with
+  `that action is not enabled in the current phase; the session is read-only (pass --enable-actions
+  to allow acting)`. Reading a page never mutates it by accident, which is the correct default for
+  a research lane — and it means a recipe that assumes a click silently reads a page it never
+  changed unless the flag is passed.
+
 ## Traps
 - **A digest rewrites inside the quote marks.** Measured on the URL above: silver's raw bytes read
   `…(I often call this "exfiltration" but I'm not confident that term is widely understood.)`;
