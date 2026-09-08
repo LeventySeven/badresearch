@@ -229,7 +229,8 @@
         {
           "id": "S5-3",
           "does": "artifact-re lane: install -> sparse clone -> bundle -> probe -> fingerprint -> blogs LAST, evidence = file:line",
-          "status": "todo"
+          "status": "passed",
+          "evidence": "passed \u2014 lane driven end to end on a REAL question I needed answered: what does yt-dlp's own source say `--list-subs` means when it lists nothing? (It grounds the practitioner-video.md line I had just written from ONE measurement.) Order held: identity -> package -> read -> probe; blogs never needed. Identity first per the name-squat trap: yt-dlp, 638 releases since 2021, author pukkandan, repo yt-dlp/yt-dlp \u2014 and the PyPI latest (2026.8.19) is byte-identical to the locally installed build that produced my measurement, so the source read IS the code measured. Zero-execution fetch (`pip download --no-deps --only-binary=:all:` + unzip). Enumeration line: `artifact-re | files listed 1046 | candidates selected 2 | cut line extractor/*.py \u2014 the listing RENDERER lives in the core, not in any site extractor`. Three findings, each cited file:line @ version and each then confirmed against the live tool: (1) YoutubeDL.py:4076-4077 \u2014 an empty table prints `<id> has no <name>` and returns with NO header, so a caption-free video ASSERTS its emptiness rather than falling silent; measured `1IdzkRVmWAA has no subtitles` at stdout line 189. (2) :3054-3058 renders two sections headed `[info] Available <name> for <id>:`; the automatic-captions header landed at line 5. (3) THE TRAP \u2014 :667 sets `screen = sys.stderr if quiet else stdout` and :1007 returns early under quiet, so `--quiet --list-subs` gave 183 stdout lines, 0 stderr, and ZERO `has no` occurrences: the flag deletes the only positive absence signal there is."
         },
         {
           "id": "S5-4",

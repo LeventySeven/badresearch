@@ -48,11 +48,24 @@ Three distinguishable outcomes (all three produced on 2026-09-08):
 Probe cost ~11s. For a single video, the same three-way split appears on `transcript`:
 - `FETCH_FAILED_BUT_TRACKS_EXIST` + `EXIT=2` → **THROTTLE, not absence.** Sleep 30-60s and retry. Never record as caption-free.
 - `VIDEO_UNREADABLE` + `EXIT=2` → listing itself failed (deleted/private/gated). Verified on a bogus id.
-- `NO_SUBTITLES_AVAILABLE` + `EXIT=1` → the only outcome that *can* be an absence — and it is one
-  unauthenticated sample from a host that bot-walls, so **confirm it before you record it.** The
-  classifier's whole evidence for absence is that `--list-subs` exited 0 and matched no `^[a-z]{2}`
-  row; a throttled listing that returns a caption-free player response exits 0 and matches none
-  either. Re-run the listing once, ~30s later, and only then call it EMPTY.
+- `NO_SUBTITLES_AVAILABLE` + `EXIT=1` → the only outcome that *can* be an absence, and the wrapper
+  infers it the weak way: `--list-subs` exited 0 and matched no `^[a-z]{2}` row. A throttled listing
+  that returns a caption-free player response exits 0 and matches none either, so that inference
+  cannot separate them. **There is a positive signal available and it is not being used.** Read from
+  the source, then confirmed live:
+  - `yt_dlp/YoutubeDL.py:4076-4077` @ 2026.8.19 — when the table is empty the listing prints
+    `<video id> has no <name>` and returns *without* a header. So a genuinely caption-free video
+    says so in words; it does not fall silent. Grep for `has no subtitles` / `has no automatic
+    captions` and you have EMPTY as an assertion instead of an inference.
+  - `YoutubeDL.py:3054-3058` renders **two** sections — automatic captions (only when the key is
+    present) then subtitles — each headed `[info] Available <name> for <id>:`. Measured on
+    `1IdzkRVmWAA`: header for automatic captions at stdout line 5, and `1IdzkRVmWAA has no
+    subtitles` at line 189. Auto-captioned, manually uncaptioned, fully readable.
+  - **The trap: `--quiet` deletes the evidence.** `YoutubeDL.py:667` sets
+    `screen = sys.stderr if quiet else stdout`, and `to_screen` returns early under quiet without
+    verbose (`:1007`). Measured: a `--quiet --list-subs` run gave 183 stdout lines, 0 stderr lines
+    and **zero** occurrences of `has no`. Run the listing WITHOUT `--quiet` or you have thrown away
+    the only thing that could have told you the difference.
 - **Even confirmed, it bounds the captions and not the talk.** "This video has no caption track" is
   not "this speaker's claim is unattested" — the talk still exists, and the claim may sit in a blog
   post, a repo, or a slide deck. Record the video as unreadable in THIS lane and put the question
