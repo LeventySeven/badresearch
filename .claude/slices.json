@@ -85,7 +85,8 @@
         {
           "id": "S2-2",
           "does": "a producer extracts frontier items from a real fetched body",
-          "status": "todo"
+          "status": "passed",
+          "evidence": "passed — RED first (ImportError: extract_frontier_items). Producer emits entities, named methods, arXiv ids and referent-carrying figures present in a body and absent from the question, preferring the longest form as the more diagnostic cue. Driven on a real 326,123-char corpus document fetched through `bad lane-local`. DEFECT FOUND AND FIXED BY THE END-TO-END DRIVE: the first version matched any decimal and produced 348 items dominated by raw floats ('0.069180676288051') — a frontier that large is nameable by accident, which disables the gate quietly. Tightened to require a referent (money/percent/arXiv/number+unit); 208 items on the same body. Also fixed a real artifact the drive exposed: a sentence-initial preposition was being captured into the entity ('On Natural Questions')."
         },
         {
           "id": "S2-3",
@@ -107,8 +108,9 @@
         {
           "id": "S2-6",
           "does": "END TO END: post-wave-1 queries containing a term first seen in a fetched doc, counted, > 0",
-          "status": "todo",
-          "is_check": true
+          "status": "passed",
+          "is_check": true,
+          "evidence": "passed — the count came back >0 on a genuine end-to-end drive, and its FIRST run came back 0, which is the check working. That zero exposed two things: the producer's number over-emission (fixed above) and a badly built drive of my own — I read one document then asked follow-ups about content in a different one, measuring my scripting rather than the loop. Rebuilt so the follow-ups are derived FROM the extracted items. Result: 2 post-wave-1 queries allowed and naming terms first seen in the fetched doc ('Adaptive Evolutionary Framework', 'Better Code Retrieval'); the deliberate re-phrase control was refused. NOTE the lane query also had to be widened from 0 hits to 3 — the skill's own start-wide-then-narrow rule firing on me."
         }
       ]
     },

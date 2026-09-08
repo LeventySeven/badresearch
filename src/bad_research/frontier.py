@@ -137,3 +137,104 @@ class FrontierState:
             seen_entities=set(d.get("seen_entities", [])),
             log=list(d.get("log", [])),
         )
+
+
+# Words that are frequent enough that emitting them as frontier items would make the
+# gate nameable by almost any query — the opposite of what it is for. Cue
+# diagnosticity (how uniquely a cue selects one item) is what predicts retrieval, so
+# a producer that emits common words grows the frontier and weakens the gate at once.
+_STOP = {
+    "the", "this", "that", "these", "those", "with", "from", "into", "over", "under",
+    "when", "where", "which", "while", "there", "their", "here", "than", "then",
+    "have", "has", "had", "was", "were", "been", "being", "are", "is", "and", "but",
+    "for", "not", "all", "any", "each", "more", "most", "some", "such", "only",
+    "also", "does", "did", "done", "will", "would", "could", "should", "about",
+    "result", "results", "thing", "things", "work", "works", "well", "very", "much",
+    "one", "two", "three", "first", "second", "same", "other", "another", "both",
+}
+
+# Capitalised only because they start a sentence — never the head of an entity.
+_LEADING_NOISE = {
+    "on", "in", "at", "by", "for", "the", "a", "an", "and", "but", "or", "if",
+    "when", "while", "with", "from", "to", "of", "as", "so", "then", "this",
+    "that", "these", "those", "it", "its", "we", "our", "they", "their", "here",
+    "there", "both", "each", "every", "no", "not", "only", "also", "however",
+}
+
+# A capitalised or alphanumeric token that carries a specific referent: a model name
+# (GB200, H200), a method (Adaptive-RAG), an acronym (EM, NAACL), a versioned id.
+# The en-dash branch is deliberate: real corpus text hyphenates method names
+# with an en dash, and dropping that branch would silently miss those entities.
+_ENTITY = re.compile(r"\b(?:[A-Z][A-Za-z0-9]*(?:[-–][A-Za-z0-9]+)+|[A-Z]{2,}[0-9]*|[A-Z][a-z]+[0-9]+|[A-Za-z]+[0-9]{2,}(?:[A-Za-z0-9]*)?)\b")  # noqa: RUF001
+# A figure the question did not contain — but ONLY one carrying a referent: money,
+# a percentage, an arXiv id, or a number bound to a unit. A bare decimal is NOT a
+# frontier item. Measured: the first version matched any decimal and produced 348
+# items from 40k chars of one teardown, most of them raw floats like
+# "0.069180676288051". A frontier that large is nameable by accident, which
+# disables the gate quietly — the failure mode this producer's own docstring warns
+# about. Under-emitting costs a hop; over-emitting costs the check.
+_QUANTITY = re.compile(
+    r"\b(?:arXiv:?\s?)?\d{4}\.\d{4,5}\b"                       # arXiv id
+    r"|\$\d[\d,]*(?:\.\d+)?"                                     # money
+    r"|\b\d[\d,]*(?:\.\d+)?\s?%"                                # percentage
+    r"|\b\d[\d,]*(?:\.\d+)?\s?(?:EM|F1|BAcc|GB|TB|MB|kW|hr|ms)\b"  # number + word unit
+    # No trailing \b for the symbol units: \b after a multiplication sign or "/"
+    # requires a word character next, so "3.8x" and "22,282 tok/s" never matched. Caught
+    # by testing whether the branch fires rather than by reading the pattern.
+    r"|\b\d[\d,]*(?:\.\d+)?\s?(?:tok/s|×|x(?![A-Za-z]))"  # noqa: RUF001
+)
+# Two or three capitalised/alphanumeric tokens in a row — a multi-word entity.
+_MULTI = re.compile(r"\b(?:[A-Z][A-Za-z0-9]*|[A-Z]{2,}[0-9]*)(?:\s+(?:[A-Z][A-Za-z0-9]*|[A-Z]{2,}[0-9]*)){1,2}\b")
+
+
+def extract_frontier_items(body: str, question: str) -> set[str]:
+    """Entities and quantities present in `body` and absent from `question`.
+
+    This is the producer the gate depends on. Without it the frontier stays empty,
+    every query after the first names nothing, and the loop stalls rather than
+    accreting — the rule has to be survivable as well as strict.
+
+    Deliberately narrow. It emits things with a specific referent (a model name, a
+    method, an arXiv id, a figure) and refuses common words, because every item added
+    is another way for a lazy query to satisfy the gate. Under-emitting costs a hop;
+    over-emitting silently disables the check.
+    """
+    known = {t.casefold().rstrip(".-,;:") for t in re.findall(r"[A-Za-z0-9][\w.\-]*", question)}
+    out: set[str] = set()
+
+    for pat in (_MULTI, _ENTITY, _QUANTITY):
+        # A quantity already earned its place by carrying a referent (money, a
+        # percentage, an arXiv id, a unit), so the common-word guard below must not
+        # be applied to it. Measured: that guard silently ate "3.8x" and
+        # "22,282 tok/s", because both tokenize to pieces of three characters or
+        # fewer and the guard drops an item whose every token is that short. The
+        # guard is right for prose and wrong for figures.
+        is_quantity = pat is _QUANTITY
+        for raw in pat.findall(body):
+            item = raw.strip().rstrip(".,;:)")
+            # A sentence-initial function word gets capitalised by grammar, not by
+            # being a name: "On Natural Questions" is one entity plus a preposition.
+            # Leaving it in makes the cue less diagnostic and the item harder to name.
+            parts = item.split()
+            while len(parts) > 1 and parts[0].casefold() in _LEADING_NOISE:
+                parts = parts[1:]
+            item = " ".join(parts)
+            if not item:
+                continue
+            toks = {t.casefold().rstrip(".-") for t in re.findall(r"[A-Za-z0-9][\w.\-]*", item)}
+            if not toks or toks <= known:
+                continue                      # nothing new in it
+            if not is_quantity and all(t in _STOP or len(t) <= 3 for t in toks):
+                continue                      # no diagnostic token
+            # Must be nameable by the gate that consumes it, or it is dead weight.
+            if not _norm_tokens(item):
+                continue
+            out.add(item)
+
+    # Prefer the longer form when one item's tokens contain another's ("GB200 NVL72"
+    # over "GB200"): the longer cue is the more diagnostic one.
+    redundant = {
+        a for a in out for b in out
+        if a != b and _norm_tokens(a) < _norm_tokens(b)
+    }
+    return out - redundant
