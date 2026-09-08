@@ -9,10 +9,9 @@ A searcher looks one thing up. A researcher finds one thing, and what he found t
 for next — so his second question is one he could not have asked first. That compounding is the whole
 job, and it is the only thing here that is hard.
 
-**Everything below is what a good answer looks like, not a sequence to execute.** You are better at
-choosing the order than any list would be. What you are not free to do is skip the refusals — those
-are marked MUST, they are few, and each one is there because skipping it produced a confidently wrong
-answer.
+**Everything below is what a good answer looks like, not a sequence to execute.** What you are not
+free to do is skip the refusals — those are marked MUST, they are few, and each one is there because
+skipping it produced a confidently wrong answer.
 
 ---
 
@@ -26,12 +25,19 @@ the question you already asked, and re-phrasing is the measured failure mode of 
 "repeatedly searching for similar keywords despite retrieving relevant objects", continuing after the
 answer was already in hand. If you cannot name a frontier item, you are done: say so and write.
 
-Four things count as frontier items. The third is the one most systems never build:
+Five things count as frontier items. The first four are handed to you by a source, so a loop built on
+them alone can only burrow deeper into the cluster its first query landed in. The fifth is the only one
+you generate yourself:
 
 - an **entity or quantity** that appeared in a source and not in the question
 - an **unfilled cell** in the shape you promised to deliver
 - a **contradiction** between two sources on one claim — *see below, this one blocks the finish*
 - a **lane that returned nothing and was not retried**, because unreached is not the same as empty
+- **the record your own emerging answer implies should exist.** Take the one load-bearing claim and
+  ask what would have to be on file if it were true — a changelog entry, a filing, a benchmark row, a
+  price. Go look for that. If it is not there, the four-kinds table below decides what you learned:
+  EMPTY (the record is kept and this is not in it) is evidence against your claim; MISSING or BLOCKED
+  is evidence of nothing. This is not a licence to manufacture a disagreement — it tests a premise.
 
 Stop when the frontier is empty, not when a step count is reached. A run that adds no new domain and
 no new entity in a round is finished; keep going and you are spending tokens to make the answer worse.
@@ -54,24 +60,20 @@ most valuable thing you have found, and finding it is why you are reading widely
 Three honest answers, and the first two are common:
 
 - **Answer from what you have** — you already know it and the cost of being wrong is low. Say so.
+  Never available for a sentence carrying a version, price, quota, limit, date or proper name: those
+  move, and your confidence about them is not evidence that they did not.
 - **One wide expansion** — a good query, read the results, write. Most questions.
 - **Frontier-chained** — the answer requires a fact you can only ask for after learning another one.
 
 Getting this right is worth more than anything you do inside the loop. Say which you chose in one line
 at the top of the answer, so it can be corrected.
 
-**Start wide, then narrow.** Your instinct is an over-specific query, and an over-specific query
-returns nothing, which reads exactly like a dead topic. Measured here: an eight-word phrase returned
-zero across every lane; the three-word version returned eight results. Widen before you conclude
-absence.
-
 ---
 
 ## Where to look
 
-Reach is the largest lever there is — the same agent with the same loop, given a better retriever, has
-measured 14.58% → 93.49% while making *fewer* searches. So the question is never "how hard should I
-think about this", it is "what have I not looked at".
+Reach is the largest lever — the same agent and loop with a better retriever measured 14.58% → 93.49%
+while making *fewer* searches. The question is never how hard to think, it is what you have not read.
 
 Each lane below is a file. **Read it at the moment you decide to use that lane** — it carries the exact
 commands, the traps, and what counts as evidence there. Do not read them all up front.
@@ -97,29 +99,32 @@ and they are not interchangeable:
 | **MISSING** | the root or URL does not resolve | nothing; the lane is DOWN |
 | **EXHAUSTED** | you ran out of budget, quota or rate limit mid-run | nothing; name the quota and what went unasked |
 
-The last one is the newest and the easiest to misreport as EMPTY — a cold run hit a 200/200 search
-quota and had to be careful not to record it as absence. A broken tool and an empty lane produce
-identical silence, and treating the first as the second is how a research answer becomes a guess with
-citations. `bad lane-local <query>` prints an enumeration line for exactly this reason; carry that
-discipline into every lane.
+A broken tool and an empty lane produce identical silence, and reading the first as the second is how
+a research answer becomes a guess with citations — `bad lane-local` prints an enumeration line for it.
 
 **Before concluding absence, widen.** One literal phrase returning zero is not evidence. Try the term
 the field uses, the abbreviation, the author's name, the adjacent concept. A cold run reported that
 this single rule is what stopped it filing a false "not in corpus" after its first zero-hit grep.
 
 **Do not build an index over any of this.** No embeddings, no cache of prior findings, no summary of
-summaries. A production findings-cache measured zero hits in 133 attempts, and the corpora grow most
-days. `grep -n` is the correct retrieval at this size and is current for free.
+summaries. A production findings-cache measured zero hits in 133 attempts, the corpora grow most days,
+and `grep -n` is current for free.
 
 ---
 
 ## What counts as evidence
 
-- A **span you can point at** — `path:line`, or a URL plus the date you fetched it, or a `file:line`
-  inside a package you installed. A claim whose source you cannot land does not ship; the mechanism
-  behind it may, said as a mechanism.
-- **Captions are substance, never quotation.** A talk listed under YouTube's *manual* subtitle track
-  still rendered "Claude Code" as "Cloud Code" throughout. Paraphrase, and say it came from a talk.
+- A **span you can point at, no wider than the claim it carries** — `path:line`, a URL plus the date
+  you fetched it, or a `file:line` inside a package you installed. `FILE.md:1-2383` is the shape of a
+  citation, not a citation: cite the fewest lines that carry the claim, so a reader lands on the
+  sentence instead of hunting a file for it. A claim whose source you cannot land does not ship; the
+  mechanism behind it may, said as a mechanism.
+- **A citation claims the span SUPPORTS the sentence, not merely that the span exists.** Every other
+  rule here asks whether a span is real; none asks whether it entails what you wrote beside it, so a
+  correctly fetched, on-topic, verbatim span cited for a claim it does not make passes every check in
+  this file. Before it ships, read the span against the sentence and land on one of three: it supports
+  the claim, it contradicts it, or your sentence goes beyond it. The third is the common one — say
+  what the span shows and where you extrapolated, or cut the extrapolation.
 - **A retrieval tool's digest is the tool's words, not the page's.** Re-check any quote against the
   raw bytes before you put it in quotation marks.
 - **Count distinct actors, not distinct URLs.** Collapse by person, by company, and by commercial
@@ -150,17 +155,19 @@ days. `grep -n` is the correct retrieval at this size and is current for free.
 
 ## Delegation
 
-Fan out **reading**, never judgment. Readers return findings, verbatim spans, and whether the source
-was actually reachable — never a recommendation, never a conclusion. One reasoner holds the thread and
-writes the answer in one pass.
+Fan out **reading**, never judgment. One reasoner holds the thread and writes the answer in one pass —
+splitting the *thinking* yields agents that each produce a correct fact while nothing owns the
+end-to-end picture. Every reader's brief carries three things past the objective and the lane:
 
-This is the shape teams converge on after trying the other one: a consultancy that built one agent per
-analytical step killed it, and their account of why is that the model was never the problem — the way
-they had split the work was. Each agent produced a correct fact; nothing owned the end-to-end picture,
-so the recommended action did not follow from the cause it had correctly found. (From a conference
-talk, paraphrased from captions.) A second team abandoned parallel section-writing for the same
-reason: the sections did not cohere. Scale readers by how much there is to read, not by how many kinds
-of thing the question touches.
+- **A boundary — what this reader must NOT read.** Written per reader, so you can check the boundaries
+  are disjoint before a token is spent. Without one, readers duplicate work and leave gaps between
+  them; with one, overlapping returned sources are a visible defect rather than an invisible cost.
+- **A slot for what it could not close** — findings, verbatim spans, a reachability outcome, *and* the
+  questions its read opened. That last slot is the only way a fan-out feeds the frontier instead of
+  flattening it into a single round.
+- **The chain veto: could you have written this brief before the previous read returned?** If yes for
+  every reader, you bought width and called it depth, however many ran. Scale readers by how much
+  there is to read, never by how many kinds of thing the question touches.
 
 ## Checks, and what they are worth
 
@@ -173,10 +180,9 @@ bad uncited-gate                     # no factual sentence ships uncited
 bad recitation-gate                  # you paraphrased rather than copied
 ```
 
-`uncited-gate` and `recitation-gate` assume a vault with `[N]` markers resolved against note bodies.
-An answer citing `path:line` directly does not have that shape, so they will not apply — say the check
-did not apply rather than reporting it clean. **A check that was never run and a check that passed
-must never look the same in your report.**
+Both gates assume a vault with `[N]` markers resolved against note bodies, so an answer citing
+`path:line` will not fit them — say the check did not apply rather than reporting it clean. **A check
+never run and a check that passed must never look the same in your report.**
 
 **A check that can only pass is not a check.** Before trusting one, break something on purpose and
 watch it go red — a coverage checker in this codebase once shipped at 11% coverage while printing a

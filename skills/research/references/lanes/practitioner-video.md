@@ -48,7 +48,20 @@ Three distinguishable outcomes (all three produced on 2026-09-08):
 Probe cost ~11s. For a single video, the same three-way split appears on `transcript`:
 - `FETCH_FAILED_BUT_TRACKS_EXIST` + `EXIT=2` → **THROTTLE, not absence.** Sleep 30-60s and retry. Never record as caption-free.
 - `VIDEO_UNREADABLE` + `EXIT=2` → listing itself failed (deleted/private/gated). Verified on a bogus id.
-- `NO_SUBTITLES_AVAILABLE` + `EXIT=1` → the only genuine absence; the listing returned cleanly and named no tracks.
+- `NO_SUBTITLES_AVAILABLE` + `EXIT=1` → the only outcome that *can* be an absence — and it is one
+  unauthenticated sample from a host that bot-walls, so **confirm it before you record it.** The
+  classifier's whole evidence for absence is that `--list-subs` exited 0 and matched no `^[a-z]{2}`
+  row; a throttled listing that returns a caption-free player response exits 0 and matches none
+  either. Re-run the listing once, ~30s later, and only then call it EMPTY.
+- **Even confirmed, it bounds the captions and not the talk.** "This video has no caption track" is
+  not "this speaker's claim is unattested" — the talk still exists, and the claim may sit in a blog
+  post, a repo, or a slide deck. Record the video as unreadable in THIS lane and put the question
+  back on the frontier; do not let a caption gap become a finding of absence.
+- **The section header is not the signal — the rows are.** `--list-subs` prints two sections, and
+  auto-only videos print none of the manual one. Measured 2026-09-08 on `1IdzkRVmWAA`: exit 0, **160**
+  track rows, 2 of them English (`en`, `en-orig`), **zero** occurrences of `Available subtitles`, one
+  of `automatic captions`. Grepping for the manual header would file that readable talk as caption-free;
+  the wrapper's row regex is section-blind on purpose and correctly routes it to `EXIT=2` instead.
 
 ## What counts as evidence here
 **channel name + exact talk title + video id + PARAPHRASE.** Never a quoted string.
