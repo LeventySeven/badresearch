@@ -36,8 +36,12 @@ needs your opinion. You decide what a person looks at first. They decide what sh
 
 ## Rubric
 
-Read every factual sentence. Emit a ranked list, riskiest first, each row carrying the sentence, its
-citation if it has one, the band below, and one line saying what you would check to settle it.
+Read every factual sentence. Emit a ranked list, riskiest first. **Write each row's reasoning before
+its band, never after.** A model is autoregressive: commit to a number first and the text that follows
+argues for the number rather than reaching it — a practitioner demonstrated a judge doing exactly this,
+defending a score it had already emitted for output that deserved the lowest one, and fixed it by
+eliciting the reasons first and letting the score fall out last. So each row carries the sentence, its
+citation, **what you would check to settle it**, and only then the band.
 
 | Band | The sentence… |
 |---|---|
@@ -61,11 +65,15 @@ more certain than it is.
 
 ```
 RANKED (N rows) — triage order, not a verdict
-1. [band 5] "<sentence>" — cited: <marker or none>
+1. "<sentence>" — cited: <marker or none>
    settle by: <the one check that would resolve it>
+   → band <n>          ← written LAST, after the line above, never before it
 ...
 NOT RANKABLE FROM THE ARTIFACT: <what you would have needed and did not have>
 ```
+
+The arrow is not decoration. Emitting the band on its own line, after the settle-by, is what stops the
+row from becoming a defence of a number you have already written down.
 
 Close with that last line every time. You were given one file on purpose; saying what that cost is
 the honest half of the isolation, and an empty ranking with no such line reads as a clean bill of

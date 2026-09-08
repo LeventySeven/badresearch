@@ -199,3 +199,26 @@ is usually a picked constant" rather than refuting it.
 **For a research run:** carry which sub-questions remain unanswered, not just how many new entities
 arrived. A round that added three entities and closed no promised cell has not advanced, and a scalar
 counter cannot tell you that.
+
+# A judge that emits the score first will defend it
+
+The model is autoregressive, so a rubric that asks for a number and then an explanation gets an
+explanation *of the number*, not a reason for it. A practitioner demonstrated his own judge doing
+exactly that — arguing for a score it had already committed to, on output he considered worthless —
+and fixed it by eliciting pros, cons and reasons first and letting the score fall out last. A shipped
+loop-detector in a coding harness makes the same choice in its schema: `{analysis, confidence}`, in
+that order, so the reasoning is generated before the number.
+
+Two live failures from the same session, worth having as calibration: an image judge returned **5/5 for
+images on a deck containing no images**, and after a model upgrade every rubric score moved into the
+4.2–4.8 band, which its author read as evidence the rubric was measuring nothing. An unanchored rubric
+has nothing to attach to — no example of what a 0 or a 5 looks like.
+
+**And judge–human agreement is measurable, so measure it rather than assuming.** One shipped tool makes
+it the headline number: hand-label a set, then iterate the judge prompt against an alignment score. A
+live run went 72% → **56%** (the author's own prompt edit made it worse) → 78% → 89% after changing the
+judge model. He named his own overfitting out loud — adding literal words he knew the judge tripped on
+— which is the failure a rising alignment score cannot distinguish from a better judge. An independent
+team names the taxonomy: data drift, **judge drift** (hill-climbing one judge means overfitting to it),
+and small-eval-set drift (the prompt starts to mirror those examples). Their mitigation is
+human-annotated goldens kept specifically to detect judge drift.

@@ -33,6 +33,10 @@ examples rather than in either argument.
   subtask correctly and produced a Flappy Bird with a Super Mario background. Their rule — *rule out
   by default any architecture that does not share full traces, because actions carry implicit
   decisions and conflicting decisions carry bad results.*
+  **Weigh it as what it is.** Read in full, that essay contains no benchmark, no eval and no number;
+  it is expert testimony from a production team, and it is widely cited as though it were data. Take
+  the mechanism and the worked failure; do not put it on the same shelf as the 180-configuration sweep
+  above. The two agree here, which is why the discriminator survives — but one of them measured.
 
 **Fan out when the results combine by union. Do not when they must be mutually consistent.**
 
