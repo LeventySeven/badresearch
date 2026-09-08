@@ -264,6 +264,107 @@
           "evidence": "passed \u2014 the slice check made re-runnable as scripts/lane-probes.sh and driven as a user. All 8 lanes named a state, none returned silence: local-corpus WORKING (teardowns 407 / transcripts 41 / articles 190 / x-guides 67, enumerated live), artifact-re WORKING (left-pad@1.3.0), delta-vs-pinned-ref WORKING, terms-and-pricing WORKING (code=200 chars=18907 datemarks=1), web-live WORKING, practitioner-video WORKING, live-instrument WORKING (461 events), people-track-record WORKING (roster=45 gh=simonw). PROVEN RED TWICE, because a check that can only pass is not one. (1) Repointed the local roots and the roster at /tmp/nope: local-corpus -> MISSING, people-track-record -> MISSING, practitioner-video -> BLOCKED, and the script still exits 0 \u2014 correct by design, since a probe reporting BLOCKED or MISSING is telling the truth, not failing. (2) Shimmed npm to print unanticipated text: artifact-re -> UNCLASSIFIED and exit 1. Only an unclassifiable result fails the run, which is the one thing the four-kinds taxonomy cannot absorb."
         }
       ]
+    },
+    {
+      "id": "S6",
+      "capability": "I ask a real research question and the skill's answer beats what I would have got without it \u2014 blind-judged, with a control arm where the skill is the wrong tool.",
+      "check": "Adversarial + replication, corrected BEFORE any arm ran: 2 questions x 2 arms (treatment = the research skill, control = a plain agent with no skill). Q2 is deliberately a question the skill should NOT help on \u2014 a single-lookup fact \u2014 so OVER-REACH is measurable and a treatment that burns rounds on it is a loss, not a tie. Reports stripped of arm labels and scored by a blind judge on accretion, citation checkability, contradiction surfacing and honest absence. PASS = the verdict is reported whichever way it falls, with contamination declared. Q1 carries a PLANTED corpus defect with ground truth I verified myself: AGENTIC_SEARCH_SPEC.md:183 asserts iterating loses to one retrieval on all three single-hop sets, while its own table at :180 gives Natural Questions one-step 32.40 vs multi-step 35.60 \u2014 multi-step WINS. An arm repeating the prose fell for it; an arm catching it did the counterpart-hunting the direction demands. [check rewritten from '2 questions x 3 arms' \u2014 that phrasing named an arm that does not exist; edited before any row flipped and before any arm was dispatched.]",
+      "unknown": "Whether the skill helps at all. The PRIOR baseline is damning and unresolved: plain Claude+WebSearch beat old badresearch's fast route 3-0 on blind judges INCLUDING accretion. Nothing since has re-measured.",
+      "confidence": 0.3,
+      "shape": "",
+      "trap": "",
+      "delete": [],
+      "rows": [
+        {
+          "id": "S6-1",
+          "does": "arms are isolated by PATH \u2014 no arm can reach the harness, the ledger, or another arm's output",
+          "status": "todo"
+        },
+        {
+          "id": "S6-2",
+          "does": "contamination is DETECTED, not assumed: each arm reports which skills/tools it invoked, and a control that used the research skill is declared contaminated",
+          "status": "todo"
+        },
+        {
+          "id": "S6-3",
+          "does": "the planted corpus defect has verified ground truth and each arm's answer is scored against it",
+          "status": "todo"
+        },
+        {
+          "id": "S6-4",
+          "does": "judge is blind \u2014 sees anonymised reports only, never which arm produced which, never the harness",
+          "status": "todo"
+        },
+        {
+          "id": "S6-5",
+          "is_check": true,
+          "does": "END TO END: 2 questions x 3 arms judged blind; verdict reported whichever way it falls",
+          "status": "todo"
+        }
+      ]
+    },
+    {
+      "id": "S7",
+      "capability": "Every lane of my corpus has been mined for what the skill is still missing, and each surviving finding names a source I can open.",
+      "check": "Multiple agents per source across ALL lanes (teardowns 407, transcripts 41, articles 190, x-guides 67, 32 yt channels, 45 practitioners), disjoint boundaries per the skill's own delegation contract. PASS = a pooled slate where every accepted item cites path:line or url+date, a chair's REFUSAL count exceeds its accept count, and every surviving edit lands with the skill still passing its own gates.",
+      "unknown": "Whether the corpus still holds anything the skill does not already carry \u2014 six prior lanes each rediscovered the same x-guides composition fact, which is what over-mining looks like.",
+      "confidence": 0.65,
+      "shape": "",
+      "trap": "",
+      "delete": [],
+      "rows": [
+        {
+          "id": "S7-1",
+          "does": "every reader brief carries a BOUNDARY (what not to read) and the boundaries are provably disjoint",
+          "status": "todo"
+        },
+        {
+          "id": "S7-2",
+          "does": "every reader returns open questions, not just findings \u2014 the fan-out feeds the frontier",
+          "status": "todo"
+        },
+        {
+          "id": "S7-3",
+          "does": "lanes never before mined in this project are covered: the 32 yt channels and the 41 transcripts",
+          "status": "todo"
+        },
+        {
+          "id": "S7-4",
+          "does": "pooled slate chaired: refusals outnumber accepts and each refusal names its reason",
+          "status": "todo"
+        },
+        {
+          "id": "S7-5",
+          "is_check": true,
+          "does": "END TO END: surviving edits applied; SKILL.md still under cap, all gates green, tests pass",
+          "status": "todo"
+        }
+      ]
+    },
+    {
+      "id": "S8",
+      "capability": "The corpus map that loads into every session tells the truth, so an agent routed by it does not report EMPTY where the lane is MISSING.",
+      "check": "Enumerate every claim in the map live and diff. PASS = every count and path in ~/.claude/CLAUDE.md resolves, or is corrected, and a re-run of the enumeration agrees.",
+      "unknown": "How many other claims in that file are stale \u2014 three are already confirmed wrong.",
+      "confidence": 0.9,
+      "shape": "",
+      "trap": "",
+      "delete": [],
+      "rows": [
+        {
+          "id": "S8-1",
+          "does": "every path and count in the corpus map is checked live and the wrong ones named",
+          "status": "passed",
+          "evidence": "passed \u2014 every path and count in the corpus map checked live against disk, 2026-09-09. FOUR were wrong, and all four misroute an agent into reporting EMPTY where the lane is MISSING: (1) x-guides '~100' is actually 67, a 49% overstatement, and its manifest coverage was stated as 28-of-100 rather than 28-of-67; (2) 'GUIDES_*.md | 5 route-maps' is 4; (3) GUIDES_AI_AGENT_SYSTEMS.md DOES NOT EXIST \u2014 that name is a transcript, TRANSCRIPTS_AI_AGENT_SYSTEMS.md (68k lines); (4) the entire agentmemory/ directory and its GUIDES_AS_SKILLS.md are fiction \u2014 nothing on Desktop mentions that filename, yet the map told every session to 'read before proposing any guide->procedure conversion'. The FINDING is real and survives in the guides-to-procedures-falsified memory; only the pointer was dead, and it is now struck through and redirected there. Also refreshed two approximations the map itself flagged as approximate (teardowns ~395->407, transcripts ~40->41)."
+        },
+        {
+          "id": "S8-2",
+          "is_check": true,
+          "does": "END TO END: the map is corrected and a fresh enumeration agrees with it",
+          "status": "passed",
+          "evidence": "passed \u2014 driven end to end. Re-enumerated every corrected claim against disk and all five agree (x-guides 67, guides 4, teardowns 407, transcripts 41, core-guides 3). Every ~/Desktop path named in the map resolves, with the single dead one struck through and explicitly labelled rather than deleted, so a reader who remembers it learns it is gone instead of silently finding nothing. Backup of the pre-edit file kept in the session scratchpad."
+        }
+      ]
     }
   ],
   "order": [

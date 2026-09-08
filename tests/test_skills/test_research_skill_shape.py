@@ -113,3 +113,28 @@ def test_load_bearing_rules_survive_edits(phrase: str):
     assert phrase.lower() in SKILL.read_text(encoding="utf-8").lower(), (
         f"SKILL.md no longer carries {phrase!r} — that rule was removed, not refactored."
     )
+
+
+def test_every_script_the_skill_tells_you_to_run_ships_with_it():
+    """Found by COLD USE, not by audit: an arm following SKILL.md hit a dead path.
+
+    `test_every_command_named_in_skill_exists` covers `bad <cmd>` names and passed
+    the whole time, because the hole was a different shape — a `bash scripts/...`
+    line whose target lived in the REPO but not in the packaged skill. The
+    installed skill had no `scripts/` directory at all, so the one command in the
+    Checks block that is not a `bad` subcommand could never run for its actual
+    reader.
+
+    This is the exact defect the owner filed as "first error" — a documented name
+    that cannot resolve — reintroduced inside the fix for it, and it took an
+    agent actually following the file to surface it.
+    """
+    body = SKILL.read_text(encoding="utf-8")
+    scripts = set(re.findall(r"(?:bash|sh)\s+(scripts/[\w./-]+)", body))
+    assert scripts, "the Checks block should still name at least one runnable script"
+    missing = [s for s in sorted(scripts) if not (SKILL.parent / s).is_file()]
+    assert not missing, (
+        f"SKILL.md tells its reader to run {missing}, which does not ship inside the "
+        f"skill directory ({SKILL.parent}). A path that resolves only from the repo "
+        "root is a dead name for everyone who installed the skill."
+    )

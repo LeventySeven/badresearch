@@ -1,0 +1,26 @@
+[vault]
+name = "Research Base"
+default_status = "draft"
+research_dir = "research"
+
+[search]
+title_weight = 10.0
+body_weight = 1.0
+tags_weight = 5.0
+aliases_weight = 3.0
+boost_evergreen = 1.5
+penalize_deprecated = 0.3
+penalize_stale = 0.7
+
+[web]
+provider = "builtin"
+profile = ""
+magic = false
+
+[sync]
+auto_sync = true
+exclude_patterns = [".hyperresearch/*", "exports/*", ".git/*", ".venv/*", "node_modules/*", "templates/*", "CLAUDE.md", "AGENTS.md", "agents.md", "GEMINI.md", "README.md", "CHANGELOG.md"]
+
+[index]
+auto_build = true
+pages = ["_index", "_tags", "_recent", "_orphans", "_stats"]

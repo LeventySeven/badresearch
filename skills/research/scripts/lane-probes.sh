@@ -13,6 +13,20 @@
 # Exit 1 if any lane is UNCLASSIFIED. A lane reporting BLOCKED or MISSING is a
 # healthy probe telling the truth, not a failure of this script.
 set -uo pipefail
+# Resolve the repo to probe independently of where this is invoked from: the skill ships
+# inside <repo>/skills/research/scripts/, and an installed copy may sit anywhere at all.
+# Find a git repo to use as the delta/instrument target. An INSTALLED skill usually
+# sits outside any repo, and that is a MISSING lane, never a broken script -- the
+# distinction this whole file exists to preserve. Measured: running from
+# ~/.claude/skills/research/ made git exit 129, which the first version of this
+# script filed as UNCLASSIFIED and failed the run on. Working from inside the repo
+# hid it completely.
+REPO="${BAD_REPO:-}"
+if [ -z "$REPO" ]; then
+  for cand in "$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." 2>/dev/null && pwd)" "$PWD"; do
+    [ -n "$cand" ] && git -C "$cand" rev-parse --git-dir >/dev/null 2>&1 && { REPO="$cand"; break; }
+  done
+fi
 R="${RESEARCH_ROOT:-$HOME/Desktop}"
 CV="${COMPOUND_V:-$R/compound-v}"
 fail=0
@@ -39,13 +53,16 @@ case "$o" in
 esac
 
 # 3. delta-vs-pinned-ref — 0 is UNCHANGED and reportable, 1 is a delta, 128 is a bad ref.
-git -C "$PWD" diff --quiet HEAD~1 HEAD -- . 2>/dev/null; rc=$?
-case $rc in
-  0)   say delta-vs-pinned-ref EMPTY   "UNCHANGED HEAD~1..HEAD (a result, not a failure)" ;;
-  1)   say delta-vs-pinned-ref WORKING "delta present HEAD~1..HEAD" ;;
-  128) say delta-vs-pinned-ref MISSING "bad revision — stale clone or wrong tag" ;;
-  *)   say delta-vs-pinned-ref UNCLASSIFIED "rc=$rc" ;;
-esac
+if [ -z "$REPO" ]; then
+  say delta-vs-pinned-ref MISSING "no git repo reachable — set BAD_REPO to probe this lane"
+else
+  git -C "$REPO" diff --quiet HEAD~1 HEAD -- . 2>/dev/null; rc=$?
+  case $rc in
+    0) say delta-vs-pinned-ref EMPTY   "UNCHANGED HEAD~1..HEAD (a result, not a failure)" ;;
+    1) say delta-vs-pinned-ref WORKING "delta present HEAD~1..HEAD" ;;
+    *) say delta-vs-pinned-ref MISSING "git rc=$rc — bad revision, shallow clone, or not a repo" ;;
+  esac
+fi
 
 # 4. terms-and-pricing — code!=200 or chars<500 is BLOCKED; anchors present is WORKING.
 o=$(curl -sL --compressed -m 25 -A "Mozilla/5.0" -w '\n@@%{http_code}\n' https://www.anthropic.com/legal/aup 2>/dev/null | python3 -c '
@@ -78,12 +95,16 @@ elif [ -n "${n:-}" ]; then say practitioner-video WORKING "$n titles matched"
 else say practitioner-video UNCLASSIFIED "no footer line"; fi
 
 # 7. live-instrument — an instrument that cannot answer is BROKEN, not a zero.
-o=$(git -C "$PWD" rev-list --count HEAD 2>&1)
-case "$o" in
-  [0-9]*) [ "$o" -gt 0 ] && say live-instrument WORKING "commit stream, $o events" \
-                         || say live-instrument EMPTY "instrument answered, 0 rows" ;;
-  *)      say live-instrument MISSING "$o" ;;
-esac
+if [ -z "$REPO" ]; then
+  say live-instrument MISSING "no git repo reachable — set BAD_REPO to probe this lane"
+else
+  o=$(git -C "$REPO" rev-list --count HEAD 2>&1)
+  case "$o" in
+    [0-9]*) [ "$o" -gt 0 ] && say live-instrument WORKING "commit stream, $o events" \
+                           || say live-instrument EMPTY "instrument answered, 0 rows" ;;
+    *)      say live-instrument MISSING "${o%%$'\n'*}" ;;
+  esac
+fi
 
 # 8. people-track-record — three ways to print 0; they are not the same finding.
 P="$CV/references/practitioners.tsv"
