@@ -130,4 +130,8 @@ from bad_research.cli.checks import quote_drift_gate_cmd as _quote_drift_cmd
 app.command("no-source-claim-gate")(_no_source_claim_cmd)
 app.command("quote-drift-gate")(_quote_drift_cmd)
 
+from bad_research.cli.checks import figure_support_gate_cmd as _figure_support_cmd
+
+app.command("figure-support-gate")(_figure_support_cmd)
+
 __all__ = ["app"]

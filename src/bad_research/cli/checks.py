@@ -16,6 +16,7 @@ from pathlib import Path
 
 import typer
 
+from bad_research.checks.figure_support import check_figure_support
 from bad_research.checks.no_source_claim import (
     count_absence_claims,
     find_unfounded_absence_claims,
@@ -155,5 +156,37 @@ def quote_drift_gate_cmd(
         typer.echo("PASS | every attributed quotation is byte-identical to its note"
                    if result.ok else "REFUSE | a quotation does not match the source it cites")
 
+    if not result.ok:
+        raise typer.Exit(code=1)
+
+
+def figure_support_gate_cmd(
+    report: Path = typer.Option(..., "--report", help="The report about to ship."),
+    note_bodies: Path = typer.Option(..., "--note-bodies", "--sources", help="JSON {note_id: body}, in source order."),
+    json_out: bool = typer.Option(False, "--json", "-j", help="Emit findings as JSON."),
+) -> None:
+    """Every cited sentence's NUMBERS must appear in the note it cites. Exit 1 on any that do not.
+
+    Closes the numeric half of the cite-everything hole. A draft whose every
+    sentence is false but carries a resolving marker passes `uncited-gate`
+    clean; most fabricated research claims fabricate a quantity, and that half
+    is a fact about two strings. Reports its own blind spot: `unchecked` counts
+    cited sentences carrying no number, which this gate cannot see.
+    """
+    bodies = json.loads(note_bodies.read_text(encoding="utf-8"))
+    result = check_figure_support(report.read_text(encoding="utf-8"), bodies, list(bodies))
+
+    if json_out:
+        typer.echo(json.dumps(result.to_dict(), indent=2))
+    else:
+        typer.echo(
+            f"figure-support | figures checked {result.checked} "
+            f"| cited sentences with no figure (UNCHECKABLE here) {result.unchecked} "
+            f"| findings {len(result.findings)}"
+        )
+        for f in result.findings:
+            typer.echo(f"  - {f.outcome}: {f.quantity} cited to {f.cited_note} :: {f.sentence[:80]!r}")
+        typer.echo("PASS | every cited figure appears in the note it cites"
+                   if result.ok else "REFUSE | a cited figure does not appear in its source")
     if not result.ok:
         raise typer.Exit(code=1)
