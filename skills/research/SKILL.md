@@ -175,14 +175,27 @@ end-to-end picture. Every reader's brief carries three things past the objective
 
 ## Checks, and what they are worth
 
-Run the deterministic ones on everything; they are cheap and exact:
+Run the deterministic ones on everything; they are cheap and exact. Each is the executing form of a
+rule stated above, and it exists because the prose version is worth roughly 7% on a post-trained
+model while a non-zero exit is worth what it says:
 
 ```bash
 which bad || echo "not on PATH — try .venv/bin/bad, or skip the CLI checks and say so"
-bad lane-local "<query>" --json      # a lane that reports its own zeros
-bad uncited-gate                     # no factual sentence ships uncited
-bad recitation-gate                  # you paraphrased rather than copied
+bad lane-local "<query>" --json   # a lane that reports its own zeros
+bad frontier-gate  --state s.json --query "<q>"   # refuses a query naming no frontier item
+bad frontier-observe --state s.json --domains … --entities …   # the stop signal, computed not asked
+bad close-gate --claims c.json --answer draft.md --dispositions d.json   # an open disagreement blocks the close
+bad quote-drift-gate --report r.md --note-bodies n.json   # a quotation still says what you quoted
+bad no-source-claim-gate --report r.md --notes n.json     # "no source was found" is checked, not asserted
+bad uncited-gate                  # no factual sentence ships uncited
+bad recitation-gate               # you paraphrased rather than copied
+bash scripts/lane-probes.sh       # every lane names its state; none returns silence
 ```
+
+The middle five are the ones that decide something. `close-gate` will not let you rank a
+disagreement and then drop the side you ruled against; `quote-drift-gate` settles by bytes what no
+judge should be asked; `frontier-observe` computes the stop signal before the next prompt is built,
+because a model that wants to keep searching is not a reliable witness to diminishing returns.
 
 Both gates assume a vault with `[N]` markers resolved against note bodies, so an answer citing
 `path:line` will not fit them — say the check did not apply rather than reporting it clean. **A check
