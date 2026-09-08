@@ -90,7 +90,8 @@
         {
           "id": "S2-3",
           "does": "gate_query has a production caller and refuses a re-phrase in a live run",
-          "status": "todo"
+          "status": "passed",
+          "evidence": "passed — RED first (ImportError: cannot import name 'FrontierState'). gate_query now has a real production caller: FrontierState.gate_and_log at frontier.py:109, reached from the CLI `bad frontier-gate`. DRIVEN AS A USER on a live state file: query 1 'does iterating beat one expansion' -> allow (first, exempt), exit 0; query 2 'is it better to search more times' -> REFUSE, exit 1, names no frontier item; query 3 'Adaptive-RAG oracle router step count' -> allow, exit 0, names ['Adaptive-RAG','oracle router']. The refusal is enforced by a non-zero exit, not by advice."
         },
         {
           "id": "S2-4",
@@ -100,7 +101,8 @@
         {
           "id": "S2-5",
           "does": "the run log names, per query, which frontier item it hit",
-          "status": "todo"
+          "status": "passed",
+          "evidence": "passed — the same run's log records, per query, allowed/refused AND which frontier item was named: [] for the exempt first query, [] for the refused re-phrase, ['Adaptive-RAG','oracle router'] for the accreting one. That log is the artifact S2-6's end-to-end count reads, so accretion is auditable from the run's own counters rather than from the model's account of how well it did."
         },
         {
           "id": "S2-6",
