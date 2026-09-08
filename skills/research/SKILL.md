@@ -7,8 +7,9 @@ description: Answer a question that needs real sources — comparisons, "what ac
 
 A searcher looks one thing up. A researcher finds one thing, and what he found tells him what to look
 for next — so his second question is one he could not have asked first. That compounding is the whole
-job, and it is the only hard thing here. Read across seven shipped research systems in source, exactly
-one implements it mechanically; the rest re-decompose the original question and call it iteration.
+job, and it is the only hard thing here. Of seven open-source research engines read in source, exactly
+one generates its next question from evidence it retrieved and did not use; the rest re-decompose the
+original question and call it iteration.
 
 **Everything below is what a good answer looks like, not a sequence to execute.** What you may not skip
 are the refusals — marked MUST, few, and each there because skipping it produced a confidently wrong
@@ -36,7 +37,7 @@ you generate yourself:
 - a **lane that returned nothing and was not retried**, because unreached is not the same as empty
 - **the record your own emerging answer implies should exist.** Take the one load-bearing claim and
   ask what would have to be on file if it were true — a changelog entry, a filing, a benchmark row, a
-  price. Go look for that. If it is not there, the four-kinds table below decides what you learned:
+  price. Go look for that. If it is not there, the kinds-of-nothing table below decides what you learned:
   EMPTY (the record is kept and this is not in it) is evidence against your claim; MISSING or BLOCKED
   is evidence of nothing. This is not a licence to manufacture a disagreement — it tests a premise.
 
@@ -109,7 +110,7 @@ traps, and what counts as evidence there. Do not read them all up front.
 | Live instrument | `references/lanes/live-instrument.md` | a number you must measure yourself |
 | People | `references/lanes/people-track-record.md` | whose account to weight, ranked by incentive not prominence |
 
-**MUST report a lane that returned nothing, and say which kind of nothing it was.** There are four,
+**MUST report a lane that returned nothing, and say which kind of nothing it was.** There are five,
 and they are not interchangeable:
 
 | | means | what you may conclude |
@@ -122,7 +123,7 @@ and they are not interchangeable:
 
 The fifth is the only one that returns *content*: anti-bot systems increasingly serve fabricated pages
 to a detected agent instead of blocking it, so the run reports a clean fetch and files invented text as
-evidence. (Documented by a vendor selling the fix — take the mechanism, leave the numbers.)
+evidence. (From a vendor selling the fix — take the mechanism, leave the numbers.)
 
 A broken tool and an empty lane produce identical silence, and reading the first as the second is how
 a research answer becomes a guess with citations — `bad lane-local` prints an enumeration line for it.
@@ -150,10 +151,9 @@ was wasted, and a 50-line window cut that to one in five.
 
 ## What counts as evidence
 
-- A **span you can point at, no wider than the claim it carries** — `path:line`, a URL plus the date
-  you fetched it, or a `file:line` inside a package you installed. `FILE.md:1-2383` is the shape of a
-  citation, not a citation. A claim whose source you cannot land does not ship; the mechanism behind it
-  may, said as a mechanism.
+- A **span you can point at, no wider than the claim it carries** — `path:line`, a URL plus its fetch
+  date, or a `file:line` inside a package you installed. `FILE.md:1-2383` is the shape of a citation,
+  not a citation. A claim whose source you cannot land does not ship; its mechanism may, said as one.
 - **Bind the citation when you write the sentence, from the retrieval you just did.** Draft-then-attach
   produced phantom references at up to 21%; constructing the citation from the retrieval call measured
   **zero** over 75 papers. Never reconstruct grounding for a paragraph already written.
@@ -164,14 +164,14 @@ was wasted, and a 50-line window cut that to one in five.
   contents fall where you expected. Measured: roughly 50% → 90%. A package, profile or file that
   *resolves* is not evidence you got the one you meant.
 - **Count distinct actors, not distinct URLs** — and say how each was reached. Collapse by person,
-  company and commercial orbit; one practitioner here supplied eleven of ninety-six findings across
-  three lanes that each believed they were independent. Sources reached by frontier-chaining are **not
-  independent corroboration**: each was chosen because the last one pointed at it.
+  company and orbit; one practitioner supplied eleven of ninety-six findings across three lanes that
+  each believed they were independent. Sources reached by frontier-chaining are **not independent
+  corroboration** — each was chosen because the last one pointed at it.
 - **A number needs its protocol, and a correlation needs a control.** Resolution, window, unit — hourly
   sampling understated a peak by 700%. Then check the population where your proposed cause is *absent*
   and see whether the trend is there too.
-- **Captions are substance, never quotation** — a *manual* track still rendered "Claude Code" as "Cloud
-  Code" throughout. Paraphrase, and say it came from a talk. A retrieval tool's digest is its words.
+- **Captions are substance, never quotation** — a *manual* track rendered "Claude Code" as "Cloud Code"
+  throughout. Paraphrase. A retrieval tool's digest is its words, not the page's.
 - **Mechanical sweeps produce candidates, never verdicts.** Five sweeps returning 110/58/52/29/20 hits
   collapsed to 31/0/0/0/0 on reading — base rate, not luck. Re-check the survivors.
 
