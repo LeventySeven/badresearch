@@ -26,16 +26,31 @@ class Frontier:
         self.items.discard(item)
 
 
-def _tokens(q: str) -> set[str]:
-    return set(re.findall(r"[A-Za-z0-9][\w.\-]*", q))
+def _norm_tokens(text: str) -> set[str]:
+    """Casefolded tokens with trailing punctuation stripped.
+
+    `$0.66` yields `0.66` on both sides so a quantity matches itself, and a
+    trailing period no longer welds itself onto the token before it.
+    """
+    raw = re.findall(r"[A-Za-z0-9][\w.\-]*", text)
+    return {t.casefold().rstrip(".-") for t in raw} - {""}
 
 
 def gate_query(query: str, frontier: Frontier, first: bool = False) -> tuple[bool, list[str]]:
-    """Refuse a query naming no frontier item. The first query is exempt."""
+    """Refuse a query naming no frontier item. The first query is exempt (spec R1).
+
+    An item is NAMED when every one of its tokens appears in the query, so a
+    multi-token item ("GB200 NVL72") and a quantity ("$0.66") both match — three
+    of R1's five item types are multi-token by construction, and an equality test
+    against single tokens could never name any of them.
+    """
     if first:
         return True, []
-    toks = {t.casefold() for t in _tokens(query)}
-    named = sorted(i for i in frontier.items if i.casefold() in toks)
+    qt = _norm_tokens(query)
+    named = sorted(
+        i for i in frontier.items
+        if (it := _norm_tokens(i)) and it <= qt   # `and it` — an item with no
+    )                                            # tokens must not match everything
     return bool(named), named
 
 

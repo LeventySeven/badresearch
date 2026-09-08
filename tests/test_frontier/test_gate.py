@@ -34,3 +34,26 @@ def test_add_drops_empty_strings_and_close_removes_an_item():
     f.close("H200")
     f.close("never-there")  # closing an unknown item is a no-op, not an error
     assert f.items == {"MoE"}
+
+
+def test_multi_token_item_is_named():
+    ok, named = gate_query("GB200 NVL72 power draw", Frontier(items={"GB200 NVL72"}))
+    assert ok is True and named == ["GB200 NVL72"]
+
+
+def test_quantity_with_currency_prefix_is_named():
+    assert gate_query("is it $0.66 per token", Frontier(items={"$0.66"}))[0] is True
+
+
+def test_trailing_punctuation_does_not_block_a_match():
+    assert gate_query("compare price of the H200.", Frontier(items={"H200"}))[0] is True
+
+
+def test_item_with_no_tokens_never_matches():
+    # the empty set is a subset of everything — the `and it` guard stops it naming itself
+    assert gate_query("anything at all", Frontier(items={"$$$"}))[0] is False
+
+
+def test_partial_multi_token_match_is_refused():
+    # naming only half a multi-token item is still a re-phrase
+    assert gate_query("GB200 power draw", Frontier(items={"GB200 NVL72"}))[0] is False
