@@ -81,7 +81,16 @@ def test_description_describes_the_user_request_not_the_skill():
 def test_every_bad_command_it_names_resolves_against_the_live_cli():
     real = {c.name or (c.callback.__name__ if c.callback else "") for c in app.registered_commands}
     real |= {g.name for g in app.registered_groups}
-    named = set(re.findall(r"`?bad ([a-z][a-z-]+)", SKILL.read_text(encoding="utf-8")))
+    # The backtick/code-fence context is REQUIRED, not optional. The old pattern made it
+    # optional and so matched the English word: prose reading "base rate, not bad luck"
+    # was reported as a missing CLI command `bad luck`. That is the check mis-reading its
+    # input, not a real dead name — a documented command always appears in backticks or a
+    # fenced block. Narrowed to those two contexts; the planted-defect test below proves
+    # it still catches a name that genuinely does not resolve.
+    body = SKILL.read_text(encoding="utf-8")
+    fenced = "\n".join(re.findall(r"^```bash\n(.*?)^```", body, re.S | re.M))
+    inline = "\n".join(re.findall(r"`(bad [a-z][a-z0-9 -]*)`", body))
+    named = set(re.findall(r"(?:^|\s)bad ([a-z][a-z-]+)", fenced + "\n" + inline, re.M))
     missing = named - real
     assert not missing, (
         f"SKILL.md names commands that do not exist: {sorted(missing)}. "
@@ -138,3 +147,24 @@ def test_every_script_the_skill_tells_you_to_run_ships_with_it():
         f"skill directory ({SKILL.parent}). A path that resolves only from the repo "
         "root is a dead name for everyone who installed the skill."
     )
+
+
+def test_the_command_check_still_catches_a_name_that_does_not_resolve():
+    """Red-first proof that narrowing the pattern did not neuter the check.
+
+    The pattern was narrowed because it read the English word "bad" in prose as a CLI
+    name ("base rate, not bad luck" -> a missing command `bad luck`). Narrowing a check
+    to stop it mis-firing is only legitimate if it still fires on the real thing, so this
+    plants one and watches it go red.
+    """
+    import subprocess
+    body = SKILL.read_text(encoding="utf-8")
+    planted = body.replace("bad lane-local", "bad definitely-not-a-command", 1)
+    fenced = "\n".join(re.findall(r"^```bash\n(.*?)^```", planted, re.S | re.M))
+    inline = "\n".join(re.findall(r"`(bad [a-z][a-z0-9 -]*)`", planted))
+    named = set(re.findall(r"(?:^|\s)bad ([a-z][a-z-]+)", fenced + "\n" + inline, re.M))
+    assert "definitely-not-a-command" in named, "the narrowed pattern no longer sees commands at all"
+    bad = SKILL.parents[2] / ".venv" / "bin" / "bad"
+    rc = subprocess.run([str(bad), "definitely-not-a-command", "--help"],
+                        capture_output=True).returncode
+    assert rc != 0, "fixture is wrong: that command should not exist"

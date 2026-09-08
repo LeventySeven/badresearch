@@ -7,11 +7,12 @@ description: Answer a question that needs real sources — comparisons, "what ac
 
 A searcher looks one thing up. A researcher finds one thing, and what he found tells him what to look
 for next — so his second question is one he could not have asked first. That compounding is the whole
-job, and it is the only thing here that is hard.
+job, and it is the only hard thing here. Read across seven shipped research systems in source, exactly
+one implements it mechanically; the rest re-decompose the original question and call it iteration.
 
-**Everything below is what a good answer looks like, not a sequence to execute.** What you are not
-free to do is skip the refusals — those are marked MUST, they are few, and each one is there because
-skipping it produced a confidently wrong answer.
+**Everything below is what a good answer looks like, not a sequence to execute.** What you may not skip
+are the refusals — marked MUST, few, and each there because skipping it produced a confidently wrong
+answer.
 
 ---
 
@@ -39,8 +40,14 @@ you generate yourself:
   EMPTY (the record is kept and this is not in it) is evidence against your claim; MISSING or BLOCKED
   is evidence of nothing. This is not a licence to manufacture a disagreement — it tests a premise.
 
-Stop when the frontier is empty, not when a step count is reached. A run that adds no new domain and
-no new entity in a round is finished; keep going and you are spending tokens to make the answer worse.
+**A query names a frontier item AND is one sentence saying what evidence you want.** The measured
+default is keyword soup — models trained on grep emit regex-shaped piles into retrievers that want
+language. Say what you need before composing it.
+
+Stop when the frontier is empty, with a floor and a patience: a run answered on **fewer than ~5
+distinct retrievals** was answered from what you already had, and one quiet round is noise where
+**two** consecutive is the signal (shipped rules also floor at ~3 sources per sub-question). Past that,
+more searching makes the answer worse.
 
 ## Contradictions are the second half of the job
 
@@ -53,6 +60,14 @@ most valuable thing you have found, and finding it is why you are reading widely
   yourself two unreconciled numbers mid-thought is a measured collapse mode, not a neutral act.
 - Say which you believe and why, or say plainly that it is unresolved. Both are answers. "Sources
   differ" with no verdict and no reason is not.
+- **Diagnose before you rank.** Two disagreeing accounts usually differ for one of two reasons, and
+  both are checkable: the **window** each covers (as-of date, cut-off) and how each **mapped a
+  near-miss** (did one read the primary where the other accepted an approximation?). Two sources that
+  differ only in window are not a contradiction; they are one source and a later one.
+- **Your own notes contradict each other too, and nothing will tell you.** Options you were weighing
+  get recorded as things that happened — a memory system logged its user visiting two countries on
+  overlapping dates, because the source was a conversation *deciding between* them. Two of your own
+  entries that cannot both be true is a frontier item, not bookkeeping.
 - Do not manufacture them. If you are hunting a disagreement to justify another round, stop.
 
 ## Before you retrieve: decide how much retrieval this needs
@@ -72,11 +87,16 @@ at the top of the answer, so it can be corrected.
 
 ## Where to look
 
-Reach is the largest lever — the same agent and loop with a better retriever measured 14.58% → 93.49%
-while making *fewer* searches. The question is never how hard to think, it is what you have not read.
+Reach is the largest lever, and **iteration is mostly what a loop does when reach is failing.**
+Measured with only the retriever varied: random → the agent learned to stop searching (0.241); BM25 →
+it *increased* its calls (0.352); a good dense index → it searched judiciously and scored best (0.430).
+It iterates hardest where retrieval is worst and the extra turns never close the gap — swapping only
+the inference retriever moved one benchmark 0.254 → 0.582, worth more than the whole training run.
+**And reach is not sufficient:** given the *perfect* source set, published systems still recover about
+half the key facts. A source retrieved and not used is a different failure from one not retrieved.
 
-Each lane below is a file. **Read it at the moment you decide to use that lane** — it carries the exact
-commands, the traps, and what counts as evidence there. Do not read them all up front.
+Each lane below is a file. **Read it when you decide to use that lane** — it carries the commands, the
+traps, and what counts as evidence there. Do not read them all up front.
 
 | Lane | Read | For |
 |---|---|---|
@@ -98,17 +118,33 @@ and they are not interchangeable:
 | **BLOCKED** | a bot-wall, paywall, 402/403, consent interstitial | nothing; quote the interstitial and say so |
 | **MISSING** | the root or URL does not resolve | nothing; the lane is DOWN |
 | **EXHAUSTED** | you ran out of budget, quota or rate limit mid-run | nothing; name the quota and what went unasked |
+| **POISONED** | on-topic content arrived, and the defender chose it | nothing — and this one looks like a healthy read |
+
+The fifth is the only one that returns *content*: anti-bot systems increasingly serve fabricated pages
+to a detected agent instead of blocking it, so the run reports a clean fetch and files invented text as
+evidence. (Documented by a vendor selling the fix — take the mechanism, leave the numbers.)
 
 A broken tool and an empty lane produce identical silence, and reading the first as the second is how
 a research answer becomes a guess with citations — `bad lane-local` prints an enumeration line for it.
 
-**Before concluding absence, widen.** One literal phrase returning zero is not evidence. Try the term
-the field uses, the abbreviation, the author's name, the adjacent concept. A cold run reported that
-this single rule is what stopped it filing a false "not in corpus" after its first zero-hit grep.
+**Before concluding absence, widen — then say what you could have detected.** One literal phrase
+returning zero is not evidence. Try the term the field uses, the abbreviation, the author's name, the
+adjacent concept. A cold run reported that this single rule is what stopped it filing a false "not in
+corpus" after its first zero-hit grep.
 
-**Do not build an index over any of this.** No embeddings, no cache of prior findings, no summary of
-summaries. A production findings-cache measured zero hits in 133 attempts, the corpora grow most days,
-and `grep -n` is current for free.
+**EMPTY licenses "not in corpus" only with the class you ruled out and how.** A failed query rules out
+an *instantiation*, never an approach — one phrasing is a vanishing fraction of how a thing can be
+said. Medicine names the same gap: declare in advance what you could have detected, or a true zero and
+an underpowered one are indistinguishable. Without that you have a widened MISSING.
+
+**Do not build an index over any of this** — no embeddings, no findings cache, no summary of summaries.
+A production findings-cache measured zero hits in 133 attempts and the corpora grow most days. Know the
+rule's condition so you can tell when it lapses: a memory layer measured **zero capability gain and
+pure cost** while the material fits in context, earning its keep only once evidence sits outside the
+window. It does not forbid two things — recording **dispositions** (rejected, and why, in the reason's
+own terms) over a target you re-scan; and capping how much of a file you read, where the cheap half of
+an index's benefit actually lives. Grep buys recall and pays in precision: about one file read in three
+was wasted, and a 50-line window cut that to one in five.
 
 ---
 
@@ -116,29 +152,31 @@ and `grep -n` is current for free.
 
 - A **span you can point at, no wider than the claim it carries** — `path:line`, a URL plus the date
   you fetched it, or a `file:line` inside a package you installed. `FILE.md:1-2383` is the shape of a
-  citation, not a citation: cite the fewest lines that carry the claim, so a reader lands on the
-  sentence instead of hunting a file for it. A claim whose source you cannot land does not ship; the
-  mechanism behind it may, said as a mechanism.
-- **A citation claims the span SUPPORTS the sentence, not merely that the span exists.** Every other
-  rule here asks whether a span is real; none asks whether it entails what you wrote beside it, so a
-  correctly fetched, on-topic, verbatim span cited for a claim it does not make passes every check in
-  this file. Before it ships, read the span against the sentence and land on one of three: it supports
-  the claim, it contradicts it, or your sentence goes beyond it. The third is the common one — say
-  what the span shows and where you extrapolated, or cut the extrapolation.
-- **A retrieval tool's digest is the tool's words, not the page's.** Re-check any quote against the
-  raw bytes before you put it in quotation marks.
-- **Captions are substance, never quotation** — YouTube's *manual* track is frequently ASR. Paraphrase
-  and say it came from a talk. (This bullet was cut once as duplication and a check refused the cut:
-  it was written after a caption-sourced phrase reached this very file in quotation marks, and the
-  lane files that also carry the rule are read on demand, long after the damage is done.)
-- **Count distinct actors, not distinct URLs.** Collapse by person, by company, and by commercial
-  orbit before you call anything corroborated — a vendor recommending the thing it sells is one
-  interested source however many pages it has. Measured here: one practitioner supplied eleven of
-  ninety-six findings across three lanes that each believed they were independent.
-- **A number needs its protocol.** Resolution, window, unit. Hourly sampling understated a peak by
-  700% on the same data, so where sampling could hide a peak, report a bound (`≥ X`) and not a fact.
+  citation, not a citation. A claim whose source you cannot land does not ship; the mechanism behind it
+  may, said as a mechanism.
+- **Bind the citation when you write the sentence, from the retrieval you just did.** Draft-then-attach
+  produced phantom references at up to 21%; constructing the citation from the retrieval call measured
+  **zero** over 75 papers. Never reconstruct grounding for a paragraph already written.
+- **A citation claims the span SUPPORTS the sentence, not merely that the span exists.** Read the span
+  against the sentence and land on one of three: it supports the claim, it contradicts it, or your
+  sentence goes beyond it. The third is the common one — say where you extrapolated, or cut it.
+- **Verify a retrieved object by its properties, not its name** — date, unit, scale, and whether its
+  contents fall where you expected. Measured: roughly 50% → 90%. A package, profile or file that
+  *resolves* is not evidence you got the one you meant.
+- **Count distinct actors, not distinct URLs** — and say how each was reached. Collapse by person,
+  company and commercial orbit; one practitioner here supplied eleven of ninety-six findings across
+  three lanes that each believed they were independent. Sources reached by frontier-chaining are **not
+  independent corroboration**: each was chosen because the last one pointed at it.
+- **A number needs its protocol, and a correlation needs a control.** Resolution, window, unit — hourly
+  sampling understated a peak by 700%. Then check the population where your proposed cause is *absent*
+  and see whether the trend is there too.
+- **Captions are substance, never quotation** — a *manual* track still rendered "Claude Code" as "Cloud
+  Code" throughout. Paraphrase, and say it came from a talk. A retrieval tool's digest is its words.
 - **Mechanical sweeps produce candidates, never verdicts.** Five sweeps returning 110/58/52/29/20 hits
-  collapsed to 31/0/0/0/0 on reading. The grep is not the finding.
+  collapsed to 31/0/0/0/0 on reading — base rate, not luck. Re-check the survivors.
+
+`references/evidence.md`: shipped span-width and quote caps, the subject-controlled source pool, an
+earlier agent's query trail masquerading as a source, and the denominator of silence.
 
 ## What must never happen
 
@@ -159,55 +197,50 @@ and `grep -n` is current for free.
 
 ## Delegation
 
-Fan out **reading**, never judgment. One reasoner holds the thread and writes the answer in one pass —
-splitting the *thinking* yields agents that each produce a correct fact while nothing owns the
-end-to-end picture. Every reader's brief carries three things past the objective and the lane:
+Fan out **reading**, never judgment — and only when results combine by **union**. Where the parts must
+be mutually consistent, one reader. Measured: independent parallel agents that never communicate
+amplify one agent's error **17.2×** against **4.4×** through a centralized validating orchestrator, and
+on strictly sequential work *all four* multi-agent shapes lost by 39–70%. **So the frontier-chained
+tier is a do-not-fan-out tier** — it is sequential by definition.
 
-- **A boundary — what this reader must NOT read.** Written per reader, so you can check the boundaries
-  are disjoint before a token is spent. Without one, readers duplicate work and leave gaps between
-  them; with one, overlapping returned sources are a visible defect rather than an invisible cost.
-- **A slot for what it could not close** — findings, verbatim spans, a reachability outcome, *and* the
-  questions its read opened. That last slot is the only way a fan-out feeds the frontier instead of
-  flattening it into a single round.
-- **The chain veto: could you have written this brief before the previous read returned?** If yes for
-  every reader, you bought width and called it depth, however many ran. Scale readers by how much
-  there is to read, never by how many kinds of thing the question touches.
+`references/delegation.md`: what a brief must withhold (state the question, never the thesis — readers
+told what you are building return opinions instead of facts), reader budget floor and kill threshold,
+the chain veto, the typed reduction, and the one judgment that must leave the reasoner.
 
 ## Checks, and what they are worth
 
 Run the deterministic ones on everything; they are cheap and exact. Each is the executing form of a
-rule stated above, and it exists because the prose version is worth roughly 7% on a post-trained
-model while a non-zero exit is worth what it says:
+rule stated above, and exists because prose is worth roughly 7% on a post-trained model while a
+non-zero exit is worth what it says:
 
 ```bash
 which bad || echo "not on PATH — try .venv/bin/bad, or skip the CLI checks and say so"
-bad lane-local "<query>" --json   # a lane that reports its own zeros
-bad frontier-gate  --state s.json --query "<q>"   # refuses a query naming no frontier item
+bad lane-local "<query>" --json                          # a lane that reports its own zeros
+bad frontier-gate    --state s.json --query "<q>"        # refuses a query naming no frontier item
 bad frontier-observe --state s.json --domains … --entities …   # the stop signal, computed not asked
 bad close-gate --claims c.json --answer draft.md --dispositions d.json   # an open disagreement blocks the close
-bad quote-drift-gate --report r.md --note-bodies n.json   # a quotation still says what you quoted
-bad no-source-claim-gate --report r.md --notes n.json     # "no source was found" is checked, not asserted
-bad uncited-gate                  # no factual sentence ships uncited
-bad recitation-gate               # you paraphrased rather than copied
-bash scripts/lane-probes.sh       # every lane names its state; none returns silence
+bad quote-drift-gate    --report r.md --note-bodies n.json     # a quotation still says what you quoted
+bad figure-support-gate --report r.md --note-bodies n.json     # a cited figure is IN the note cited
+bad no-source-claim-gate --report r.md --notes n.json          # "no source was found" is checked
+bad uncited-gate ; bad recitation-gate                         # marker present; you paraphrased
+bash scripts/lane-probes.sh                              # every lane names its state; none is silent
 ```
 
-The middle five are the ones that decide something. `close-gate` will not let you rank a
-disagreement and then drop the side you ruled against; `quote-drift-gate` settles by bytes what no
-judge should be asked; `frontier-observe` computes the stop signal before the next prompt is built,
-because a model that wants to keep searching is not a reliable witness to diminishing returns.
+**A check that can only pass is not a check** — and there are two ways to fail that. Break it on
+purpose and watch it go red. Then try to *beat* it with a shortcut: if a degenerate answer can pass,
+the check is not ready. Measured here — a draft whose every sentence was false but carried a marker to
+a real note came back clean from `uncited-gate`, because that gate measures citation *presence*.
 
-Both gates assume a vault with `[N]` markers resolved against note bodies, so an answer citing
-`path:line` will not fit them — say the check did not apply rather than reporting it clean. **A check
-never run and a check that passed must never look the same in your report.**
+**Run the arm where your explanation is absent.** Three unrelated fields converge: feed the system
+scrambled or empty input and see whether it still answers confidently; and to claim accumulated
+findings helped, re-run with the store *wiped* and report the difference, not the absolute. If the
+answer barely moves you measured the model, not the corpus — say which.
 
-**A check that can only pass is not a check.** Before trusting one, break something on purpose and
-watch it go red — a coverage checker in this codebase once shipped at 11% coverage while printing a
-clean result.
+**A check never run and a check that passed must never look the same in your report.**
 
-And know the ceiling of the semantic ones: on long-form work, every published groundedness judge lands
-between 55 and 60 on a scale where 50 is chance. Use a judge to *rank* what a human should look at.
-Never let one certify that the work is correct.
+`references/checks.md`: what each gate asserts and what it does not, why the judge ceiling is a
+property of the *unit* rather than of judging, and the two things nothing here measures — recall, and
+the trajectory.
 
 ## The answer
 

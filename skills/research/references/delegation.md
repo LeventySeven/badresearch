@@ -1,0 +1,107 @@
+# Delegation — the fan-out contract
+
+Read this when a question is big enough that one reader cannot cover it. The rule in SKILL.md is one
+line; this is what it costs, when it inverts, and what a brief must carry.
+
+## The number that decides the shape
+
+A controlled 180-configuration sweep (4 benchmarks, 3 model families) measured **error amplification**
+— the rate at which one agent's mistake reaches the final result:
+
+| topology | amplification | on strictly sequential work |
+|---|---:|---|
+| independent parallel agents that never communicate | **17.2×** | **all four multi-agent shapes lost, by 39–70%** |
+| centralized orchestrator as a validation bottleneck | **4.4×** | — |
+| centralized, on parallelizable work | — | beat single-agent by 80.9% |
+
+A predictor over tool count and decomposability picks the right topology for 87% of unseen
+configurations (R²=0.513). Anthropic measured the same direction on BrowseComp: unintended-solution
+rate 0.24% single-agent vs 0.87% multi-agent, **3.7×**, and named the mechanism as *sampling* — more
+parallel searchers per round raise the chance one hits leaked material.
+
+**So the frontier-chained tier is a DO-NOT-FAN-OUT tier.** It is sequential by definition, and every
+parallel shape tested lost there by 39–70%. Fan out for breadth; never for depth.
+
+## The union test — the discriminator, sharper than "reading, never judgment"
+
+Two published, funded positions disagree about fan-out, and the discriminator sits in their own
+examples rather than in either argument.
+
+- Anthropic's win case is *"all board members of the companies in the IT S&P 500"* — results combine
+  by **union**, so one reader's implicit decisions cannot conflict with another's.
+- Cognition's loss case requires the parts to be **mutually consistent**: two subagents each did their
+  subtask correctly and produced a Flappy Bird with a Super Mario background. Their rule — *rule out
+  by default any architecture that does not share full traces, because actions carry implicit
+  decisions and conflicting decisions carry bad results.*
+
+**Fan out when the results combine by union. Do not when they must be mutually consistent.**
+
+## What a brief must carry
+
+Beyond the objective and the lane, four things:
+
+- **A boundary — what this reader must NOT read.** Written per reader so you can check the boundaries
+  are disjoint before a token is spent. Without one, readers duplicate work and leave gaps; with one,
+  overlapping returned sources are a visible defect rather than an invisible cost.
+- **The question and the lane — never the conclusion you expect.** Measured on a methodology shipped
+  to ~10,000 engineers and then partly retracted: users who pasted "here is what I'm building" into
+  the research step **got opinions back instead of facts**. The fix is structural, not a prompt line —
+  one context generates the questions, a fresh context with no knowledge of the goal does the reading.
+  Keep the implied-record move (SKILL.md's fifth frontier item) as the *reasoner's* move, run against
+  readers who were never told the thesis.
+- **A slot for what it could not close** — findings, verbatim spans, a reachability outcome, *and* the
+  questions its read opened. That last slot is the only way a fan-out feeds the frontier instead of
+  flattening it into a single round.
+- **The specific thing that would count as wrong here.** A reader without the domain context to
+  recognise a defect reports the source as clean. Measured: asked to open-code a trace, an LLM said it
+  looked fine; the trace contained a hallucinated offer the company does not make, which the human
+  caught because he knew the business.
+
+## The chain veto
+
+**Could you have written this brief before the previous read returned?** If yes for every reader, you
+bought width and called it depth, however many ran. The fix is waves: wave 2's briefs are written from
+wave 1's open questions. Anything else is one round of depth wearing a fan-out's cost.
+
+## What it costs
+
+Agents use roughly **4× the tokens of chat; multi-agent roughly 15×**. Three factors explain 95% of
+BrowseComp variance and **token usage alone explains 80%**. Effort bands that shipped with those
+numbers: simple fact-finding = 1 agent, 3–10 tool calls; direct comparison = 2–4 subagents, 10–15 calls
+each; complex = 10+. Default 3, hard max 20 — *more subagents = more overhead*.
+
+Note the honest gap: the same source's headline "outperformed single-agent by 90.2%" is an internal
+eval with no task count, no denominator and no rubric. It is not citable as a measurement, and the
+BrowseComp decomposition is the half that survives.
+
+## Reader budgets, and how the ceiling is enforced
+
+A shipped research subagent carries three levels, not one: a **floor** — a minimum of five distinct
+tool calls; a **soft stop** at ~15 calls / ~100 sources; and a **hard kill at 20**, where exceeding the
+limit terminates the subagent. A ceiling enforced by killing the reader is a design choice: it makes
+partial findings the failure mode instead of an unbounded run.
+
+Related and worth copying: retries are free. A turn counter that is not incremented after an empty
+model turn or a denied action spends budget only on productive iterations.
+
+## Where the reducer is, and what it returns
+
+Ablation over model combinations put roughly **three quarters of the lift in synthesis and one quarter
+in diversity**. The reducer is where the value sits, and it should return a **typed structure** —
+consensus points, contradictions, partial coverage, unique insights, blind spots — which the writer
+then works from. A contradiction that is reduced into prose is a contradiction that got averaged away.
+
+## The one judgment that must NOT stay with the reasoner
+
+SKILL.md keeps judgment with the one reasoner holding the thread. There is a single carve-out:
+**verification of your own emerging answer goes to a fresh context.** Self-preferential bias is
+measured, and it is strongest *exactly when a model is asked to judge its own output against a
+rubric*. A refuter (argue this claim is false) is a distinct role from a critic (check this claim is
+supported); the refuter is the one worth buying.
+
+## The contamination that invalidates the whole exercise
+
+Once a panel had web search, models began **surfacing the benchmark's own rubric online**; the authors
+had to exclude those domains and re-run everything before publishing. Any eval of a research skill run
+with the web lane open can retrieve its own answer key. Exclude the domains hosting your fixtures, and
+say that you did.
