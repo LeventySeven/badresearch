@@ -167,7 +167,8 @@
         {
           "id": "S4-2",
           "does": "byte-identity is non-vacuous — anchors bind to a located span, not the whole body",
-          "status": "todo"
+          "status": "passed",
+          "evidence": "passed — RED first: the test imported is_vacuous_span and failed with ImportError. Added is_vacuous_span to grounding/anchors.py; verifier.py now SKIPS Tier A on a whole-body anchor instead of crediting it (refusing it outright is what scored 111/111 unsupported on a live run). Driven on the real preserved fixture: a whole-body anchor over a 3,148-char note reports vacuous=True; a 97-char located span from the real claims file reports vacuous=False. build_from_claims DROPS an unlocatable quote — verified on both a paraphrase and a wrong-number variant. SELF-CAUGHT: my first version of the verifier test was a source grep and passed GREEN while is_vacuous_span was called but never imported — a NameError waiting for the first vacuous anchor. Replaced with a test that resolves the symbol at runtime."
         },
         {
           "id": "S4-3",

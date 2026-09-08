@@ -12,7 +12,7 @@ from enum import StrEnum
 
 from bad_research.llm.base import LLMMessage, LLMProvider
 
-from .anchors import AnchorStore, ClaimAnchor, quote_sha
+from .anchors import AnchorStore, ClaimAnchor, is_vacuous_span, quote_sha
 from .nli import NLILabel, NLIModel, classify_nli
 from .render import extract_citations, parse_line_anchor
 
@@ -416,8 +416,16 @@ class CitationVerifier:
                 if anchor is None:
                     continue  # dangling cite -- the gate (Task 11) handles it
                 body = note_bodies.get(anchor.note_id, "")
-                # Tier A -- byte-identity ($0).
-                if not tier_a_byte_identity(anchor, body):
+                # Tier A -- byte-identity ($0). SKIPPED when the anchor covers the
+                # whole body: there `body[0:len(body)] == body` holds for any body at
+                # all, so the check executes, cannot fail, and establishes nothing.
+                # Crediting that as a pass is how a citation gate reports grounding it
+                # never did. Such an anchor is not refused either -- refusing it is what
+                # scored all 111 cited sentences `unsupported` on a live run -- it just
+                # has to earn its verdict from the semantic tiers below instead.
+                if is_vacuous_span(anchor, body):
+                    pass
+                elif not tier_a_byte_identity(anchor, body):
                     findings.append(CitationFinding(anchor.lookup_key, sent, VerifyVerdict.UNSUPPORTED, 0.0))
                     continue
                 # Tier B -- local NLI ($0). The premise is the cited LINE SPAN text

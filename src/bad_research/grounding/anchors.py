@@ -200,6 +200,26 @@ def _as_str(value: object) -> str:
     return value if isinstance(value, str) else ""
 
 
+def is_vacuous_span(anchor: ClaimAnchor, body: str) -> bool:
+    """True when the anchor covers the WHOLE note body, so Tier A proves nothing.
+
+    `tier_a_byte_identity` asks whether `body[char_start:char_end] == quoted_support`.
+    When the span is the entire body that reduces to `body == body` and returns True
+    for any body at all — including one supporting nothing the report claims. It is a
+    check that executes and cannot fail, which is the shape this codebase has already
+    shipped once (a coverage checker reporting clean at 11% coverage).
+
+    Measured on a live run of the `--note-bodies` standalone path: all 111 cited
+    sentences were seeded whole-body. Before the anchor-binding fix Tier A returned
+    False for all 111; after it, True for all 111. Neither number was evidence.
+
+    Callers should treat a vacuous anchor as UNVERIFIED rather than as verified —
+    a byte-identity pass over a whole-body span is not grounding, and reporting it
+    as one is how a citation gate turns green while checking nothing.
+    """
+    return anchor.char_start == 0 and anchor.char_end >= len(body)
+
+
 def build_from_claims(
     store: AnchorStore,
     claims: Iterable[dict[str, object]],
