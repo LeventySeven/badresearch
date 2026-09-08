@@ -87,10 +87,25 @@ commands, the traps, and what counts as evidence there. Do not read them all up 
 | Live instrument | `references/lanes/live-instrument.md` | a number you must measure yourself |
 | People | `references/lanes/people-track-record.md` | whose account to weight, ranked by incentive not prominence |
 
-**MUST report a lane that returned nothing.** Name what you looked for and whether the tool worked.
-A broken tool and an empty lane produce identical silence, and treating the first as the second is how
-a research answer becomes a guess with citations. `bad lane-local <query>` prints an enumeration line
-for exactly this reason; carry that discipline into every lane.
+**MUST report a lane that returned nothing, and say which kind of nothing it was.** There are four,
+and they are not interchangeable:
+
+| | means | what you may conclude |
+|---|---|---|
+| **EMPTY** | the lane is healthy and the topic genuinely is not there | "not in corpus" — and only here |
+| **BLOCKED** | a bot-wall, paywall, 402/403, consent interstitial | nothing; quote the interstitial and say so |
+| **MISSING** | the root or URL does not resolve | nothing; the lane is DOWN |
+| **EXHAUSTED** | you ran out of budget, quota or rate limit mid-run | nothing; name the quota and what went unasked |
+
+The last one is the newest and the easiest to misreport as EMPTY — a cold run hit a 200/200 search
+quota and had to be careful not to record it as absence. A broken tool and an empty lane produce
+identical silence, and treating the first as the second is how a research answer becomes a guess with
+citations. `bad lane-local <query>` prints an enumeration line for exactly this reason; carry that
+discipline into every lane.
+
+**Before concluding absence, widen.** One literal phrase returning zero is not evidence. Try the term
+the field uses, the abbreviation, the author's name, the adjacent concept. A cold run reported that
+this single rule is what stopped it filing a false "not in corpus" after its first zero-hit grep.
 
 **Do not build an index over any of this.** No embeddings, no cache of prior findings, no summary of
 summaries. A production findings-cache measured zero hits in 133 attempts, and the corpora grow most
@@ -152,10 +167,16 @@ of thing the question touches.
 Run the deterministic ones on everything; they are cheap and exact:
 
 ```bash
+which bad || echo "not on PATH — try .venv/bin/bad, or skip the CLI checks and say so"
 bad lane-local "<query>" --json      # a lane that reports its own zeros
 bad uncited-gate                     # no factual sentence ships uncited
 bad recitation-gate                  # you paraphrased rather than copied
 ```
+
+`uncited-gate` and `recitation-gate` assume a vault with `[N]` markers resolved against note bodies.
+An answer citing `path:line` directly does not have that shape, so they will not apply — say the check
+did not apply rather than reporting it clean. **A check that was never run and a check that passed
+must never look the same in your report.**
 
 **A check that can only pass is not a check.** Before trusting one, break something on purpose and
 watch it go red — a coverage checker in this codebase once shipped at 11% coverage while printing a

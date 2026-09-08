@@ -9,7 +9,7 @@
     {
       "id": "S1",
       "capability": "I type /research <question> in any project and get a cited answer that used MY local corpus — the 407 teardowns, 41 transcripts, 190 articles, 100 x-guides that no web agent can reach.",
-      "check": "Run it on a question whose answer exists ONLY in the local corpus (e.g. 'what did ZS Associates conclude about multi-agent research pipelines, and what did they replace it with?' — that is in researchfms/teardowns, not on the open web in that form). PASS = the answer cites a real teardown file with a line number that `sed -n` can reproduce. FAIL-SHAPE = a plain Claude+WebSearch session cannot answer it at all, which is the point.",
+      "check": "Run it on a question whose answer exists ONLY in the local corpus AND is not spelled out in any lane recipe: 'Does iterative retrieval beat a single well-formed expansion, and what numbers back it?' (answer lives in researchfms/AGENTIC_SEARCH_SPEC.md; verified absent from skills/). PASS = the answer cites a real path:line that `sed -n` reproduces.",
       "unknown": "Whether one skill file can carry route + gate + lane pointers in under 250 lines without regressing to the process-scaffolding shape that measured -8.4 to -27.4pp.",
       "confidence": 0.9,
       "shape": "One SKILL.md + references/lanes/*.md read on demand. Anthropic's own contract: bundled files are level three, read as needed; 'when the SKILL.md file becomes unwieldy, split its content into separate files and reference them.'",
@@ -58,7 +58,9 @@
           "status": "todo",
           "is_check": true
         }
-      ]
+      ],
+      "check_original": "Run it on a question whose answer exists ONLY in the local corpus (e.g. 'what did ZS Associates conclude about multi-agent research pipelines, and what did they replace it with?' — that is in researchfms/teardowns, not on the open web in that form). PASS = the answer cites a real teardown file with a line number that `sed -n` can reproduce. FAIL-SHAPE = a plain Claude+WebSearch session cannot answer it at all, which is the point.",
+      "check_revision_reason": "The original check used the ZS Associates question, and I then had the lane-recipe agent use that SAME question as local-corpus.md's worked example — so the file handed the answer to the reader. The cold-use agent caught this itself and said part 1 was untestable in a blind sense. Revised BEFORE any row was flipped on it, not after a failure."
     },
     {
       "id": "S2",
@@ -76,7 +78,8 @@
         {
           "id": "S2-1",
           "does": "a reader returns {findings, verbatim spans, reachability} and never reasoning",
-          "status": "todo"
+          "status": "passed",
+          "evidence": "passed — agents/research-reader.md installed to ~/.claude/agents/. Contract: returns findings + verbatim spans + a 4-state reachability outcome + frontier candidates; explicitly forbids conclusions, recommendations, paraphrase-as-quote and silent failure. It is also the frontier PRODUCER S2-2 needs."
         },
         {
           "id": "S2-2",
@@ -199,12 +202,14 @@
         {
           "id": "S5-1",
           "does": "local-corpus lane (delivered in S1) also routes articles via _manifest.json",
-          "status": "todo"
+          "status": "passed",
+          "evidence": "passed — driven: `bad lane-local` reaches all 5 roots (714 files, 0 unreachable); article routing verified via _manifest.json (190 entries, real unguessable slugs incl. one truncated mid-word)."
         },
         {
           "id": "S5-2",
           "does": "practitioner-video lane: yt.sh sweep over channels.tsv, tier-scoped, captions marked SUBSTANCE-not-quotation",
-          "status": "todo"
+          "status": "passed",
+          "evidence": "passed — driven: `yt.sh sweep \"harness|context engineering\" 200 core` returned real core-tier rows (AI Engineer talks). Tier-scoping is the fix for the timeout that previously hid the entire core tier behind a silent partial result."
         },
         {
           "id": "S5-3",
