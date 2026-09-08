@@ -45,6 +45,14 @@ PROVIDERS: tuple[Provider, ...] = (
     Provider("arxiv", None, None, "(base)", "search"),             # keyless vertical (httpx)
     Provider("openalex", None, None, "(base)", "search"),
     Provider("crossref", None, None, "(base)", "search"),
+    # `SemanticScholarProvider` has existed in web/search/verticals.py and been
+    # resolvable via web/base.py's `_verticals` map (under both "s2" and
+    # "semantic_scholar") since before this row was added — it was simply absent
+    # from this registry, so `bad doctor` under-reported the scholarly surface by
+    # one lane. Short name `s2` matches docs/INTERFACES_KEYLESS.md's provider
+    # table. Best-effort: the upstream API 429s readily and the provider carries
+    # its own backoff.
+    Provider("s2", None, None, "(base)", "search"),
     Provider("europepmc", None, None, "(base)", "search"),
     Provider("pubmed", None, None, "(base)", "search"),
     Provider("wikipedia", None, None, "(base)", "search"),

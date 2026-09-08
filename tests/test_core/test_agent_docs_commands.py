@@ -1,17 +1,33 @@
-"""Guard: the installer-written CLAUDE.md blurb may only reference REAL CLI commands.
+"""Live Typer command map, plus a guard that the CLAUDE.md injection stays deleted.
 
-issue #11/#16 — the published v0.1.0 CLAUDE.md instructed `bad sync`, `bad note
-list/update`, `bad tags`, `bad repair`, `bad status`, `bad setup`, and a
+HISTORY. This file used to pin the installer-written CLAUDE.md blurb to the real
+CLI surface. Issues #11/#16: the published v0.1.0 blurb instructed `bad sync`,
+`bad note list/update`, `bad tags`, `bad repair`, `bad status`, `bad setup` and a
 `fetch --save-assets` flag, none of which existed, so every agent following the
-documented mechanics failed on its first call. This test pins the blurb to the
-actual Typer surface so the docs can never silently drift from the CLI again.
+documented mechanics failed on its first call.
+
+The guard worked for the dimension it checked and was blind to the one next to it.
+The blurb also named a `/hyperresearch` slash command and sixteen step skills
+(`hyperresearch-1-decompose` … `hyperresearch-16-readability-audit`) that have
+never existed under those names — the package ships `bad-research` and
+`bad-research-N-*`. Nothing asserted skill names, so the same failure class
+recurred and shipped into five real projects.
+
+The injection was deleted on 2026-09-08 (see `core/agent_docs.py`). The blurb tests
+are therefore gone; what remains is `_real_command_map`, which
+`tests/test_skills/test_cli_surface_drift.py` imports, plus a regression guard
+that nothing re-adds a writer for a user's context file.
+
+If agent-facing docs are ever reintroduced, the rule is: every command, skill,
+path and flag they name is asserted against the live registry by a test, or they
+are not written to a user's context file at all.
 """
 from __future__ import annotations
 
-import re
+import inspect
 
 from bad_research.cli import app
-from bad_research.core.agent_docs import HYPERRESEARCH_BLURB
+from bad_research.core import agent_docs, vault
 
 
 def _real_command_map() -> dict[str, set[str]]:
@@ -36,30 +52,39 @@ def _real_command_map() -> dict[str, set[str]]:
     return out
 
 
-# Every `{hpr} <command> [<subcommand>]` invocation in the blurb. The blurb uses
-# the `{hpr}` path placeholder; the first token after it is the command.
-_INVOCATION = re.compile(r"\{hpr\}\s+([a-z][a-z-]+)(?:\s+([a-z][a-z-]+))?")
-
-# Tokens that follow a group command but are NOT subcommands (flags / args).
-_NON_SUBCOMMAND = {"--help"}
-
-
-def test_blurb_references_only_real_commands():
+def test_command_map_is_non_empty():
+    """Sanity: the helper other tests import actually sees the live app."""
     real = _real_command_map()
-    groups = {name for name, subs in real.items() if subs}
-    bad: list[str] = []
-    for cmd, maybe_sub in _INVOCATION.findall(HYPERRESEARCH_BLURB):
-        if cmd not in real:
-            bad.append(cmd)
-            continue
-        # For a group command (note/assets), the next token must be a real subcommand.
-        if (cmd in groups and maybe_sub and not maybe_sub.startswith("-")
-                and maybe_sub not in real[cmd] and maybe_sub not in _NON_SUBCOMMAND):
-            bad.append(f"{cmd} {maybe_sub}")
-    assert not bad, f"CLAUDE.md blurb references non-existent commands: {sorted(set(bad))}"
+    assert real, "Typer app exposed no commands — the command map is broken"
+    assert "doctor" in real, f"expected `doctor` on every build; got {sorted(real)}"
 
 
-def test_blurb_has_no_save_assets_phantom_flag():
-    # `fetch --save-assets` was a phantom flag (issue #16): the flag never existed
-    # and the fetch CLI does not persist assets.
-    assert "--save-assets" not in HYPERRESEARCH_BLURB
+def test_agent_docs_no_longer_injects_anything():
+    """The CLAUDE.md blurb and its injector must stay deleted.
+
+    Re-adding a writer that targets a user's context file is the regression this
+    guards. `_resolve_executable` is the module's only remaining export.
+    """
+    for gone in (
+        "inject_agent_docs",
+        "_inject_into_file",
+        "HYPERRESEARCH_BLURB",
+        "HYPERRESEARCH_SECTION_MARKER",
+        "HYPERRESEARCH_SECTION_END",
+    ):
+        assert not hasattr(agent_docs, gone), (
+            f"agent_docs.{gone} is back. The CLAUDE.md injection was deleted "
+            "because it named a slash command and sixteen skills that do not "
+            "exist. Do not reintroduce it without a test asserting every name "
+            "it writes against the live registry."
+        )
+    assert hasattr(agent_docs, "_resolve_executable")
+
+
+def test_vault_create_does_not_write_agent_docs():
+    """`bad init` must not touch any file outside the vault it is creating."""
+    src = inspect.getsource(vault)
+    assert "inject_agent_docs" not in src, (
+        "vault.py calls inject_agent_docs again — `bad init` must not write to a "
+        "user's CLAUDE.md."
+    )

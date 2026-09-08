@@ -1,129 +1,33 @@
-"""Agent documentation integration — inject the hyperresearch blurb into CLAUDE.md.
+"""Executable-path resolution for the `bad` CLI.
 
-hyperresearch is a Claude Code harness. This module writes/updates CLAUDE.md
-at the vault root so Claude Code auto-loads the research workflow on every
-session. Pre-existing AGENTS.md / GEMINI.md / .github/copilot-instructions.md
-files (from older hyperresearch vaults or other tools) are left alone — we
-don't delete user content, but we no longer generate them either.
+This module used to also inject a "Research Base (hyperresearch)" block into the
+CLAUDE.md at every vault root. That injection has been REMOVED and must not come
+back in this form.
+
+Why it was deleted (2026-09-08): the injected block instructed agents to run
+`/hyperresearch <query>` and to invoke sixteen step skills named
+`hyperresearch-1-decompose` … `hyperresearch-16-readability-audit`. None of those
+names has ever existed — the package ships a `bad-research` entry skill and
+`bad-research-N-*` step skills. Because CLAUDE.md is the highest-priority file in
+an agent's context, every session in a vault-initialised project was told, up
+front, to call a slash command and sixteen skills that could not resolve. It had
+reached five real projects, and in two of them this module had CREATED the
+CLAUDE.md itself, so the file's entire content was the wrong instructions.
+
+Note the guard that did not catch it: `tests/test_core/test_agent_docs_commands.py`
+was added after issues #11/#16 (a blurb citing CLI commands that did not exist) and
+pins every `{hpr} <command>` invocation to the live Typer surface. It checks the CLI
+dimension only. The identical failure — documenting names that do not exist —
+recurred in the SKILL-name dimension, which no test covered.
+
+If agent-facing documentation is ever reintroduced, the rule it must satisfy is:
+every command, skill, path and flag it names is asserted against the live registry
+by a test, or it is not written to a user's context file at all.
 """
 
 from __future__ import annotations
 
-import re
 from pathlib import Path
-
-HYPERRESEARCH_SECTION_MARKER = "<!-- hyperresearch:start -->"
-HYPERRESEARCH_SECTION_END = "<!-- hyperresearch:end -->"
-
-HYPERRESEARCH_BLURB = """
-{marker}
-## Research Base (hyperresearch) — Today is {today}
-
-**CLI path: `{hpr}`** — use this exact path for every hyperresearch command. It may not be on your system PATH.
-
-**Paths in this document are relative to your current working directory**, not to the CLI binary's location. Use `research/notes/final_report_<vault_tag>.md` (not a prefix with the binary path) when you save files.
-
-This project uses hyperresearch as an agent-driven research knowledge base. The `research/` directory contains markdown notes collected from web sources and original research. Append `--json` to any command for structured output.
-
-### How to do research
-
-**Run a research session with `/hyperresearch <query>`.** This invokes the V8 16-step pipeline. The entry skill at `.claude/skills/hyperresearch/SKILL.md` is a thin ROUTER. The 16 step procedures live in their own skills (`hyperresearch-1-decompose` through `hyperresearch-16-readability-audit`) and are loaded fresh into context via the `Skill` tool when each step runs. This solves V7's context-compaction problem: each step's procedure lands in context only when needed. Read the entry skill before you start a research session; it explains the chain mechanics.
-
-Step 1 classifies the query into one of two routes (`fast` or `full`) and the rest of the pipeline scales accordingly — short bounded queries get a quick single-pass answer that skips the depth investigations, critics, and patcher; argumentative deep-research queries run all 16 steps with adversarial review.
-
-**Do NOT use WebFetch for source pages** — use `{hpr} fetch` instead. The skill files explain when to fetch vs. search.
-
-### What the skill files own
-
-The skill files own everything about how to research. That includes:
-- The pipeline phases and what each phase does
-- Which subagents exist and what each one is for (fetcher, loci-analyst, depth-investigator, 4 critics, patcher, polish-auditor)
-- The tool-lock invariant (patcher and polish-auditor can only Read + Edit, never Write)
-- The subagent spawn contract (every Task call passes the verbatim research_query + pipeline position + inputs)
-- Artifact locations (`research/scaffold.md`, `research/prompt-decomposition.json`, `research/loci.json`, `research/comparisons.md`, interim notes, patch / polish logs)
-- The curation pass after every research session
-
-If you need to know how hyperresearch works, read the skill file. This document does NOT duplicate that content — when the skill file and this file disagree, the skill file wins.
-
-### Canonical research query
-
-In a normal run, the canonical research query is the user's verbatim prompt. In wrapped runs, if `research/prompt.txt` exists, that file is gospel and overrides any wrapping instructions. The pipeline persists the query as `research/query-<vault_tag>.md` with YAML frontmatter — this is the canonical query reference for all downstream layers. Wrapper requirements (save path, citation format, terminal sections) are a separate contract, captured in the scaffold — not pasted into the `## User Prompt (VERBATIM — gospel)` section.
-
-### Academic APIs before web search
-
-For any topic with a research literature, hit academic APIs BEFORE running web searches. They return citation-ranked canonical papers; web search returns derivative commentary.
-
-- **Semantic Scholar:** `https://api.semanticscholar.org/graph/v1/paper/search?query=<q>&fields=title,year,citationCount,externalIds&limit=10` — then citation-chain the top papers forward + backward.
-- **arXiv:** `https://export.arxiv.org/api/query?search_query=cat:cs.LG+AND+all:<q>&sortBy=relevance&max_results=25`
-- **OpenAlex:** `https://api.openalex.org/works?search=<q>&sort=cited_by_count:desc&per-page=15&mailto=research@example.com`
-- **PubMed:** `https://eutils.ncbi.nlm.nih.gov/entrez/eutils/esearch.fcgi?db=pubmed&term=<q>&retmode=json&retmax=20`
-
-After the academic sweep, run web searches for context, news, non-academic angles, and at least one adversarial search ("criticism of X", "limitations of X").
-
-### PDFs fetch directly
-
-`{hpr} fetch` auto-detects PDF URLs (arXiv, NBER, SSRN, direct `.pdf` links) and extracts full text via pymupdf. Fetch them aggressively. Raw PDFs land in `research/raw/<note-id>.pdf` and the note's frontmatter links back via `raw_file:`.
-
-### Searching the vault
-
-```bash
-{hpr} search "query" --json                # Full-text search
-{hpr} search "query" --tag ml --json       # Filter by tag / type
-{hpr} search "query" --include-body --json # Full-body search, not just titles
-{hpr} search "" --tag ml --json            # List notes by tag (empty query = metadata filter)
-{hpr} note show <id> --json                # Read one note
-{hpr} note show <id1> <id2> <id3> --json   # Batch-read notes in one call
-```
-
-The existing tag vocabulary is whatever appears in `search` results — reuse those tags rather than minting near-duplicates.
-
-### Images, screenshots, and assets
-
-The host model is natively multimodal. When a source's substance lives in a
-figure/chart/table-image or a scanned (text-layerless) PDF, the fetch path saves
-the rendered pixels as a PNG asset bound to the note; resolve it to a real file
-and hand that path to the `Read` tool to transcribe the data.
-
-```bash
-{hpr} assets list --note-id <note-id> --json   # Assets bound to a note (id, type, path)
-{hpr} assets list --type screenshot --json     # Filter by type (screenshot|image|pdf|other)
-{hpr} assets path <asset-id> -j                 # Resolve an asset id -> readable PNG path
-```
-
-`assets list` reports each asset's integer `id`; `assets path <asset-id>` prints
-the absolute on-disk path (Read it directly).
-
-### Authenticated crawling
-
-Login-gated content (LinkedIn, Twitter, paywalled news) needs a browser profile, created out-of-band with the crawl4ai CLI (`crwl profiles`). Config in `.hyperresearch/config.toml` under `[web]`: `profile = "research"`, `magic = true`. LinkedIn / Twitter / Facebook / Instagram / TikTok auto-use a visible browser to avoid session kills.
-
-If a fetch returns a login wall, tell the user to create a `crwl` login profile and set it in `.hyperresearch/config.toml`.
-
-### Curate after every session
-
-Every research session must end with a curation pass:
-
-```bash
-{hpr} search "" -j                                                       # List notes (each result carries its `status`: draft/review/...)
-{hpr} note show <id> -j                                                  # Read the content
-{hpr} note update <id> --summary "<specific summary>" --add-tag <t> -j   # Add summary + tags
-{hpr} note update <id> --status review -j                               # Advance the lifecycle
-{hpr} lint -j                                                            # Find missing tags / summaries / broken links
-```
-
-Lifecycle: `draft` → `review` → `evergreen` (or `stale` → `deprecated` → `archive` for outdated material).
-
-Summaries must be specific — "Mamba achieves linear-time sequence modeling via selective state spaces" beats "Paper about Mamba". Reuse the tag vocabulary visible in `search` results rather than inventing new tags.
-
-### Key conventions
-
-- Notes live in `research/notes/` as markdown with YAML frontmatter
-- Link notes with `[[note-id]]` syntax
-- Create notes with `{hpr} fetch` (a URL) or `{hpr} note new` (authored); `search` reads them straight from disk — no separate index step
-- Run `{hpr} --help` for the full command list
-{end_marker}
-"""
-
 
 
 def _resolve_executable() -> str:
@@ -157,56 +61,3 @@ def _resolve_executable() -> str:
 
     # Fallback — bare name, hope it's on PATH
     return "bad"
-
-
-def inject_agent_docs(vault_root: Path) -> list[str]:
-    """Inject hyperresearch docs into CLAUDE.md at the vault root.
-
-    Always writes/updates CLAUDE.md. Does NOT touch AGENTS.md, GEMINI.md,
-    or .github/copilot-instructions.md — hyperresearch is a Claude Code
-    harness now, not a multi-platform tool. Pre-existing non-Claude doc
-    files are left untouched (we don't delete user content), but no new
-    ones are created.
-    """
-    hpr_path = _resolve_executable()
-    # Use forward slashes — bash on Windows eats backslashes
-    hpr_path = hpr_path.replace("\\", "/")
-    from datetime import date
-    blurb = HYPERRESEARCH_BLURB.format(
-        marker=HYPERRESEARCH_SECTION_MARKER,
-        end_marker=HYPERRESEARCH_SECTION_END,
-        hpr=hpr_path,
-        today=date.today().isoformat(),
-    )
-
-    modified: list[str] = []
-    result = _inject_into_file(vault_root / "CLAUDE.md", blurb, "CLAUDE.md")
-    if result:
-        modified.append(result)
-    return modified
-
-
-def _inject_into_file(filepath: Path, blurb: str, filename: str) -> str | None:
-    """Inject the hyperresearch blurb into a single file. Returns action taken or None."""
-    if filepath.exists():
-        content = filepath.read_text(encoding="utf-8-sig")
-
-        if HYPERRESEARCH_SECTION_MARKER in content:
-            pattern = re.compile(
-                re.escape(HYPERRESEARCH_SECTION_MARKER) + r".*?" + re.escape(HYPERRESEARCH_SECTION_END),
-                re.DOTALL,
-            )
-            new_content = pattern.sub(lambda _: blurb.strip(), content)
-            if new_content != content:
-                filepath.write_text(new_content, encoding="utf-8")
-                return f"{filename} (updated)"
-            return None
-        else:
-            separator = "\n\n" if not content.endswith("\n") else "\n"
-            filepath.write_text(content + separator + blurb.strip() + "\n", encoding="utf-8")
-            return f"{filename} (appended)"
-    else:
-        filepath.parent.mkdir(parents=True, exist_ok=True)
-        header = f"# {filepath.stem}\n"
-        filepath.write_text(header + blurb.strip() + "\n", encoding="utf-8")
-        return f"{filename} (created)"

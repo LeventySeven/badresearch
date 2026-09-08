@@ -136,9 +136,12 @@ class Vault:
             "# {{ title }}\n\n"
         )
 
-        # Inject CLAUDE.md at vault root
-        from bad_research.core.agent_docs import inject_agent_docs
-        inject_agent_docs(root)
+        # NOTE: this used to inject a "Research Base (hyperresearch)" block into
+        # CLAUDE.md at the vault root. Removed 2026-09-08 — it named a slash
+        # command and sixteen step skills that have never existed, and CLAUDE.md
+        # is the highest-priority file in an agent's context. See
+        # core/agent_docs.py for the full account. `bad init` no longer writes to
+        # any file outside the vault it is creating.
 
         return vault
 
