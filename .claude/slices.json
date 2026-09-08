@@ -124,7 +124,8 @@
         {
           "id": "S3-1",
           "does": "contradiction detection pairs claims mechanically (same target, opposing stance / same entities, opposite conclusion / same scope, different numbers)",
-          "status": "todo"
+          "status": "passed",
+          "evidence": "passed — driven by me: real disagreement (2.49 vs 6.31 usd/hr, different sources) -> 1 contradiction; identical values -> 0; different units (usd/hr vs usd/month) -> 0, so a different measurement is not treated as a disagreement; same source disagreeing with itself -> 0."
         },
         {
           "id": "S3-2",
@@ -160,7 +161,8 @@
         {
           "id": "S4-1",
           "does": "no-source-claim check: asserts every absence claim against the note store, exits 1 on a false one",
-          "status": "todo"
+          "status": "passed",
+          "evidence": "passed — driven by me, not by its own tests. Planted the exact false claim a live run shipped ('No source was found for GPU depreciation schedules or datacenter PUE' against a note containing a 36-month schedule and PUE 1.2): 1 finding, CLI exit 1. Same report against a genuinely silent corpus: 0 findings, exit 0. It goes red for the right reason and does not fire on valid input."
         },
         {
           "id": "S4-2",
@@ -175,7 +177,8 @@
         {
           "id": "S4-4",
           "does": "every check ships a planted-defect fixture and is proven RED before it counts",
-          "status": "todo"
+          "status": "passed",
+          "evidence": "passed — both checks in this slice ship a planted-defect fixture and were watched going red before being trusted; the cold-use agent independently broke uncited-gate with a fabricated numeric claim and reported it flagged critical and exited non-zero."
         },
         {
           "id": "S4-5",
