@@ -114,4 +114,9 @@ from bad_research.cli.lanes import lane_local_cmd as _lane_local_cmd
 
 app.command("lane-local")(_lane_local_cmd)
 
+# ── deterministic report checks (research rebuild, slice 1) ───────────────────
+from bad_research.cli.checks import no_source_claim_gate_cmd as _no_source_claim_cmd
+
+app.command("no-source-claim-gate")(_no_source_claim_cmd)
+
 __all__ = ["app"]
