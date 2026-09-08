@@ -55,8 +55,9 @@
         {
           "id": "S1-6",
           "does": "END TO END: /research on the corpus-only question returns an answer citing a reproducible teardown path:line",
-          "status": "todo",
-          "is_check": true
+          "status": "passed",
+          "is_check": true,
+          "evidence": "passed — uncontaminated cold-use run by an agent that had never seen this session. Contamination check done by the agent itself: grep over ~/.claude/skills/research/ for the answer's specifics (adaptive-rag|IRCoT|68.8|39.80|oracle router) returns 0 hits; I re-ran it and confirm 0. It invoked Skill(research) cleanly, read local-corpus.md and web-live.md, reproduced the reachability probe digit-for-digit (407/41/190/67), ran `bad lane-local` as documented, and cited AGENTIC_SEARCH_SPEC.md:169 — which `sed -n '169p'` reproduces exactly. BEYOND THE CHECK: it then verified the corpus's own citations against the primary PDFs and found TWO defects in AGENTIC_SEARCH_SPEC.md that this session had repeated as fact. Asked whether the skill changed the outcome it said yes, concretely: without the frontier and contradiction rules the natural stopping point was 'found a pre-synthesized answer with citations, done', which would have shipped both defects."
         }
       ],
       "check_original": "Run it on a question whose answer exists ONLY in the local corpus (e.g. 'what did ZS Associates conclude about multi-agent research pipelines, and what did they replace it with?' — that is in researchfms/teardowns, not on the open web in that form). PASS = the answer cites a real teardown file with a line number that `sed -n` can reproduce. FAIL-SHAPE = a plain Claude+WebSearch session cannot answer it at all, which is the point.",
