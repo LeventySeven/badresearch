@@ -189,3 +189,45 @@ def test_cli_errors_on_an_unusable_notes_payload(tmp_path):
         "no-source-claim-gate", "--report", str(report), "--notes", str(notes),
     ])
     assert res.exit_code == 2
+
+
+def test_a_one_word_subject_is_never_examined():
+    # a single content word cannot clear the co-occurrence bar, so the claim is
+    # dropped before any note is read -- the check would rather stay quiet
+    assert find_unfounded_absence_claims(
+        "No source was found for tunnelling.", {"n1": "tunnelling, tunnelling, tunnelling"}
+    ) == []
+
+
+def test_cli_errors_on_a_missing_notes_path(tmp_path):
+    report = tmp_path / "r.md"
+    report.write_text(REPORT)
+    res = runner.invoke(app, [
+        "no-source-claim-gate", "--report", str(report), "--notes", str(tmp_path / "gone.json"),
+    ])
+    assert res.exit_code == 2
+    assert "gone.json" in res.stdout
+
+
+def test_cli_errors_on_malformed_json(tmp_path):
+    notes = tmp_path / "bad.json"
+    notes.write_text("{not json")
+    report = tmp_path / "r.md"
+    report.write_text(REPORT)
+    res = runner.invoke(app, [
+        "no-source-claim-gate", "--report", str(report), "--notes", str(notes),
+    ])
+    assert res.exit_code == 2
+    assert "could not parse" in res.stdout
+
+
+def test_cli_errors_on_a_list_of_non_objects(tmp_path):
+    notes = tmp_path / "list.json"
+    notes.write_text(json.dumps(["a string, not a note record"]))
+    report = tmp_path / "r.md"
+    report.write_text(REPORT)
+    res = runner.invoke(app, [
+        "no-source-claim-gate", "--report", str(report), "--notes", str(notes),
+    ])
+    assert res.exit_code == 2
+    assert "item 0" in res.stdout
