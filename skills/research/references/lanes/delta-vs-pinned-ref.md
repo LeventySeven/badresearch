@@ -73,6 +73,14 @@ An UNCHANGED result cites the same two refs plus the probe exit code. Refs must 
 
 ## Traps
 - **Name-squat / wrong artifact.** `npm composio@1.0.0` is a 2023 squat ("UI Components for the web", one hello-world file); the vendor's CLI is `@composio/cli`, `"private": true`, 0 npm versions, shipped only as GitHub-Release binaries. Diffing it would have produced pure noise. Mechanism: npm names are first-come, unrelated to the repo. Always read `repository` + `description` before diffing. See `~/Desktop/researchfms/teardowns/COMPOSIO_R5_SDK_DELTA.md:46`.
+- **A moved line number is not a change, and a changed file is not a changed behaviour.** Measured
+  2026-09-08 on `yt-dlp` 2025.9.26 → 2026.8.19: `YoutubeDL.py` grew 4442 → 4556 lines across **28
+  hunks**, so any file-level verdict says CHANGED. Extract the functions the question actually rests
+  on and the answer inverts — `__list_table` and `to_screen` byte-identical, `render_subtitles_table`
+  differing only by `strict=True` added to a `zip()`. The line carrying the behaviour is identical
+  and sits at `:648` in one ref and `:667` in the other. So diff the SPAN, never the file, and pin
+  every citation as `path:line @ version` — a bare `path:line` rots on the next release even when
+  nothing it describes has moved.
 - **Stale clone diffs against the wrong base silently.** A tag fetched last month still resolves; git does not warn that the remote moved or that the tag was re-pointed. `git fetch --tags origin` before every comparison, or use `gh api compare` which always reads the remote.
 - **Version sort is not string sort.** `sorted(releases)` on PyPI put `2.0.0b0` last while `info.version` was `0.21.1`. Read `info.version` for latest; never take the last element of a lexicographic sort.
 - **Three-way version split.** Dist version, in-code `__version__`, and `pyproject.toml` can disagree (composio dist 0.13.1 / `__version__` "1.0.0-rc2" / pyproject 0.14.0). Pin the one you actually diffed and say which.

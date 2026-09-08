@@ -240,7 +240,8 @@
         {
           "id": "S5-5",
           "does": "delta-vs-pinned-ref lane: version-IDENTITY check first; UNCHANGED is reportable",
-          "status": "todo"
+          "status": "passed",
+          "evidence": "passed \u2014 driven on a question whose honest answer turned out to be UNCHANGED, which is the harder half of this lane and the one it exists for. Question: is the caption-absence rule I shipped from yt-dlp source durable, or a snapshot? Identity FIRST at both refs (same name, same repo yt-dlp/yt-dlp) before any diff. Refs 2025.9.26 (2025-09-26) vs 2026.8.19 (2026-08-19), both fetched zero-execution. File-level verdict says CHANGED and is useless: YoutubeDL.py 4442 -> 4556 lines, 28 hunks. Span-level verdict inverts it: `__list_table` UNCHANGED, `to_screen` UNCHANGED, `render_subtitles_table` differs only by `strict=True` added to a zip() \u2014 semantically inert. The quiet-trap line is byte-identical and MOVED, `:648` -> `:667`, which is the whole case for pinning citations as `path:line @ version`: a line-number diff would have reported a change that is not one. UNCHANGED reported as the finding it is \u2014 the rule holds across ~11 months. Trap written back into the lane file."
         },
         {
           "id": "S5-6",
