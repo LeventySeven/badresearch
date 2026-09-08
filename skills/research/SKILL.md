@@ -41,13 +41,13 @@ you generate yourself:
   is evidence of nothing. This is not a licence to manufacture a disagreement — it tests a premise.
 
 **A query names a frontier item AND is one sentence saying what evidence you want.** The measured
-default is keyword soup — models trained on grep emit regex-shaped piles into retrievers that want
-language. Say what you need before composing it.
+default is keyword soup — grep-trained models emit regex-shaped piles into retrievers wanting language.
 
-Stop when the frontier is empty, with a floor and a patience: a run answered on **fewer than ~5
-distinct retrievals** was answered from what you already had, and one quiet round is noise where
-**two** consecutive is the signal (shipped rules also floor at ~3 sources per sub-question). Past that,
-more searching makes the answer worse.
+Stop when nothing new arrived **and nothing you promised is still open** — both halves, because a
+round can add three entities and close no cell while both counters read as progress. With a floor and
+a patience: a run answered on **fewer than ~5 distinct retrievals** was answered from what you already
+had, and one quiet round is noise where **two** consecutive is the signal. A cell nothing can fill is
+abandoned *with a reason*, never dropped. (`bad frontier-observe --promise/--close/--abandon`.)
 
 ## Contradictions are the second half of the job
 

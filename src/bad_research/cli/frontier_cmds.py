@@ -64,6 +64,9 @@ def frontier_observe_cmd(
     state: Path = typer.Option(..., "--state", help="Path to the run's frontier JSON."),
     domains: str = typer.Option("", "--domains", help="Comma-separated domains this round returned."),
     entities: str = typer.Option("", "--entities", help="Comma-separated entities this round produced."),
+    promise: str = typer.Option("", "--promise", help="Comma-separated cells the answer OWES (set once, up front)."),
+    close: str = typer.Option("", "--close", help="Comma-separated promised cells this round filled."),
+    abandon: str = typer.Option("", "--abandon", help="cell=reason — give up on a promised cell, with a reason."),
     json_out: bool = typer.Option(False, "--json", help="Emit the counters as JSON."),
 ) -> None:
     """Record what a retrieval round brought back and compute the stop signal.
@@ -74,6 +77,12 @@ def frontier_observe_cmd(
     absent, a constant someone picked, or a convergence check that could never fire.
     """
     st = FrontierState.load(state)
+    st.open_cells |= {x.strip() for x in promise.split(",") if x.strip()}
+    for c in (x.strip() for x in close.split(",") if x.strip()):
+        st.close_cell(c)
+    if abandon.strip():
+        cell, _, why = abandon.partition("=")
+        st.abandon_cell(cell.strip(), why.strip())
     d = {x.strip() for x in domains.split(",") if x.strip()}
     e = {x.strip() for x in entities.split(",") if x.strip()}
     st.observe_round(d, e)
@@ -85,12 +94,19 @@ def frontier_observe_cmd(
         "new_entities": st.last_new_entities,
         "should_stop": st.should_stop(),
         "seen_domains": len(st.seen_domains),
+        "residual": st.residual(),
+        "abandoned": st.abandoned,
     }
     if json_out:
         typer.echo(_json.dumps(payload))
     else:
-        verdict = "STOP — this round added nothing new" if payload["should_stop"] else "continue"
+        if payload["should_stop"]:
+            verdict = "STOP — nothing new arrived and nothing is owed"
+        elif st.open_cells:
+            verdict = f"continue — still owed: {', '.join(st.residual())}"
+        else:
+            verdict = "continue"
         typer.echo(
             f"step {st.steps} | +{st.last_new_domains} domains "
-            f"+{st.last_new_entities} entities | {verdict}"
+            f"+{st.last_new_entities} entities | open cells {len(st.open_cells)} | {verdict}"
         )

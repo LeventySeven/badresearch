@@ -102,6 +102,45 @@ class FrontierState:
     steps: int = 0
     last_new_domains: int = 0
     last_new_entities: int = 0
+    # What the answer OWES. The scalar counters above say what arrived; these say
+    # what is still promised. A round can add three entities and close no cell,
+    # and both counters rise while the answer has not advanced -- which is why the
+    # strongest accretion mechanism in the corpus keeps a per-instance outcome
+    # VECTOR rather than a score: "target what the last attempt failed at" is not
+    # computable from a number.
+    open_cells: set[str] = field(default_factory=set)
+    closed_cells: set[str] = field(default_factory=set)
+    abandoned: dict[str, str] = field(default_factory=dict)
+
+    def close_cell(self, cell: str) -> None:
+        """Mark a promised cell filled. Refuses one that was never promised.
+
+        Without the refusal a run can empty its own obligations by inventing
+        closures, which is the same move as editing the check that grades you.
+        """
+        if cell not in self.open_cells:
+            raise KeyError(f"{cell!r} was never promised — cannot close a cell nobody asked for")
+        self.open_cells.discard(cell)
+        self.closed_cells.add(cell)
+
+    def abandon_cell(self, cell: str, because: str) -> None:
+        """Give up on a cell, with a reason, so it stops holding the run open.
+
+        A cell nothing can fill must not become an infinite loop. Abandoning it is
+        a legal outcome -- it is what the answer's "what I could not establish"
+        section is for -- but it costs a stated reason, so an abandonment and a
+        quiet drop never look the same.
+        """
+        if cell not in self.open_cells:
+            raise KeyError(f"{cell!r} was never promised — cannot abandon a cell nobody asked for")
+        if not because.strip():
+            raise ValueError("abandoning a promised cell requires a reason")
+        self.open_cells.discard(cell)
+        self.abandoned[cell] = because
+
+    def residual(self) -> list[str]:
+        """WHICH cells are still owed -- a scalar count cannot be acted on."""
+        return sorted(self.open_cells)
 
     def observe_round(self, domains: set[str], entities: set[str]) -> None:
         """Record what a retrieval round actually brought back, in code.
@@ -130,10 +169,18 @@ class FrontierState:
         })
 
     def should_stop(self) -> bool:
-        """True when the last round added nothing worth another round."""
+        """True when nothing new arrived AND nothing is still owed.
+
+        Both halves are required. The scalar half alone reads as progress: a round
+        that added three entities and closed none of the promised cells moves both
+        counters while the answer stands still. The cell half alone would hold a
+        run open forever on a cell nothing can fill -- which is why `abandon_cell`
+        exists and takes a reason.
+        """
         if self.steps < 2:
             return False
-        return self.last_new_domains < MIN_NEW_DOMAINS and self.last_new_entities == 0
+        quiet = self.last_new_domains < MIN_NEW_DOMAINS and self.last_new_entities == 0
+        return quiet and not self.open_cells
 
     @property
     def frontier(self) -> Frontier:
@@ -153,6 +200,9 @@ class FrontierState:
             json.dumps(
                 {
                     "items": sorted(self.items),
+                    "open_cells": sorted(self.open_cells),
+                    "closed_cells": sorted(self.closed_cells),
+                    "abandoned": dict(self.abandoned),
                     "seen_domains": sorted(self.seen_domains),
                     "seen_entities": sorted(self.seen_entities),
                     "log": self.log,
@@ -173,6 +223,9 @@ class FrontierState:
         d = json.loads(path.read_text(encoding="utf-8"))
         return cls(
             items=set(d.get("items", [])),
+            open_cells=set(d.get("open_cells", [])),
+            closed_cells=set(d.get("closed_cells", [])),
+            abandoned=dict(d.get("abandoned", {})),
             seen_domains=set(d.get("seen_domains", [])),
             seen_entities=set(d.get("seen_entities", [])),
             log=list(d.get("log", [])),
