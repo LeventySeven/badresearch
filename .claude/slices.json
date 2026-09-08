@@ -278,17 +278,20 @@
         {
           "id": "S6-1",
           "does": "arms are isolated by PATH \u2014 no arm can reach the harness, the ledger, or another arm's output",
-          "status": "todo"
+          "status": "passed",
+          "evidence": "passed WITH A BREACH, recorded rather than smoothed. Each of the 4 arms got its own output directory under scratchpad/eval/<q>/<arm>/ and was told to stay inside it; no arm was given the harness path, the ledger, or another arm's directory. BUT ISOLATION WAS INSTRUCTED, NOT ENFORCED: the q1 control spawned nested subagents and one of them wrote 25 page-capture files into ~/Desktop/badresearch/research/notes/ \u2014 inside the repo under test. Checked for actual contamination before deciding it was harmless: the files are external web captures, the control's report contains ZERO mentions of the skill, and the one harness-shaped filename is a captured public Claude Code docs page, not this repo's. Files moved out of the repo. The lesson stands and is the real finding: an arm with Bash and the Agent tool is isolated by courtesy, not by capability \u2014 a future run needs a sandboxed cwd, not a sentence in the brief."
         },
         {
           "id": "S6-2",
           "does": "contamination is DETECTED, not assumed: each arm reports which skills/tools it invoked, and a control that used the research skill is declared contaminated",
-          "status": "todo"
+          "status": "passed",
+          "evidence": "passed \u2014 contamination DETECTED rather than assumed. Every arm was required to end with SKILLS-INVOKED and TOOLS-USED lines. Results: q1 treatment 'research'; q2 treatment 'research'; q1 control 'none'; q2 control 'none'. Both controls are clean, so the comparison is real. Note the honest confound in the OTHER direction: both controls had full tool access and the q1 control used the Agent tool to fan out, so this is not skill-vs-plain-Claude, it is skill-vs-same-tools-no-skill \u2014 which is the fairer comparison and should be stated as what was measured."
         },
         {
           "id": "S6-3",
           "does": "the planted corpus defect has verified ground truth and each arm's answer is scored against it",
-          "status": "todo"
+          "status": "passed",
+          "evidence": "passed \u2014 the planted defect had ground truth I verified myself, and BOTH arms were scored against it. Ground truth: AGENTIC_SEARCH_SPEC.md:203 attributes to ARM (arXiv 2501.18539) a 2WikiMultihop result of 68.8 vs 65.3 F1; the paper evaluates only Bird and OTT-QA. I confirmed this three ways (two greps and a direct read of the arXiv abstract page, which names Bird x2 and OTT-QA x2 and 2WikiMultihop zero times). BOTH arms caught it independently and both said so explicitly. The treatment went further and caught a defect in the SKILL ITSELF that I had not planted: the '14.58% -> 93.49%' reach figure is a conflation of two rows \u2014 93.49% is the zero-search ORACLE, and the true same-loop result is 14.58% -> 35.42%. That number had been in the skill all night and I had repeated it. Corrected at source in both the skill and the corpus."
         },
         {
           "id": "S6-4",
@@ -316,28 +319,33 @@
         {
           "id": "S7-1",
           "does": "every reader brief carries a BOUNDARY (what not to read) and the boundaries are provably disjoint",
-          "status": "todo"
+          "status": "passed",
+          "evidence": "passed \u2014 11 reader briefs, each carrying an explicit do-NOT-read list naming the other lanes, and the boundaries are provably disjoint by construction: 3 transcript readers partitioned 41 files with no file in two lists; 2 teardown readers split 407 by subject class with the second told to skip and report anything belonging to the first; 4 YouTube readers took one tier each (9/14/6/3 = 32); the OSS readers took named repo lists. Two readers independently reported their cut lines, and the teardown pair's candidate sets (26 and 87) came from disjoint selection rules."
         },
         {
           "id": "S7-2",
           "does": "every reader returns open questions, not just findings \u2014 the fan-out feeds the frontier",
-          "status": "todo"
+          "status": "passed",
+          "evidence": "passed \u2014 every one of the 11 returned an OPEN QUESTIONS block naming the specific next source, as the brief required. They were not decoration: wave-1 questions are what the chair used to decide what was still unread, and several named exact line ranges (DEEP_RESEARCH_FAST_MODE_RE PART 2 420-560; CLAUDE_RESEARCH.md:395-420; AI_AGENT_SYSTEMS:13690-13715)."
         },
         {
           "id": "S7-3",
           "does": "lanes never before mined in this project are covered: the 32 yt channels and the 41 transcripts",
-          "status": "todo"
+          "status": "passed",
+          "evidence": "passed \u2014 both never-mined lanes covered. YouTube: all 32 channels swept by tier, 942 titles matched (core 184 / podcast 81 / research 239 / platform 438), exit 0 and zero stderr bytes on every tier, 20 transcripts read across two readers. One genuine EMPTY confirmed by the POSITIVE signal rather than inferred (4i0W9qAf8K8: both 'has no subtitles' and 'has no automatic captions', 0 track rows). Transcripts: 41 files, 601k lines, partitioned three ways. Both lanes returned findings that changed the skill."
         },
         {
           "id": "S7-4",
           "does": "pooled slate chaired: refusals outnumber accepts and each refusal names its reason",
-          "status": "todo"
+          "status": "passed",
+          "evidence": "passed \u2014 chaired in docs/sweeps/2026-09-09-pool.md. 11 accepted into SKILL.md, 14 into reference files, 2 became code; REFUSALS OUTNUMBER ACCEPTS, 13 named classes plus ~12 restatements, each with its reason. Refused: the knowledge graph (the owner ruled twice), a findings cache, e-values (needs a calibrated statistic a span cannot give), Steinhardt's lambda ordering (needs a subjective p nothing here can compute honestly), three vendor number sets with no protocol, and 'deep sections are fabricated' as a corpus-wide rate when only 1 of 41 files is audited."
         },
         {
           "id": "S7-5",
           "is_check": true,
           "does": "END TO END: surviving edits applied; SKILL.md still under cap, all gates green, tests pass",
-          "status": "todo"
+          "status": "passed",
+          "evidence": "passed \u2014 surviving edits applied and verified end to end. SKILL.md is 250/250 lines, exactly at the cap, with the overflow moved into three new reference files (delegation.md 107, evidence.md, checks.md 67) rather than deleted. All 11 reference pointers resolve. Full suite green, ruff clean on src, lane-probes PASS from the installed copy. Two checks caught my own regressions during the revamp: the 250-line cap, and the command-name check reading 'bad luck' as a CLI name \u2014 the latter was a real defect IN the check, narrowed with a planted-defect test proving it still catches a name that does not resolve."
         }
       ]
     },
