@@ -20,6 +20,7 @@ from bad_research.checks.no_source_claim import (
     count_absence_claims,
     find_unfounded_absence_claims,
 )
+from bad_research.checks.quote_drift import check_quote_drift
 
 # Note bodies on disk. Flat glob, text only — a directory of notes is a
 # directory of notes, not a tree to recurse into.
@@ -116,3 +117,43 @@ def no_source_claim_gate_cmd(
 
 
 __all__ = ["no_source_claim_gate_cmd"]
+
+
+def quote_drift_gate_cmd(
+    report: Path = typer.Option(..., "--report", help="The report about to ship."),
+    note_bodies: Path = typer.Option(
+        ..., "--note-bodies", "--sources", help="JSON {note_id: body} map, in source order."
+    ),
+    json_out: bool = typer.Option(False, "--json", "-j", help="Emit findings as JSON."),
+) -> None:
+    """Verify every attributed quotation against the note it cites. Exit 1 on any drift.
+
+    Quotation marks assert that a source contains exactly these bytes. That is
+    checkable for nothing, and it is the one claim in a research report that does
+    not need a judge -- which is why it, and not a 55-60 BAcc semantic verdict,
+    is what gets to close a ship decision.
+    """
+    bodies = json.loads(note_bodies.read_text(encoding="utf-8"))
+    result = check_quote_drift(report.read_text(encoding="utf-8"), bodies, list(bodies))
+
+    if json_out:
+        typer.echo(json.dumps(result.to_dict(), indent=2))
+    else:
+        counts: dict[str, int] = {}
+        for f in result.findings:
+            counts[f.outcome] = counts.get(f.outcome, 0) + 1
+        typer.echo(
+            "quote-drift | attributed quotations checked "
+            f"{len(result.findings)} | "
+            + (" ".join(f"{k} {v}" for k, v in sorted(counts.items())) or "none found")
+        )
+        for f in result.findings:
+            if f.outcome == "MATCHED":
+                continue
+            where = f" (the words are in {f.found_in})" if f.found_in else ""
+            typer.echo(f"  - {f.outcome}{where}: [{f.marker}] -> {f.cited_note} :: {f.quoted[:90]!r}")
+        typer.echo("PASS | every attributed quotation is byte-identical to its note"
+                   if result.ok else "REFUSE | a quotation does not match the source it cites")
+
+    if not result.ok:
+        raise typer.Exit(code=1)

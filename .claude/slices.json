@@ -182,7 +182,8 @@
         {
           "id": "S4-3",
           "does": "one adjudicator, one rubric, reading ONLY the artifact; isolation enforced by tool allowlist",
-          "status": "todo"
+          "status": "todo",
+          "evidence": "PARTIAL, not flipped. Proven: agents/research-adjudicator.md exists, declares `tools: Read` and nothing else, carries exactly one rubric, states the 55-60 BAcc ceiling as the REASON it may rank but never certify, and 12 tests assert all of that including the named escape hatches (Grep/Glob/Bash/WebFetch/WebSearch/Task/Agent) \u2014 Grep and Glob specifically, because either turns a read-only judge into an enumerator that can reconstruct the author's context. NOT yet proven: that the HARNESS enforces the allowlist at runtime. Three spawn attempts this turn all returned 'Agent type not found' \u2014 an agent installed mid-turn does not resolve until a turn boundary, and the name set is fixed for the whole turn regardless of intervening tool calls. Declaring an allowlist and having it enforced are different claims; the row stays open until the live spawn produces evidence."
         },
         {
           "id": "S4-4",
@@ -193,8 +194,9 @@
         {
           "id": "S4-5",
           "does": "END TO END: both planted defects make their check exit non-zero",
-          "status": "todo",
-          "is_check": true
+          "status": "passed",
+          "is_check": true,
+          "evidence": "passed \u2014 driven by me at the CLI, both planted defects on ONE report, each firing its own check, plus a control. (a) A cited note's body swapped for a paraphrase carrying a different number (PUE 1.2 -> 1.6): `bad quote-drift-gate` EXIT=1, ABSENT. (b) An absence asserted where a note contains it: `bad no-source-claim-gate` EXIT=1, naming n3 and the four shared words. Control report with neither defect: both EXIT=0. Note that nothing previously caught (a) with a non-zero exit \u2014 recitation-gate exits 0 by construction, uncited-gate only asks whether a marker is present, and the semantic verifier sits in the 55-60 BAcc band the slice's own shape forbids from closing \u2014 so checks/quote_drift.py was built for it. My first (b) fixture did NOT fire and the gate was right: min_shared_words=2 and 'GPU depreciation schedules' shares one content word with the note. Fixed the fixture, not the bar."
         }
       ]
     },

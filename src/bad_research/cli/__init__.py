@@ -125,7 +125,9 @@ app.command("close-gate")(close_gate_cmd)
 
 # ── deterministic report checks (research rebuild, slice 1) ───────────────────
 from bad_research.cli.checks import no_source_claim_gate_cmd as _no_source_claim_cmd
+from bad_research.cli.checks import quote_drift_gate_cmd as _quote_drift_cmd
 
 app.command("no-source-claim-gate")(_no_source_claim_cmd)
+app.command("quote-drift-gate")(_quote_drift_cmd)
 
 __all__ = ["app"]
