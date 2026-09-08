@@ -862,7 +862,7 @@ def _standalone_store_from_bodies(note_bodies: dict[str, str]) -> AnchorStore:
     citation", not "did Tier B pass")."""
     import sqlite3
 
-    from bad_research.grounding.anchors import AnchorStore, ClaimAnchor
+    from bad_research.grounding.anchors import AnchorStore, ClaimAnchor, quote_sha
 
     conn = sqlite3.connect(":memory:")
     conn.row_factory = sqlite3.Row
@@ -870,17 +870,23 @@ def _standalone_store_from_bodies(note_bodies: dict[str, str]) -> AnchorStore:
     store.init_schema()
     for idx, (note_id, body) in enumerate(note_bodies.items(), start=1):
         body = body or ""
-        # [[note-id]] anchor: anchor_id is the note_id itself so gate.get(note_id) hits.
+        # Both rows carry anchor_id == quote_sha(body) so Tier-A byte-identity can
+        # actually pass; only the lookup_key differs. Binding the marker to
+        # anchor_id instead made Tier A unsatisfiable (a SHA is never "2") and
+        # scored every cited sentence `unsupported`.
+        # [[note-id]] anchor: lookup_key is the note id so gate.get(note_id) hits.
         wiki = ClaimAnchor(
             note_id=note_id, char_start=0, char_end=len(body),
-            claim="", quoted_support=body, verified=1, anchor_id=note_id,
+            claim="", quoted_support=body, verified=1,
+            anchor_id=quote_sha(body), lookup_key=note_id,
         )
         store.upsert(wiki)
-        # [N] anchor: anchor_id is the 1-based ordinal so gate.get("1") hits. A
+        # [N] anchor: lookup_key is the 1-based ordinal so gate.get("1") hits. A
         # separate row (distinct PK) pointing at the same note/body.
         numeric = ClaimAnchor(
             note_id=note_id, char_start=0, char_end=len(body),
-            claim="", quoted_support=body, verified=1, anchor_id=str(idx),
+            claim="", quoted_support=body, verified=1,
+            anchor_id=quote_sha(body), lookup_key=str(idx),
         )
         store.upsert(numeric)
     return store
@@ -895,7 +901,7 @@ def _seed_anchors_from_notes_dir(store: AnchorStore, notes_dir: Path) -> int:
     claim_anchors rows, so a `[[note-id]]` wiki-link to a real note file would
     otherwise read as a dangling-cite. DB anchors remain authoritative — a note id
     already present in the store is left untouched; only genuinely-missing ones are
-    seeded (anchor_id == the note id, the whole body as quoted_support, verified=1,
+    seeded (lookup_key == the note id, the whole body as quoted_support, verified=1,
     mirroring _standalone_store_from_bodies' wiki anchor)."""
     from bad_research.grounding.anchors import ClaimAnchor
 
@@ -912,7 +918,7 @@ def _seed_anchors_from_notes_dir(store: AnchorStore, notes_dir: Path) -> int:
             continue
         store.upsert(ClaimAnchor(
             note_id=note_id, char_start=0, char_end=len(body),
-            claim="", quoted_support=body, verified=1, anchor_id=note_id,
+            claim="", quoted_support=body, verified=1, lookup_key=note_id,
         ))
         added += 1
     return added

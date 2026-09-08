@@ -313,6 +313,9 @@ def confidence_band(
 
 @dataclass
 class CitationFinding:
+    # The anchor's lookup_key — the citation marker as written (`[2]`, a note id,
+    # or the quote SHA). It is what addresses the row in set_verified; the Tier-A
+    # SHA lives on the anchor, not here. Field name frozen by the output contract.
     anchor_id: str
     sentence: str
     verdict: VerifyVerdict
@@ -403,7 +406,8 @@ class CitationVerifier:
                 # A-4/A-5 resolution: a line-anchored token is `note-id:L42-L58`;
                 # strip the `:L42-L58` suffix before the anchor lookup so BOTH the
                 # new line-anchored form and legacy `note-id`/`[N]` forms resolve.
-                # (Anchors are keyed by anchor_id == quote_sha; for the line-anchor
+                # (Anchors are addressed by lookup_key — a note id, an [N] ordinal,
+                # or the quote SHA by default; for the line-anchor
                 # path the line range used for the premise comes from the STORED
                 # anchor's line_start/line_end, not the token suffix — the suffix is
                 # the reader-facing display, the anchor is the source of truth.)
@@ -414,7 +418,7 @@ class CitationVerifier:
                 body = note_bodies.get(anchor.note_id, "")
                 # Tier A -- byte-identity ($0).
                 if not tier_a_byte_identity(anchor, body):
-                    findings.append(CitationFinding(anchor.anchor_id, sent, VerifyVerdict.UNSUPPORTED, 0.0))
+                    findings.append(CitationFinding(anchor.lookup_key, sent, VerifyVerdict.UNSUPPORTED, 0.0))
                     continue
                 # Tier B -- local NLI ($0). The premise is the cited LINE SPAN text
                 # (A-5: re-read from the live body via the anchor's line_start/line_end)
@@ -423,11 +427,11 @@ class CitationVerifier:
                 scores = self.nli.predict(premise, hypothesis)
                 label = classify_nli(scores)
                 if label is NLILabel.ENTAILMENT:
-                    findings.append(CitationFinding(anchor.anchor_id, sent, VerifyVerdict.SUPPORTED, scores["entailment"]))
+                    findings.append(CitationFinding(anchor.lookup_key, sent, VerifyVerdict.SUPPORTED, scores["entailment"]))
                 elif label is NLILabel.CONTRADICTION:
-                    findings.append(CitationFinding(anchor.anchor_id, sent, VerifyVerdict.CONTRADICTED, scores["contradiction"]))
+                    findings.append(CitationFinding(anchor.lookup_key, sent, VerifyVerdict.CONTRADICTED, scores["contradiction"]))
                 else:
-                    stub = CitationFinding(anchor.anchor_id, sent, VerifyVerdict.UNSUPPORTED, 0.0)
+                    stub = CitationFinding(anchor.lookup_key, sent, VerifyVerdict.UNSUPPORTED, 0.0)
                     # Tier C judges the report sentence (claim) vs the SAME line-span premise.
                     pending.append((stub, hypothesis, premise))
 

@@ -18,7 +18,12 @@ def quote_sha(quoted_support: str) -> str:
 
 @dataclass
 class ClaimAnchor:
-    """One claim->span binding. anchor_id == quote_sha(quoted_support)."""
+    """One claim->span binding. anchor_id == quote_sha(quoted_support).
+
+    `lookup_key` is how a citation marker ADDRESSES this anchor (a note id, a
+    1-based `[N]` ordinal, or -- by default -- the quote SHA itself). It is a
+    separate fact from `anchor_id`, which Tier-A byte-identity compares against
+    quote_sha(quoted_support)."""
 
     note_id: str
     char_start: int
@@ -37,15 +42,25 @@ class ClaimAnchor:
     # so a figure-derived number stays inside the uncited + recitation + verify gates
     # — NOT an ungrounded escape hatch. NULL for ordinary text anchors.
     asset_path: str | None = None
+    # How the gate addresses this anchor: `[[note-id]]` -> the note id, `[N]` ->
+    # the 1-based ordinal, and by default the quote SHA. Defaults to anchor_id.
+    lookup_key: str = ""
 
     def __post_init__(self) -> None:
         if not self.anchor_id:
             self.anchor_id = quote_sha(self.quoted_support)
+        # The gate addresses an anchor by citation marker ("2") or note id; Tier A
+        # compares anchor_id against quote_sha(quoted_support). Different facts --
+        # sharing one field made Tier A unsatisfiable for every numeric marker.
+        if not self.lookup_key:
+            self.lookup_key = self.anchor_id
 
 
-CLAIM_ANCHORS_DDL = """
-CREATE TABLE IF NOT EXISTS claim_anchors (
-    anchor_id      TEXT PRIMARY KEY,   -- == quote_sha (8-char SHA-256 of quoted_support)
+_CLAIM_ANCHORS_TABLE_SQL = """
+CREATE TABLE IF NOT EXISTS {table} (
+    lookup_key     TEXT PRIMARY KEY,   -- how a citation marker addresses this anchor:
+                                       -- a note id, a 1-based [N] ordinal, or the SHA
+    anchor_id      TEXT NOT NULL,      -- == quote_sha (8-char SHA-256 of quoted_support)
     note_id        TEXT NOT NULL,
     char_start     INTEGER NOT NULL,
     char_end       INTEGER NOT NULL,
@@ -57,8 +72,17 @@ CREATE TABLE IF NOT EXISTS claim_anchors (
     line_end       INTEGER,            -- 1-based; NULL for legacy anchors
     asset_path     TEXT                -- vision rung: saved PNG for figure-derived claims; NULL otherwise
 );
+"""
+
+CLAIM_ANCHORS_DDL = _CLAIM_ANCHORS_TABLE_SQL.format(table="claim_anchors") + """
 CREATE INDEX IF NOT EXISTS idx_claim_anchors_note ON claim_anchors(note_id);
 """
+
+# Column order used when carrying rows across the legacy-table rebuild.
+_ANCHOR_COLUMNS = (
+    "anchor_id", "note_id", "char_start", "char_end", "claim", "quoted_support",
+    "verified", "verify_score", "line_start", "line_end", "asset_path",
+)
 
 
 class AnchorStore:
@@ -70,31 +94,61 @@ class AnchorStore:
 
     def init_schema(self) -> None:
         self.conn.executescript(CLAIM_ANCHORS_DDL)
+        cols = {r[1] for r in self.conn.execute("PRAGMA table_info(claim_anchors)")}
         # Forward-compat: a pre-existing claim_anchors table (created before the
         # vision rung) lacks asset_path. CREATE TABLE IF NOT EXISTS won't add it,
         # so ALTER it in (idempotent — ignore "duplicate column").
-        cols = {r[1] for r in self.conn.execute("PRAGMA table_info(claim_anchors)")}
         if "asset_path" not in cols:
             try:
                 self.conn.execute("ALTER TABLE claim_anchors ADD COLUMN asset_path TEXT")
             except sqlite3.OperationalError:
                 pass
+            else:
+                cols = cols | {"asset_path"}
+        # Forward-compat: a table older still made anchor_id the PRIMARY KEY *and*
+        # the Tier-A quote SHA. Moving the key onto lookup_key cannot be done with
+        # ALTER in SQLite, so rebuild (this table is a cache — markdown is truth).
+        if "lookup_key" not in cols:
+            self._rebuild_without_anchor_id_pk(cols)
         self.conn.commit()
+
+    def _rebuild_without_anchor_id_pk(self, cols: set[str]) -> None:
+        """Carry a pre-lookup_key table over to the split-key schema.
+
+        Every legacy row's lookup key IS its old anchor_id — that column doubled as
+        the gate's address — so the rebuild is a straight copy plus that aliasing.
+        Rebuilding (rather than ALTERing a column in) is what drops the UNIQUE
+        constraint on anchor_id: two anchors may now legitimately share a quote SHA
+        while being addressed by different citation markers."""
+        carried = [c for c in _ANCHOR_COLUMNS if c in cols]
+        names = ", ".join(carried)
+        self.conn.executescript(_CLAIM_ANCHORS_TABLE_SQL.format(table="claim_anchors__new"))
+        self.conn.execute(
+            f"INSERT INTO claim_anchors__new (lookup_key, {names}) "
+            f"SELECT anchor_id, {names} FROM claim_anchors"
+        )
+        self.conn.execute("DROP TABLE claim_anchors")
+        self.conn.execute("ALTER TABLE claim_anchors__new RENAME TO claim_anchors")
+        self.conn.execute(
+            "CREATE INDEX IF NOT EXISTS idx_claim_anchors_note ON claim_anchors(note_id)"
+        )
 
     def upsert(self, anchor: ClaimAnchor) -> None:
         self.conn.execute(
             "INSERT INTO claim_anchors "
-            "(anchor_id, note_id, char_start, char_end, claim, quoted_support, "
+            "(lookup_key, anchor_id, note_id, char_start, char_end, claim, quoted_support, "
             " verified, verify_score, line_start, line_end, asset_path) "
-            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
-            "ON CONFLICT(anchor_id) DO UPDATE SET "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
+            "ON CONFLICT(lookup_key) DO UPDATE SET "
+            "  anchor_id=excluded.anchor_id, "
             "  note_id=excluded.note_id, char_start=excluded.char_start, "
             "  char_end=excluded.char_end, claim=excluded.claim, "
             "  quoted_support=excluded.quoted_support, "
             "  line_start=excluded.line_start, line_end=excluded.line_end, "
             "  asset_path=excluded.asset_path",
             (
-                anchor.anchor_id, anchor.note_id, anchor.char_start, anchor.char_end,
+                anchor.lookup_key, anchor.anchor_id, anchor.note_id,
+                anchor.char_start, anchor.char_end,
                 anchor.claim, anchor.quoted_support, anchor.verified, anchor.verify_score,
                 anchor.line_start, anchor.line_end, anchor.asset_path,
             ),
@@ -105,19 +159,24 @@ class AnchorStore:
         # asset_path is absent on legacy rows whose table predates the ALTER — guard
         # on the row's column names (sqlite3.Row `in` matches VALUES, not keys, so we
         # must inspect keys() explicitly) so get/all work against such tables.
-        asset_path = row["asset_path"] if "asset_path" in set(row.keys()) else None
+        keys = set(row.keys())
+        asset_path = row["asset_path"] if "asset_path" in keys else None
+        # A row read straight from an un-migrated table has no lookup_key column;
+        # there the old anchor_id column WAS the gate's address.
+        lookup_key = row["lookup_key"] if "lookup_key" in keys else row["anchor_id"]
         return ClaimAnchor(
             note_id=row["note_id"], char_start=row["char_start"], char_end=row["char_end"],
             claim=row["claim"], quoted_support=row["quoted_support"],
             verified=row["verified"], verify_score=row["verify_score"],
             anchor_id=row["anchor_id"],
             line_start=row["line_start"], line_end=row["line_end"],
-            asset_path=asset_path,
+            asset_path=asset_path, lookup_key=lookup_key,
         )
 
-    def get(self, anchor_id: str) -> ClaimAnchor | None:
+    def get(self, lookup_key: str) -> ClaimAnchor | None:
+        """Resolve a citation marker (note id, `[N]` ordinal, or quote SHA)."""
         row = self.conn.execute(
-            "SELECT * FROM claim_anchors WHERE anchor_id = ?", (anchor_id,)
+            "SELECT * FROM claim_anchors WHERE lookup_key = ?", (lookup_key,)
         ).fetchone()
         if row is None:
             return None
@@ -127,10 +186,11 @@ class AnchorStore:
         for row in self.conn.execute("SELECT * FROM claim_anchors"):
             yield self._row_to_anchor(row)
 
-    def set_verified(self, anchor_id: str, *, verified: int, score: float | None) -> None:
+    def set_verified(self, lookup_key: str, *, verified: int, score: float | None) -> None:
+        """Stamp the disposition on the row the citation marker addresses."""
         self.conn.execute(
-            "UPDATE claim_anchors SET verified = ?, verify_score = ? WHERE anchor_id = ?",
-            (verified, score, anchor_id),
+            "UPDATE claim_anchors SET verified = ?, verify_score = ? WHERE lookup_key = ?",
+            (verified, score, lookup_key),
         )
         self.conn.commit()
 
