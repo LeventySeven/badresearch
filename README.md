@@ -12,12 +12,30 @@
   <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License: MIT">
 </p>
 
-A **keyless** deep-research agent that runs as a Claude Code skill — a
-fork-and-enhance of [hyperresearch](https://github.com/jordan-gibbs/hyperresearch).
-It searches wide, filters garbage, grounds every claim to a source, and needs
-**zero API keys**: the Claude Code host model supplies all inference, exactly like
-hyperresearch. Optional local CLIs and a `[local]` neural extra are enhancements,
-never requirements.
+A **keyless** research skill for Claude Code, plus the gates that make its rules
+execute. Zero API keys: the host model supplies all inference. Optional local CLIs
+and a `[local]` neural extra are enhancements, never requirements. Originally a
+fork of [hyperresearch](https://github.com/jordan-gibbs/hyperresearch); the
+research skill itself was rebuilt from scratch in 2026-09.
+
+**What it actually is now.** One skill (`skills/research/SKILL.md`, 250 lines of
+qualities and refusals — not steps), eight lane recipes read on demand, two
+agents, and nine `bad` subcommands that exit non-zero when a rule is broken.
+
+The one mechanism is the **frontier**: every query after the first must NAME
+something a previous read produced, and a query that names nothing is a re-phrase
+and is refused by `bad frontier-gate`. The stop signal is computed in code before
+the next prompt is built — from what arrived *and* what the answer still owes —
+because a model that wants to keep searching is not a witness to its own
+diminishing returns. An open disagreement between sources blocks the finish, and
+ranking one side does not license dropping the other.
+
+Why those and not something else: of seven open-source research engines read in
+source, exactly one generates its next question from evidence it retrieved and did
+not use; none of them has contradiction handling in code; and a draft whose every
+sentence is false but carries a resolving citation passes a presence-based gate
+clean. The design notes and the measurements are in
+[`docs/sweeps/`](docs/sweeps/) and in the skill's own `references/`.
 
 ## Install
 
