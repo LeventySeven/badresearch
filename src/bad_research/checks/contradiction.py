@@ -49,19 +49,29 @@ _CURRENCY = "$€£¥"
 
 @dataclass(frozen=True)
 class Claim:
-    """One source's account of one fact: what, how much, in what unit, from whom."""
+    """One source's account of one fact: what, how much, in what unit, from whom.
+
+    `as_of` is the date the value was captured, and it is optional because it is
+    often genuinely unavailable. Where it IS known it is load-bearing: two
+    accounts of one fact carrying different dates are still a discrepancy in the
+    record rather than a stale value, but a reader can only judge that if both
+    dates reach them. `close_gate` enforces exactly that -- it demands the dates
+    that exist and never invents a requirement for the ones that do not.
+    """
 
     subject: str
     value: str
     unit: str
     source: str
+    as_of: str | None = None
 
-    def to_dict(self) -> dict[str, str]:
+    def to_dict(self) -> dict[str, str | None]:
         return {
             "subject": self.subject,
             "value": self.value,
             "unit": self.unit,
             "source": self.source,
+            "as_of": self.as_of,
         }
 
 

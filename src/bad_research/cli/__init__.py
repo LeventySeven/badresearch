@@ -119,6 +119,10 @@ from bad_research.cli.frontier_cmds import frontier_gate_cmd, frontier_observe_c
 app.command("frontier-gate")(frontier_gate_cmd)
 app.command("frontier-observe")(frontier_observe_cmd)
 
+from bad_research.cli.close_gate_cmds import close_gate_cmd
+
+app.command("close-gate")(close_gate_cmd)
+
 # ── deterministic report checks (research rebuild, slice 1) ───────────────────
 from bad_research.cli.checks import no_source_claim_gate_cmd as _no_source_claim_cmd
 

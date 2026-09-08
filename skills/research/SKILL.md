@@ -127,6 +127,10 @@ and `grep -n` is current for free.
   what the span shows and where you extrapolated, or cut the extrapolation.
 - **A retrieval tool's digest is the tool's words, not the page's.** Re-check any quote against the
   raw bytes before you put it in quotation marks.
+- **Captions are substance, never quotation** — YouTube's *manual* track is frequently ASR. Paraphrase
+  and say it came from a talk. (This bullet was cut once as duplication and a check refused the cut:
+  it was written after a caption-sourced phrase reached this very file in quotation marks, and the
+  lane files that also carry the rule are read on demand, long after the damage is done.)
 - **Count distinct actors, not distinct URLs.** Collapse by person, by company, and by commercial
   orbit before you call anything corroborated — a vendor recommending the thing it sells is one
   interested source however many pages it has. Measured here: one practitioner supplied eleven of

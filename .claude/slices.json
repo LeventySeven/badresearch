@@ -1,5 +1,5 @@
 {
-  "ask": "check desktop/badresearch. Now analyze this whole folder and whole skills first. I think maybe we should somehow make it simpler if it's needed, because I think it's a lot overcomplicated for now. And also, when we are using this research skill, sometimes a lot of things that does not work. For example, step-by-step skills — they're not working, and coding agents have to read them manually and not invoke it. So it's first error. And second, I think we should revamp it fully. So don't skimp... Because quality is a priority... make agents and coging agentic cli's SOTA at any kind of research... use ALL our channels, ALL our top sources, videos, podcasts, transcripts, articles, researches, guides, workflows, pipelines from goated people, engineers, researchers at top companies, startups, research labs. also use desktop/researchfms teardowns all at the same time via multiple agents per source. graphs are only similarity/intuintion",
+  "ask": "check desktop/badresearch. Now analyze this whole folder and whole skills first. I think maybe we should somehow make it simpler if it's needed, because I think it's a lot overcomplicated for now. And also, when we are using this research skill, sometimes a lot of things that does not work. For example, step-by-step skills \u2014 they're not working, and coding agents have to read them manually and not invoke it. So it's first error. And second, I think we should revamp it fully. So don't skimp... Because quality is a priority... make agents and coging agentic cli's SOTA at any kind of research... use ALL our channels, ALL our top sources, videos, podcasts, transcripts, articles, researches, guides, workflows, pipelines from goated people, engineers, researchers at top companies, startups, research labs. also use desktop/researchfms teardowns all at the same time via multiple agents per source. graphs are only similarity/intuintion",
   "baseline": {
     "what": "A plain Claude Code session with WebSearch/WebFetch and a demanding prompt.",
     "measured": "17 minutes, 5,930 words, 35 sources actually fetched, explicit counter-case section, honest 'what I could not establish'. Beat badresearch's fast route 3-0 on three blind-judge lenses INCLUDING accretion. It also performed a real multi-hop correction the pipeline did not: took a vendor's published formula, applied it to that vendor's own table, found every row understated 10x, and propagated the correction until the vendor's headline conclusion flipped.",
@@ -8,12 +8,12 @@
   "slices": [
     {
       "id": "S1",
-      "capability": "I type /research <question> in any project and get a cited answer that used MY local corpus — the 407 teardowns, 41 transcripts, 190 articles, 100 x-guides that no web agent can reach.",
+      "capability": "I type /research <question> in any project and get a cited answer that used MY local corpus \u2014 the 407 teardowns, 41 transcripts, 190 articles, 100 x-guides that no web agent can reach.",
       "check": "Run it on a question whose answer exists ONLY in the local corpus AND is not spelled out in any lane recipe: 'Does iterative retrieval beat a single well-formed expansion, and what numbers back it?' (answer lives in researchfms/AGENTIC_SEARCH_SPEC.md; verified absent from skills/). PASS = the answer cites a real path:line that `sed -n` reproduces.",
       "unknown": "Whether one skill file can carry route + gate + lane pointers in under 250 lines without regressing to the process-scaffolding shape that measured -8.4 to -27.4pp.",
       "confidence": 0.9,
       "shape": "One SKILL.md + references/lanes/*.md read on demand. Anthropic's own contract: bundled files are level three, read as needed; 'when the SKILL.md file becomes unwieldy, split its content into separate files and reference them.'",
-      "trap": "The skill's description competes in a shared listing budget measured live at 40,139 chars across 109 skills. A dropped description reads as a skill that does not work — indistinguishable from the bug we just fixed.",
+      "trap": "The skill's description competes in a shared listing budget measured live at 40,139 chars across 109 skills. A dropped description reads as a skill that does not work \u2014 indistinguishable from the bug we just fixed.",
       "delete": [
         "the 21-skill chain",
         "the Skill() step-indirection",
@@ -26,48 +26,48 @@
           "id": "S1-1",
           "does": "skills/research/SKILL.md exists, <=250 lines, description <=500 chars",
           "status": "passed",
-          "evidence": "passed — 173 lines / 446-char description; tests/test_skills/test_research_skill_shape.py. CAVEAT: I authored the file and wrote its size/description assertions afterwards, so those two never went red first. The lane-reference assertion DID go red for the right reason (5 missing lane files) and is the honest check here."
+          "evidence": "passed \u2014 173 lines / 446-char description; tests/test_skills/test_research_skill_shape.py. CAVEAT: I authored the file and wrote its size/description assertions afterwards, so those two never went red first. The lane-reference assertion DID go red for the right reason (5 missing lane files) and is the honest check here."
         },
         {
           "id": "S1-2",
           "does": "`bad lane-local \"<query>\"` returns real path:line hits from the flat teardown glob",
           "status": "passed",
-          "evidence": "passed — driven as a user: `bad lane-local \"ZS Associates\"` -> TRANSCRIPTS_AI_AGENT_SYSTEMS.md:6884, and `sed -n '6884p'` reproduces the cited line exactly."
+          "evidence": "passed \u2014 driven as a user: `bad lane-local \"ZS Associates\"` -> TRANSCRIPTS_AI_AGENT_SYSTEMS.md:6884, and `sed -n '6884p'` reproduces the cited line exactly."
         },
         {
           "id": "S1-3",
-          "does": "the lane emits an enumeration line even when it selects 0 — a zero is reported, never silent",
+          "does": "the lane emits an enumeration line even when it selects 0 \u2014 a zero is reported, never silent",
           "status": "passed",
-          "evidence": "passed — `bad lane-local \"zzz-no-such-term-zzz\"` returns selected 0 AND still prints `local-corpus | files listed 714 | candidates selected 0 | cut line ...`."
+          "evidence": "passed \u2014 `bad lane-local \"zzz-no-such-term-zzz\"` returns selected 0 AND still prints `local-corpus | files listed 714 | candidates selected 0 | cut line ...`."
         },
         {
           "id": "S1-4",
           "does": "the lane never recurses (36k files live under teardowns/; -r ranks vendored source above breakdowns)",
           "status": "passed",
-          "evidence": "passed — measured: flat glob sees 407 .md under teardowns/, recursive would see 2101; the lane listed 407."
+          "evidence": "passed \u2014 measured: flat glob sees 407 .md under teardowns/, recursive would see 2101; the lane listed 407."
         },
         {
           "id": "S1-5",
           "does": "every `bad <cmd>` the skill names resolves against the live Typer app",
           "status": "passed",
-          "evidence": "passed — `bad lane-local --help` resolves; the skill names only lane-local, uncited-gate, recitation-gate and all three are in the live Typer app."
+          "evidence": "passed \u2014 `bad lane-local --help` resolves; the skill names only lane-local, uncited-gate, recitation-gate and all three are in the live Typer app."
         },
         {
           "id": "S1-6",
           "does": "END TO END: /research on the corpus-only question returns an answer citing a reproducible teardown path:line",
           "status": "passed",
           "is_check": true,
-          "evidence": "passed — uncontaminated cold-use run by an agent that had never seen this session. Contamination check done by the agent itself: grep over ~/.claude/skills/research/ for the answer's specifics (adaptive-rag|IRCoT|68.8|39.80|oracle router) returns 0 hits; I re-ran it and confirm 0. It invoked Skill(research) cleanly, read local-corpus.md and web-live.md, reproduced the reachability probe digit-for-digit (407/41/190/67), ran `bad lane-local` as documented, and cited AGENTIC_SEARCH_SPEC.md:169 — which `sed -n '169p'` reproduces exactly. BEYOND THE CHECK: it then verified the corpus's own citations against the primary PDFs and found TWO defects in AGENTIC_SEARCH_SPEC.md that this session had repeated as fact. Asked whether the skill changed the outcome it said yes, concretely: without the frontier and contradiction rules the natural stopping point was 'found a pre-synthesized answer with citations, done', which would have shipped both defects."
+          "evidence": "passed \u2014 uncontaminated cold-use run by an agent that had never seen this session. Contamination check done by the agent itself: grep over ~/.claude/skills/research/ for the answer's specifics (adaptive-rag|IRCoT|68.8|39.80|oracle router) returns 0 hits; I re-ran it and confirm 0. It invoked Skill(research) cleanly, read local-corpus.md and web-live.md, reproduced the reachability probe digit-for-digit (407/41/190/67), ran `bad lane-local` as documented, and cited AGENTIC_SEARCH_SPEC.md:169 \u2014 which `sed -n '169p'` reproduces exactly. BEYOND THE CHECK: it then verified the corpus's own citations against the primary PDFs and found TWO defects in AGENTIC_SEARCH_SPEC.md that this session had repeated as fact. Asked whether the skill changed the outcome it said yes, concretely: without the frontier and contradiction rules the natural stopping point was 'found a pre-synthesized answer with citations, done', which would have shipped both defects."
         }
       ],
-      "check_original": "Run it on a question whose answer exists ONLY in the local corpus (e.g. 'what did ZS Associates conclude about multi-agent research pipelines, and what did they replace it with?' — that is in researchfms/teardowns, not on the open web in that form). PASS = the answer cites a real teardown file with a line number that `sed -n` can reproduce. FAIL-SHAPE = a plain Claude+WebSearch session cannot answer it at all, which is the point.",
-      "check_revision_reason": "The original check used the ZS Associates question, and I then had the lane-recipe agent use that SAME question as local-corpus.md's worked example — so the file handed the answer to the reader. The cold-use agent caught this itself and said part 1 was untestable in a blind sense. Revised BEFORE any row was flipped on it, not after a failure."
+      "check_original": "Run it on a question whose answer exists ONLY in the local corpus (e.g. 'what did ZS Associates conclude about multi-agent research pipelines, and what did they replace it with?' \u2014 that is in researchfms/teardowns, not on the open web in that form). PASS = the answer cites a real teardown file with a line number that `sed -n` can reproduce. FAIL-SHAPE = a plain Claude+WebSearch session cannot answer it at all, which is the point.",
+      "check_revision_reason": "The original check used the ZS Associates question, and I then had the lane-recipe agent use that SAME question as local-corpus.md's worked example \u2014 so the file handed the answer to the reader. The cold-use agent caught this itself and said part 1 was untestable in a blind sense. Revised BEFORE any row was flipped on it, not after a failure."
     },
     {
       "id": "S2",
-      "capability": "The loop asks a question it could only have asked after reading something — and refuses one it could have asked at the start.",
+      "capability": "The loop asks a question it could only have asked after reading something \u2014 and refuses one it could have asked at the start.",
       "check": "On one real run, count the queries issued after wave 1 that contain a term which first appeared in a FETCHED DOCUMENT rather than in the user's prompt or the initial decomposition. PASS = that count is > 0 and the run log names which frontier item each query hit. If it is zero, the owner's thesis is unimplemented and this slice did not ship, whatever the tests say.",
-      "unknown": "What a frontier item actually looks like when a real reader produces it — the gate already fails on long multi-token items, and nothing produces items yet.",
+      "unknown": "What a frontier item actually looks like when a real reader produces it \u2014 the gate already fails on long multi-token items, and nothing produces items yet.",
       "confidence": 0.65,
       "shape": "Extract entities/quantities absent from the question after each read; every subsequent query must name one. Harness computes new-domain/new-entity deltas BEFORE the prompt is built so the stop is auditable even if the model lies.",
       "trap": "Subset containment is order-insensitive and non-contiguous, so a long contradiction string is unnameable in practice while a common-word item can be named incidentally. The producer's item FORMAT decides whether the gate is real.",
@@ -80,38 +80,38 @@
           "id": "S2-1",
           "does": "a reader returns {findings, verbatim spans, reachability} and never reasoning",
           "status": "passed",
-          "evidence": "passed — agents/research-reader.md installed to ~/.claude/agents/. Contract: returns findings + verbatim spans + a 4-state reachability outcome + frontier candidates; explicitly forbids conclusions, recommendations, paraphrase-as-quote and silent failure. It is also the frontier PRODUCER S2-2 needs."
+          "evidence": "passed \u2014 agents/research-reader.md installed to ~/.claude/agents/. Contract: returns findings + verbatim spans + a 4-state reachability outcome + frontier candidates; explicitly forbids conclusions, recommendations, paraphrase-as-quote and silent failure. It is also the frontier PRODUCER S2-2 needs."
         },
         {
           "id": "S2-2",
           "does": "a producer extracts frontier items from a real fetched body",
           "status": "passed",
-          "evidence": "passed — RED first (ImportError: extract_frontier_items). Producer emits entities, named methods, arXiv ids and referent-carrying figures present in a body and absent from the question, preferring the longest form as the more diagnostic cue. Driven on a real 326,123-char corpus document fetched through `bad lane-local`. DEFECT FOUND AND FIXED BY THE END-TO-END DRIVE: the first version matched any decimal and produced 348 items dominated by raw floats ('0.069180676288051') — a frontier that large is nameable by accident, which disables the gate quietly. Tightened to require a referent (money/percent/arXiv/number+unit); 208 items on the same body. Also fixed a real artifact the drive exposed: a sentence-initial preposition was being captured into the entity ('On Natural Questions')."
+          "evidence": "passed \u2014 RED first (ImportError: extract_frontier_items). Producer emits entities, named methods, arXiv ids and referent-carrying figures present in a body and absent from the question, preferring the longest form as the more diagnostic cue. Driven on a real 326,123-char corpus document fetched through `bad lane-local`. DEFECT FOUND AND FIXED BY THE END-TO-END DRIVE: the first version matched any decimal and produced 348 items dominated by raw floats ('0.069180676288051') \u2014 a frontier that large is nameable by accident, which disables the gate quietly. Tightened to require a referent (money/percent/arXiv/number+unit); 208 items on the same body. Also fixed a real artifact the drive exposed: a sentence-initial preposition was being captured into the entity ('On Natural Questions')."
         },
         {
           "id": "S2-3",
           "does": "gate_query has a production caller and refuses a re-phrase in a live run",
           "status": "passed",
-          "evidence": "passed — RED first (ImportError: cannot import name 'FrontierState'). gate_query now has a real production caller: FrontierState.gate_and_log at frontier.py:109, reached from the CLI `bad frontier-gate`. DRIVEN AS A USER on a live state file: query 1 'does iterating beat one expansion' -> allow (first, exempt), exit 0; query 2 'is it better to search more times' -> REFUSE, exit 1, names no frontier item; query 3 'Adaptive-RAG oracle router step count' -> allow, exit 0, names ['Adaptive-RAG','oracle router']. The refusal is enforced by a non-zero exit, not by advice."
+          "evidence": "passed \u2014 RED first (ImportError: cannot import name 'FrontierState'). gate_query now has a real production caller: FrontierState.gate_and_log at frontier.py:109, reached from the CLI `bad frontier-gate`. DRIVEN AS A USER on a live state file: query 1 'does iterating beat one expansion' -> allow (first, exempt), exit 0; query 2 'is it better to search more times' -> REFUSE, exit 1, names no frontier item; query 3 'Adaptive-RAG oracle router step count' -> allow, exit 0, names ['Adaptive-RAG','oracle router']. The refusal is enforced by a non-zero exit, not by advice."
         },
         {
           "id": "S2-4",
           "does": "stop counters are computed in code before the prompt; the model never self-reports diminishing returns",
           "status": "passed",
-          "evidence": "passed — RED first: 5 of 6 tests failed, incl. 'StopCounters is defined but called from nowhere in src/'. Wired into FrontierState.observe_round (frontier.py:116) and exposed as `bad frontier-observe`. DRIVEN AS A USER: round 1 +3 domains/+2 entities -> continue; round 2 +1/+1 -> continue; round 3 +0/+0 -> STOP. The signal is computed from set differences before the next prompt is built and persisted per-round in the state file, so the stop is auditable from the run's own counters rather than from the model's account of its diminishing returns — every stopping rule surveyed for this rebuild was absent, a hand-picked constant, or a convergence check that could never fire."
+          "evidence": "passed \u2014 RED first: 5 of 6 tests failed, incl. 'StopCounters is defined but called from nowhere in src/'. Wired into FrontierState.observe_round (frontier.py:116) and exposed as `bad frontier-observe`. DRIVEN AS A USER: round 1 +3 domains/+2 entities -> continue; round 2 +1/+1 -> continue; round 3 +0/+0 -> STOP. The signal is computed from set differences before the next prompt is built and persisted per-round in the state file, so the stop is auditable from the run's own counters rather than from the model's account of its diminishing returns \u2014 every stopping rule surveyed for this rebuild was absent, a hand-picked constant, or a convergence check that could never fire."
         },
         {
           "id": "S2-5",
           "does": "the run log names, per query, which frontier item it hit",
           "status": "passed",
-          "evidence": "passed — the same run's log records, per query, allowed/refused AND which frontier item was named: [] for the exempt first query, [] for the refused re-phrase, ['Adaptive-RAG','oracle router'] for the accreting one. That log is the artifact S2-6's end-to-end count reads, so accretion is auditable from the run's own counters rather than from the model's account of how well it did."
+          "evidence": "passed \u2014 the same run's log records, per query, allowed/refused AND which frontier item was named: [] for the exempt first query, [] for the refused re-phrase, ['Adaptive-RAG','oracle router'] for the accreting one. That log is the artifact S2-6's end-to-end count reads, so accretion is auditable from the run's own counters rather than from the model's account of how well it did."
         },
         {
           "id": "S2-6",
           "does": "END TO END: post-wave-1 queries containing a term first seen in a fetched doc, counted, > 0",
           "status": "passed",
           "is_check": true,
-          "evidence": "passed — the count came back >0 on a genuine end-to-end drive, and its FIRST run came back 0, which is the check working. That zero exposed two things: the producer's number over-emission (fixed above) and a badly built drive of my own — I read one document then asked follow-ups about content in a different one, measuring my scripting rather than the loop. Rebuilt so the follow-ups are derived FROM the extracted items. Result: 2 post-wave-1 queries allowed and naming terms first seen in the fetched doc ('Adaptive Evolutionary Framework', 'Better Code Retrieval'); the deliberate re-phrase control was refused. NOTE the lane query also had to be widened from 0 hits to 3 — the skill's own start-wide-then-narrow rule firing on me."
+          "evidence": "passed \u2014 the count came back >0 on a genuine end-to-end drive, and its FIRST run came back 0, which is the check working. That zero exposed two things: the producer's number over-emission (fixed above) and a badly built drive of my own \u2014 I read one document then asked follow-ups about content in a different one, measuring my scripting rather than the loop. Rebuilt so the follow-ups are derived FROM the extracted items. Result: 2 post-wave-1 queries allowed and naming terms first seen in the fetched doc ('Adaptive Evolutionary Framework', 'Better Code Retrieval'); the deliberate re-phrase control was refused. NOTE the lane query also had to be widened from 0 hits to 3 \u2014 the skill's own start-wide-then-narrow rule firing on me."
         }
       ]
     },
@@ -122,7 +122,7 @@
       "unknown": "Whether the run can tell a load-bearing contradiction from a cosmetic one without manufacturing conflicts to keep searching.",
       "confidence": 0.65,
       "shape": "A contradiction between S1 and S2 on claim C is a first-class frontier item; the run cannot close while one is open. Keep both with provenance; resolve or rank BEFORE the spans reach the model, because injecting one unreconciled conflict measured 30 minutes of pondering and a collapse mode.",
-      "trap": "Uncapped, the agent manufactures conflicts to keep searching. DRNOISE also measures the opposite failure: one seeded plausible-but-false document causes 66-88 point accuracy drops, and 'generic verification prompts reduce but do not close this gap' — so it cannot be prose.",
+      "trap": "Uncapped, the agent manufactures conflicts to keep searching. DRNOISE also measures the opposite failure: one seeded plausible-but-false document causes 66-88 point accuracy drops, and 'generic verification prompts reduce but do not close this gap' \u2014 so it cannot be prose.  KNOWN LIMIT, measured not assumed: 'load-bearing' is a substring test on the subject, so a draft that paraphrases the subject ('H100 hourly rate' where the claim said 'H100 on-demand') files a real disagreement as cosmetic and the gate goes quiet. Fuzzy matching would close that and open a worse one \u2014 blocking closes over pairs that are not the same thing \u2014 and a check that cries wolf gets switched off. The gate is a floor, never a proof that nothing was missed.",
       "delete": [
         "4 separate disagreement passes (step 4.0 contradiction graph, 6 cross-locus, 6.5 orphan scan, 12 dialectic critic)"
       ],
@@ -131,23 +131,26 @@
           "id": "S3-1",
           "does": "contradiction detection pairs claims mechanically (same target, opposing stance / same entities, opposite conclusion / same scope, different numbers)",
           "status": "passed",
-          "evidence": "passed — driven by me: real disagreement (2.49 vs 6.31 usd/hr, different sources) -> 1 contradiction; identical values -> 0; different units (usd/hr vs usd/month) -> 0, so a different measurement is not treated as a disagreement; same source disagreeing with itself -> 0."
+          "evidence": "passed \u2014 driven by me: real disagreement (2.49 vs 6.31 usd/hr, different sources) -> 1 contradiction; identical values -> 0; different units (usd/hr vs usd/month) -> 0, so a different measurement is not treated as a disagreement; same source disagreeing with itself -> 0."
         },
         {
           "id": "S3-2",
           "does": "an open contradiction blocks close, and the cap prevents manufacturing",
-          "status": "todo"
+          "status": "passed",
+          "evidence": "passed \u2014 driven by me at the CLI. An undisposed load-bearing disagreement exits 1 with the reason naming both sides; a disposition carrying an empty `because` still exits 1. Load-bearing is COMPUTED (the subject appears in the draft), never judged, which is also the anti-manufacture guard: a conflict the draft never raises is filed cosmetic and blocks nothing (drive: an egress answer against a seeded GPU-price conflict -> exit 0, 1 cosmetic, 0 blockers). The cap is separately non-silent \u2014 17 seeded pairs -> 12 returned, suppressed=5, total_found=17."
         },
         {
           "id": "S3-3",
           "does": "both sides survive into the output with provenance and dual dating",
-          "status": "todo"
+          "status": "passed",
+          "evidence": "passed \u2014 driven by me. Ranking a side does NOT license dropping it: with a valid `ranked` disposition, a draft naming only the winner exited 1 with 6 blockers \u2014 the losing value, both source strings, and both as-of dates. Value matching is numeric, not substring, so $2.49/hr and 2.490 match while the 2.49 inside 12.49 does not. Dates are demanded only where the claim carries one."
         },
         {
           "id": "S3-4",
           "does": "END TO END: seeded conflicting-number question surfaces the conflict and refuses to close",
-          "status": "todo",
-          "is_check": true
+          "status": "passed",
+          "is_check": true,
+          "evidence": "passed \u2014 END TO END on a REAL corpus discrepancy, not a fixture. Verified the numbers myself first: AGENTIC_SEARCH_SPEC.md:180 (Adaptive-RAG table) gives Natural Questions one-step 32.40 vs multi-step 35.60 \u2014 multi-step wins \u2014 while :183 prose says iterating 'loses to one retrieval' on all three single-hop sets. Four drives: (1) conflict surfaced, no disposition -> exit 1; (2) ranked but the draft drops the losing side -> exit 1, 6 blockers; (3) both sides with provenance and dating -> exit 0; (4) the honest caveat shown rather than asserted \u2014 relabel both sides with one identical source string and the count drops to 0, because an intra-document inconsistency is a drafting problem by design and this gate is blind to it."
         }
       ]
     },
@@ -157,8 +160,8 @@
       "check": "Planted-defect, adversarial: take a finished report and (a) swap a cited note's body for a paraphrase supporting a different number, (b) insert a sentence asserting 'no source was found for X' where a cited note contains X. PASS = each check exits non-zero. A check nobody has watched go red is not evidence.",
       "unknown": "Whether byte-identity can be made non-vacuous on the standalone path, where anchors are currently bound to the whole note body so Tier A reduces to body==body.",
       "confidence": 0.65,
-      "shape": "Lead with STRUCTURE — a resolved id and a content hash are exact. Treat the semantic judge as a filter that ranks, never a gate that closes: on ExpertQA every system lands 55.2-60.0 BAcc, and a ~60-BAcc instrument cannot distinguish a 0.1% system from a 2% one.",
-      "trap": "AstaBench's Faker fabricates everything, does no research, and scores 39.2 on E2E-Bench for $0.026 — beating ReAct/gpt-5 at 30.0. Report-shaped output passes judges, so any check that grades SHAPE rewards fabrication.",
+      "shape": "Lead with STRUCTURE \u2014 a resolved id and a content hash are exact. Treat the semantic judge as a filter that ranks, never a gate that closes: on ExpertQA every system lands 55.2-60.0 BAcc, and a ~60-BAcc instrument cannot distinguish a 0.1% system from a 2% one.",
+      "trap": "AstaBench's Faker fabricates everything, does no research, and scores 39.2 on E2E-Bench for $0.026 \u2014 beating ReAct/gpt-5 at 30.0. Report-shaped output passes judges, so any check that grades SHAPE rewards fabrication.",
       "delete": [
         "5 critics + grader stub + fresh-reviewer + patcher + polish auditor",
         "the readability stage measured adding 0 citations in 19 minutes"
@@ -168,13 +171,13 @@
           "id": "S4-1",
           "does": "no-source-claim check: asserts every absence claim against the note store, exits 1 on a false one",
           "status": "passed",
-          "evidence": "passed — driven by me, not by its own tests. Planted the exact false claim a live run shipped ('No source was found for GPU depreciation schedules or datacenter PUE' against a note containing a 36-month schedule and PUE 1.2): 1 finding, CLI exit 1. Same report against a genuinely silent corpus: 0 findings, exit 0. It goes red for the right reason and does not fire on valid input."
+          "evidence": "passed \u2014 driven by me, not by its own tests. Planted the exact false claim a live run shipped ('No source was found for GPU depreciation schedules or datacenter PUE' against a note containing a 36-month schedule and PUE 1.2): 1 finding, CLI exit 1. Same report against a genuinely silent corpus: 0 findings, exit 0. It goes red for the right reason and does not fire on valid input."
         },
         {
           "id": "S4-2",
-          "does": "byte-identity is non-vacuous — anchors bind to a located span, not the whole body",
+          "does": "byte-identity is non-vacuous \u2014 anchors bind to a located span, not the whole body",
           "status": "passed",
-          "evidence": "passed — RED first: the test imported is_vacuous_span and failed with ImportError. Added is_vacuous_span to grounding/anchors.py; verifier.py now SKIPS Tier A on a whole-body anchor instead of crediting it (refusing it outright is what scored 111/111 unsupported on a live run). Driven on the real preserved fixture: a whole-body anchor over a 3,148-char note reports vacuous=True; a 97-char located span from the real claims file reports vacuous=False. build_from_claims DROPS an unlocatable quote — verified on both a paraphrase and a wrong-number variant. SELF-CAUGHT: my first version of the verifier test was a source grep and passed GREEN while is_vacuous_span was called but never imported — a NameError waiting for the first vacuous anchor. Replaced with a test that resolves the symbol at runtime."
+          "evidence": "passed \u2014 RED first: the test imported is_vacuous_span and failed with ImportError. Added is_vacuous_span to grounding/anchors.py; verifier.py now SKIPS Tier A on a whole-body anchor instead of crediting it (refusing it outright is what scored 111/111 unsupported on a live run). Driven on the real preserved fixture: a whole-body anchor over a 3,148-char note reports vacuous=True; a 97-char located span from the real claims file reports vacuous=False. build_from_claims DROPS an unlocatable quote \u2014 verified on both a paraphrase and a wrong-number variant. SELF-CAUGHT: my first version of the verifier test was a source grep and passed GREEN while is_vacuous_span was called but never imported \u2014 a NameError waiting for the first vacuous anchor. Replaced with a test that resolves the symbol at runtime."
         },
         {
           "id": "S4-3",
@@ -185,7 +188,7 @@
           "id": "S4-4",
           "does": "every check ships a planted-defect fixture and is proven RED before it counts",
           "status": "passed",
-          "evidence": "passed — both checks in this slice ship a planted-defect fixture and were watched going red before being trusted; the cold-use agent independently broke uncited-gate with a fabricated numeric claim and reported it flagged critical and exited non-zero."
+          "evidence": "passed \u2014 both checks in this slice ship a planted-defect fixture and were watched going red before being trusted; the cold-use agent independently broke uncited-gate with a fabricated numeric claim and reported it flagged critical and exited non-zero."
         },
         {
           "id": "S4-5",
@@ -197,12 +200,12 @@
     },
     {
       "id": "S5",
-      "capability": "It reaches the lanes nothing else can — my teardowns, my channels, a package's own source, a vendor's terms as of a date, a delta against a pinned ref.",
+      "capability": "It reaches the lanes nothing else can \u2014 my teardowns, my channels, a package's own source, a vendor's terms as of a date, a delta against a pinned ref.",
       "check": "For each lane, one question only that lane can answer, and the answer carries the lane's own evidence form (path:line / a yt video id + paraphrase / a file:line inside an installed package / a verbatim clause + section + as-of date). PASS = every lane returns a real hit OR an explicit zero naming what it looked for and whether the tool worked.",
       "unknown": "Whether artifact-RE needs a sandbox story before it can install and read third-party packages safely.",
       "confidence": 0.65,
-      "shape": "One reference file per lane carrying the ACCESS RECIPE — when to reach for it, exact commands, its traps, its reachability probe, what counts as evidence. Zero always-on cost while it stays inside one skill's references/ tree.",
-      "trap": "BrowseComp-Plus measured the retriever swap at 14.58% -> 93.49% on the same agent and same loop — reach is the largest lever in the pool. But the moment a lane becomes a registered skill it starts paying the shared description budget and this whole advantage dies.",
+      "shape": "One reference file per lane carrying the ACCESS RECIPE \u2014 when to reach for it, exact commands, its traps, its reachability probe, what counts as evidence. Zero always-on cost while it stays inside one skill's references/ tree.",
+      "trap": "BrowseComp-Plus measured the retriever swap at 14.58% -> 93.49% on the same agent and same loop \u2014 reach is the largest lever in the pool. But the moment a lane becomes a registered skill it starts paying the shared description budget and this whole advantage dies.",
       "delete": [
         "more scholarly APIs (7 registered, least-exercised lane, both preserved runs are web-doc lookups)",
         "per-kind modes behind a router",
@@ -213,13 +216,13 @@
           "id": "S5-1",
           "does": "local-corpus lane (delivered in S1) also routes articles via _manifest.json",
           "status": "passed",
-          "evidence": "passed — driven: `bad lane-local` reaches all 5 roots (714 files, 0 unreachable); article routing verified via _manifest.json (190 entries, real unguessable slugs incl. one truncated mid-word)."
+          "evidence": "passed \u2014 driven: `bad lane-local` reaches all 5 roots (714 files, 0 unreachable); article routing verified via _manifest.json (190 entries, real unguessable slugs incl. one truncated mid-word)."
         },
         {
           "id": "S5-2",
           "does": "practitioner-video lane: yt.sh sweep over channels.tsv, tier-scoped, captions marked SUBSTANCE-not-quotation",
           "status": "passed",
-          "evidence": "passed — driven: `yt.sh sweep \"harness|context engineering\" 200 core` returned real core-tier rows (AI Engineer talks). Tier-scoping is the fix for the timeout that previously hid the entire core tier behind a silent partial result."
+          "evidence": "passed \u2014 driven: `yt.sh sweep \"harness|context engineering\" 200 core` returned real core-tier rows (AI Engineer talks). Tier-scoping is the fix for the timeout that previously hid the entire core tier behind a silent partial result."
         },
         {
           "id": "S5-3",
@@ -262,12 +265,12 @@
     "S3",
     "S5"
   ],
-  "orderRationale": "By information per unit time, not by ease. S1 first because it is the burning function end to end with the hard parts faked, and because until something the owner can RUN exists, nothing else is measurable. S2 next because it carries the load-bearing unknown — the owner's whole thesis — and its check is a count that can come back zero. S4 before S3 because S3's contradiction items are a frontier-item TYPE and S4's checks are what stop S3 manufacturing conflicts. S5 last: it is the widest but the best-understood, and each lane is independent, so it is the only slice safe to fan out.",
+  "orderRationale": "By information per unit time, not by ease. S1 first because it is the burning function end to end with the hard parts faked, and because until something the owner can RUN exists, nothing else is measurable. S2 next because it carries the load-bearing unknown \u2014 the owner's whole thesis \u2014 and its check is a count that can come back zero. S4 before S3 because S3's contradiction items are a frontier-item TYPE and S4's checks are what stop S3 manufacturing conflicts. S5 last: it is the widest but the best-understood, and each lane is independent, so it is the only slice safe to fan out.",
   "notSlices": [
     {
       "item": "Deleting the 19-stage orchestration, graph/, the --codex translator, the polish/readability stages",
       "askedBy": "the evidence, not the owner",
-      "why": "Removal, not capability. It ships as cleanup once the replacement passes its checks — deleting first would destroy the only baseline we have."
+      "why": "Removal, not capability. It ships as cleanup once the replacement passes its checks \u2014 deleting first would destroy the only baseline we have."
     },
     {
       "item": "Plugin packaging and portability to opencode/Codex",
@@ -276,7 +279,7 @@
     },
     {
       "item": "A knowledge graph / entity store / triple store",
-      "askedBy": "nobody — explicitly forbidden twice",
+      "askedBy": "nobody \u2014 explicitly forbidden twice",
       "why": "DIRECTION: 'graphs will be overkill for research' and 'graphs are only similarity/intuintion'. Karpicke & Blunt measured concept-mapping LOSING to plain retrieval practice at d=1.50; graphiti/cognee/mem0 all ship traversal off."
     },
     {
@@ -287,7 +290,7 @@
     {
       "item": "More scholarly APIs",
       "askedBy": "nobody",
-      "why": "7 registered and least-exercised. Both preserved runs are web-doc lookups. The only defensible edit was registering the provider that already existed — done."
+      "why": "7 registered and least-exercised. Both preserved runs are web-doc lookups. The only defensible edit was registering the provider that already existed \u2014 done."
     },
     {
       "item": "Fixing the 18 pre-existing ruff errors in tests/",
@@ -297,7 +300,7 @@
   ],
   "openUnknowns": [
     "The owner's five real queries and the run that triggered the complaint are still not in DIRECTION.md. Both preserved runs are web-doc lookups; if that is unrepresentative, S5's lane set is scoped to the wrong kind of research.",
-    "What 'overcomplicated' costs him concretely — tokens, wall-clock, cognitive load, or bad reports — has never been priced.",
+    "What 'overcomplicated' costs him concretely \u2014 tokens, wall-clock, cognitive load, or bad reports \u2014 has never been priced.",
     "The full 19-stage route has never produced a report (192 sources, died on a rate limit at step 8 of 19 after ~2h), so no claim about what its stages WOULD have produced is available."
   ]
 }
