@@ -1,0 +1,115 @@
+"""Shape guards for `skills/research/SKILL.md` — the rebuilt research skill.
+
+Three of these encode findings that cost real money to learn, so they are checks
+rather than conventions:
+
+* **Size.** The skill must stay inside the per-skill compaction head. The thing it
+  replaced was a 411-line, 36,983-char entry file that was almost entirely a
+  dispatch table for a mechanism that never fired.
+* **Description budget.** A skill's `description` is its routing signal, and the
+  listing is *shortened* when the budget overflows — measured live on this machine
+  at 40,139 chars across 109 personal skills. A dropped description reads as a
+  skill that does not work, which is indistinguishable from the bug this rebuild
+  exists to fix, so the budget is asserted rather than hoped for.
+* **Named commands resolve.** The predecessor shipped a CLAUDE.md block naming a
+  `/hyperresearch` slash command and sixteen `hyperresearch-N-*` step skills that
+  have never existed. A guard was added afterwards (`tests/test_core/
+  test_agent_docs_commands.py`) — but it pinned only the *CLI* names, and the same
+  failure class recurred in the dimension nobody asserted. This test closes that
+  dimension for the new skill: every `bad <cmd>` it names is checked against the
+  live Typer app.
+"""
+from __future__ import annotations
+
+import re
+from pathlib import Path
+
+import pytest
+
+from bad_research.cli import app
+
+SKILL = Path(__file__).resolve().parents[2] / "skills" / "research" / "SKILL.md"
+
+MAX_LINES = 250          # Anthropic's own guidance: keep SKILL.md under 500 lines;
+                         # this skill holds itself to half that on purpose.
+MAX_DESCRIPTION = 500    # well inside the documented 1,536-char per-skill cap, because
+                         # the binding constraint here is the SHARED listing budget.
+
+
+def _frontmatter() -> str:
+    m = re.search(r"\A---\n(.*?)\n---", SKILL.read_text(encoding="utf-8"), re.S)
+    assert m, "SKILL.md must open with a YAML frontmatter block"
+    return m.group(1)
+
+
+def _field(name: str) -> str:
+    m = re.search(rf"^{name}:\s*(.*?)(?=^\w[\w-]*:|\Z)", _frontmatter(), re.S | re.M)
+    assert m, f"frontmatter is missing `{name}:`"
+    return m.group(1).strip()
+
+
+def test_skill_file_exists():
+    assert SKILL.is_file(), f"expected the research skill at {SKILL}"
+
+
+def test_body_stays_within_the_compaction_head():
+    n = len(SKILL.read_text(encoding="utf-8").splitlines())
+    assert n <= MAX_LINES, (
+        f"SKILL.md is {n} lines (cap {MAX_LINES}). Past this it stops being a skill and "
+        "starts being the dispatch table it replaced — move detail into references/."
+    )
+
+
+def test_description_stays_inside_the_shared_listing_budget():
+    d = _field("description")
+    assert d, "description must not be empty — it is the routing signal"
+    assert len(d) <= MAX_DESCRIPTION, (
+        f"description is {len(d)} chars (cap {MAX_DESCRIPTION}). The listing is shortened "
+        "when the shared budget overflows, and a dropped description reads as a skill "
+        "that does not work."
+    )
+
+
+def test_description_describes_the_user_request_not_the_skill():
+    """Routing signals are matched against what the user asked, not what the skill is."""
+    d = _field("description").lower()
+    assert "use when" in d or "answer" in d, (
+        "the description should say when to reach for this, in the user's terms"
+    )
+
+
+def test_every_bad_command_it_names_resolves_against_the_live_cli():
+    real = {c.name or (c.callback.__name__ if c.callback else "") for c in app.registered_commands}
+    real |= {g.name for g in app.registered_groups}
+    named = set(re.findall(r"`?bad ([a-z][a-z-]+)", SKILL.read_text(encoding="utf-8")))
+    missing = named - real
+    assert not missing, (
+        f"SKILL.md names commands that do not exist: {sorted(missing)}. "
+        "This is the exact failure class that shipped a /hyperresearch roster into five "
+        "real projects — a documented name that cannot resolve."
+    )
+
+
+def test_every_referenced_lane_file_exists():
+    """A lane pointer that resolves to nothing is a lane that silently never runs."""
+    body = SKILL.read_text(encoding="utf-8")
+    refs = set(re.findall(r"`(references/[\w/\-]+\.md)`", body))
+    assert refs, "the skill should point at its lane recipes by relative path"
+    missing = [r for r in sorted(refs) if not (SKILL.parent / r).is_file()]
+    assert not missing, f"SKILL.md references files that do not exist: {missing}"
+
+
+@pytest.mark.parametrize(
+    "phrase",
+    [
+        "frontier",              # the loop's one mechanism
+        "Captions are substance",  # the quotation rule that has already been violated once
+        "silver",                # the browser constraint, non-negotiable
+        "not in corpus",         # abstention as a first-class output
+    ],
+)
+def test_load_bearing_rules_survive_edits(phrase: str):
+    """These are not style. Each one is here because its absence produced a wrong answer."""
+    assert phrase.lower() in SKILL.read_text(encoding="utf-8").lower(), (
+        f"SKILL.md no longer carries {phrase!r} — that rule was removed, not refactored."
+    )

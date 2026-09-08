@@ -32,5 +32,9 @@ docs/KEYLESS_REBUILD_PLAN_OUTLINE.md
 docs/SPEC.md
 docs/enhancements/
 
-# research vault — per-run output/scratch (eval + real runs), never shipped
-research/
+# research vault — per-run output/scratch (eval + real runs), never shipped.
+# ROOT-ANCHORED on purpose. A bare `research/` matches a directory of that name at ANY
+# depth, and it was silently swallowing `skills/research/` — the entire research skill,
+# its SKILL.md and all eight lane recipes, invisible to git while looking committed.
+# Same failure class as an unanchored `reference/` that once hid a shipped skill's docs.
+/research/
