@@ -109,4 +109,9 @@ app.command("export")(_export_cmd)
 app.command("grounding-surface")(_grounding_surface_cmd)
 app.command("grounding-recall")(_grounding_recall_cmd)
 
+# ── local-corpus lane (research rebuild, slice 1) ─────────────────────────────
+from bad_research.cli.lanes import lane_local_cmd as _lane_local_cmd
+
+app.command("lane-local")(_lane_local_cmd)
+
 __all__ = ["app"]
