@@ -66,6 +66,32 @@ Worked example from this run:
 
 `bound=exact` is only allowed when the instrument returns a total the source itself computes (a `count(*)`, a billing line), never for anything sampled.
 
+## Driven on real data, 2026-09-08 — what the resolution actually costs
+
+The lane's core move, run against this repo's own commit stream (460 commits, 105.1 days,
+2026-05-26 .. 2026-09-08). One metric, one window, three bucket sizes:
+
+| buckets | peak | busiest bucket held |
+|---|---:|---:|
+| 60s | **8.000 commits/min** | 8 |
+| 3600s | 0.550 commits/min | 33 |
+| 86400s | 0.139 commits/min | 200 |
+
+**The hourly view understates the true peak by 93%, the daily view by 98% — on identical data.**
+Every one of those numbers is defensible and only the first answers "how bursty is this". So report
+a bound (`≥ 8/min at 60s resolution`), never a bare figure, and state the bucket size beside it or
+the number means nothing.
+
+Two honest notes from the same run, because a check that can only pass is not a check:
+
+- **The union check passed and did not discriminate.** Paging five pages of 100 gave 460 rows, 460
+  distinct ids, against the source's own count of 460 — but the naive sum-of-pages would *also* have
+  matched here. This run is a control, not a demonstration that the check catches anything. It earns
+  its place on the pages where the two diverge; do not cite a passing union check as evidence the
+  paging was sound unless you can say what it would have looked like broken.
+- **The control arm was 0.06s against a 0.00s no-op** (5 reps, median). A treatment that close to the
+  floor cannot support a claim about cost, and saying so is the result.
+
 ## Traps
 - **A plain sqlite path CREATES the file.** `sqlite3 /bad/path.db "select..."` made a real 0-byte `nope.db` and then said `no such table` — a missing-path error disguised as a schema error, plus a filesystem write. `file:...?mode=ro` returns `unable to open database file` and creates nothing. Verified both ways.
 - **Resolution understates peaks, always downward.** Same 4,354 events: 60s buckets peak at 11/min, 3600s buckets at 0.333/min. The coarse number is **3.0% of the true peak — a 33x understatement**. Averaging a bucket cannot recover what the bucket flattened, so the error only ever runs one way. This is why the honest form is `>= 11 events/min at 60s`, never `11 events/min`.

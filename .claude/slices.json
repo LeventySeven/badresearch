@@ -253,7 +253,8 @@
         {
           "id": "S5-7",
           "does": "live-instrument + people-track-record lanes",
-          "status": "todo"
+          "status": "passed",
+          "evidence": "passed \u2014 both lanes driven on real data, each producing a finding the recipe did not have. LIVE-INSTRUMENT, on this repo's own commit stream (460 commits, 105.1 days): one metric, one window, three resolutions -> 60s 8.000/min, 3600s 0.550/min, 86400s 0.139/min. The hourly view understates the true peak by 93% and the daily by 98%, on identical data, which is why the lane demands a bound plus the bucket size and not a bare figure. Two negative results recorded rather than dressed up: the union check passed (460 rows / 460 distinct / count 460) but the NAIVE sum would also have matched, so that run is a control and not a demonstration; and the control arm was 0.06s against a 0.00s no-op, too close to the floor to support any cost claim. PEOPLE-TRACK-RECORD: probe roster=45 gh=simonw; 26 topic candidates collapsing to 17 orbits (INDEPENDENT 5, Anthropic 4, Replit 2, Letta 2, 13 singletons). Then the real catch \u2014 an X handle is not a GitHub login, and a login that RESOLVES is not evidence it is the right account. `alexalbert__` fails visibly; `GeoffreyHuntley` resolves to `geoffreyhuntley` (47 repos, 1 follower, blog field pointing at github.com/ghuntley/) and returns 0 PushEvents, which the builder-vs-alum discriminator reads as 'alum'. The real account `ghuntley` has 810 repos and 2,870 followers. A succeeding lane step filed a prolific practitioner as inactive; the tell was in the profile already fetched. Both written back."
         },
         {
           "id": "S5-8",

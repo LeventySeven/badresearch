@@ -57,6 +57,24 @@ A person-claim needs four parts, in this order:
 Never cite a WebSearch digest as a quotation — it is a paraphrase (`~/.claude/.../memory/x-twitter-retrieval-paths.md`).
 
 ## Traps
+- **An X handle is not a GitHub login, and a login that RESOLVES is not evidence it is the right
+  account.** Measured 2026-09-08 across five roster handles: `alexalbert__` does not resolve at all
+  (a clean, visible failure). The dangerous one is `GeoffreyHuntley`, which resolves — GitHub
+  case-folds it to `geoffreyhuntley` — and returns **0 recent PushEvents**, which this lane's
+  builder-vs-alum discriminator reads as "not shipping". It is the wrong account. Side by side:
+
+  | login | repos | followers | blog field |
+  |---|---:|---:|---|
+  | `geoffreyhuntley` | 47 | **1** | `https://github.com/ghuntley/` — it points at another profile |
+  | `ghuntley` | 810 | **2,870** | `https://www.ghuntley.com/` |
+
+  A prolific practitioner would have been filed as an alum by a lane step that succeeded. **The tell
+  is inside the profile you already fetched**: a follower count in single digits beside a real
+  repo count, and a `blog` field pointing at another GitHub profile rather than at a site. Read
+  those two fields before you read the event count, and when the handle does not resolve, say so as
+  a MISSING outcome rather than scoring the person zero.
+- **A zero from this lane is almost never EMPTY.** Non-resolution, the wrong account, and a genuinely
+  quiet month are three different findings that all print `0`. Name which one you got.
 - **`silver extract <url>` is not URL-grounded here — REPRODUCED TWICE 2026-09-08.** Asked for
   `https://x.com/bcherny` and for `https://borischerny.com`; **both** returned a snapshot headed
   `- title: "Workers & Pages Pricing | Cloudflare" [url=https://www.cloudflare.com/plans/developer-platform/]`
