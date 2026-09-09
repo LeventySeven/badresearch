@@ -1,0 +1,981 @@
+{
+  "survived": {
+    "The same Feedly filter uses OPPOSITE defaults for two different kinds of uncertainty, and both are stated. The LLM adjudicator's prompt rule 5 fails closed \\u2014 'If the visible text is genuinely insufficient to tell, answer NO \\u2014 the filter's job is to remove noise, and an undecidable article is noise'. The runtime fails open \\u2014 a candidate never evaluated (cost guard tripped, or a model failure the retry did not recover) is KEPT, because 'a filter that silently empties a feed on an API outage is worse than one that under-filters'. Rule 3 additionally forbids the model from using popularity at all: 'Ignore the publication, the author, the popularity and your own opinion of the subject.'": {
+      "refuted": 0,
+      "kept": 3,
+      "reasons": [],
+      "corrections": [
+        "Skeptic angle 0 was to check the evidence exists and says this. It does \u2014 every quoted string resolves verbatim in /Users/seventyleven/Desktop/researchfms/teardowns/FEEDLY_PRODUCT_CODE.md (25,130 lines). Rule 5 fails closed at 11049-11051 (\"If the visible text is genuinely insufficient to tell, answ",
+        "Every quotation in the claim is verbatim-correct and the opposite-defaults mechanism is real, so the finding is nearly right rather than false. But two things must be fixed. (1) Attribution: this is not Feedly's filter. The repo is `feedly-replica` and the module docstring at FEEDLY_PRODUCT_CODE.md:",
+        "Every quote in the claim is verbatim present in the file, and six of the ten line citations are exact (rule 3 :11045, rule 5 :11049, fail-open :11196-11200, cost guard :10989 and :11183, negation :11141). The mechanism is therefore real executable-shaped code with both rationales written inline \u2014 no"
+      ]
+    },
+    "Feedly's replica derives its dedup band split from arithmetic, publishes the resulting recall, and then adds a second index channel specifically because the recall is bad at the threshold. 132 MinHash permutations split 12 bands \\u00d7 11 rows puts the S-curve inflection at (1/12)^(1/11) = 0.7979, matching Feedly's published 0.80 LSH threshold. That split catches a true 0.85-overlap pair 88.9% of the time and a 0.90 pair 98.9%, but only 66% exactly at 0.80 \\u2014 'the honest cost of a 12\\u00d711 split' \\u2014 so the 32-bit SimHash is split into 4 blocks of 8 bits and each is indexed, so by pigeonhole any pair within Hamming distance \\u22643 shares a block.": {
+      "refuted": 1,
+      "kept": 2,
+      "reasons": [
+        "Half the claim checks out; the load-bearing half does not. VERIFIED: NUM_PERM=132, BANDS=12, ROWS=11 with an assert (:4888, :5120-5127), and the table's P values reproduce to 4 dp in python \u2014 0.6596/0.8889/0.9891/0.0058 \u2014 and the pigeonhole statement (4x8 bits, Hamming<=3 => a clean block) is valid,"
+      ],
+      "corrections": [
+        "The cited evidence resolves exactly and the core mechanism is fully confirmed. FEEDLY_PRODUCT_CODE.md:5052-5090 is \u00a72.13 with the 6-row split table (5066-5073), the choice (5077-5084) and the recall patch (5086-5090). I independently recomputed every cell: 12x11 gives inflection 0.79780 and P = 0.65",
+        "Every number in the claim reproduces independently, and the provenance holds. Recomputed the S-curve table from scratch: P(0.80)=0.659648, P(0.85)=0.888931, P(0.90)=0.989102, P(0.50)=0.005844 \u2014 exact match to FEEDLY_PRODUCT_CODE.md:5070. Monte-Carlo over the actual construction in the file (blake2b "
+      ]
+    },
+    "The shipped mechanism for rejecting a candidate is a cheap model's own top-k list re-scored by an expensive model used ONLY as a veto, with two hard thresholds: keep as negative if cross-encoder score < 0.1, promote to positive if > 0.9. Skipping the veto is worse than doing no mining at all: MS MARCO MRR@10 goes 32.39 (in-batch baseline) -> 26.03 (raw hard negatives) -> 36.38 (denoised hard negatives) -> 37.02 (+ pseudo-labelled augmentation).": {
+      "refuted": 0,
+      "kept": 3,
+      "reasons": [],
+      "corrections": [
+        "Evidence resolves and the empirical core is exact. Verified twice independently: pulled the arXiv LaTeX source (arxiv.org/e-print/2010.08191) and cross-checked the ar5iv render. Paper is real (RocketQA, Qu et al., NAACL 2021). Table 3 is confirmed as the ablation table by source order (tbl-datastat=",
+        "The mechanism is real, implemented, and measured \u2014 not an aspiration or vendor claim. Verified against the primary source (ar5iv HTML of arXiv:2010.08191, NAACL 2021) and the released code (github.com/PaddlePaddle/RocketQA, research/RocketQA_NAACL2021). All five Table 3 numbers are verbatim: In-batc",
+        "On the assigned angle the number survives cleanly: all four MRR@10 values (32.39 / 26.03 / 36.38 / 37.02) appear verbatim in Table 3 of both the ar5iv HTML and the published NAACL PDF, on MSMARCO Passage Ranking, with a stated protocol (ERNIE 2.0 base dual-encoder / large cross-encoder, dev split of"
+      ]
+    },
+    "Learned per-query truncation ('decide how many candidates to pay for') does NOT beat a hardcoded constant. Across 8 truncation methods, 3 retrievers and 2 re-rankers on TREC-DL 19/20: with a strong first stage (SPLADE++ or RepLLaMA), Fixed-k=20 gives the best effectiveness/efficiency trade-off in every scenario and supervised methods' gains are not statistically significant. The headroom is real and unreachable: an oracle cut-off shows ~30% of queries need NO re-ranking at all (RepLLaMA first stage), ~5% with BM25.": {
+      "refuted": 0,
+      "kept": 3,
+      "reasons": [],
+      "corrections": [
+        "NOT REFUTED \u2014 every load-bearing number checks out verbatim against the primary source, and skeptic angle 1 is fully answered: this is a measurement, not an aspiration or vendor claim.\n\nAUTHENTICITY / MECHANISM REALITY. Fetched arXiv:2404.18185 abstract page live: title \"Ranked List Truncation for L",
+        "Verified against the primary source (arXiv:2404.18185v1, only version; SIGIR'24 pp.141-151), read directly from the saved page text. The load-bearing sentences are accurate, sometimes near-verbatim: line 399 states \"the unsupervised method Fixed-k (20) consistently achieves the best effectiveness/ef",
+        "The source resolves and says what is claimed. arXiv:2404.18185v1 is real, titled \"Ranked List Truncation for Large Language Model-based Re-Ranking\" by Meng/Arabzadeh/Askari/Aliannejadi/de Rijke, arXiv Comments field reads \"Accepted for publication as a long paper at SIGIR 2024\" with related DOI 10.1"
+      ]
+    },
+    "The accreting filter that demonstrably beats the static one is Continuous Active Learning (relevance feedback on the top-scored, retrained every batch) \\u2014 and the comparison is run with the static learner's training cost set to ZERO and it still loses. Concrete constants: seed = ONE relevant document; 100 randomly drawn documents presumptively labelled 'not relevant' each iteration to give the SVM a boundary; batch size starts at 1 and grows by ceil(B/10), which makes the run O(n log n + T(n)) instead of the O(n^2) that batch-size-1 would cost.": {
+      "refuted": 1,
+      "kept": 2,
+      "reasons": [
+        "REFUTED on the statistical warrant, though the engineering constants survive verbatim. Read the primary source (arXiv LaTeX e-print of 1504.06868, sigir.tex, 856 lines), not a rendering.\n\nCONFIRMED VERBATIM: Sec. 3.1 procedure \u2014 seed = one relevant document; \"Temporarily augment the training set by "
+      ],
+      "corrections": [
+        "The source exists, opens, and states nearly everything claimed \u2014 verbatim. I pulled arXiv:1504.06868v1 (PDF, 7pp) and confirmed each constant in place: step (2) seeds with the single document labeled \"relevant\"; step (3) \"Set the initial batch size B to 1\"; step (10) \"Increase B by ceil(B/10)\"; Sec.",
+        "I could not refute it. I pulled the PDF and the LaTeX source of arXiv:1504.06868v1 and checked every constant against the primary text, plus Lewis et al. (JMLR 2004) for the control number.\n\nMECHANISM IS REAL, NOT ASPIRATIONAL. Sec. 3.1 gives a fully specified 11-step algorithm, implemented over Cor"
+      ]
+    },
+    "A score threshold is only meaningful against the negative distribution it was calibrated on. Changing ONLY the negative sampler at test time (train negatives=BM25, test negatives=random) blows up expected calibration error by 25x: ECE 0.002 -> 0.050. Domain shift alone costs ~9x: 0.003 -> 0.028.": {
+      "refuted": 1,
+      "kept": 2,
+      "reasons": [
+        "Cells transcribed correctly; headline effect sizes overstated ~3x against the paper's own stated averages. Verified in arXiv:2101.04356 Table 1: UDC-trained row is 0.834/0.002 in-domain, 0.318/0.050 NS_random, 0.182/0.045 NS_sentenceBERT; MANTiS-trained row is 0.615/0.003 -> 0.422/0.028 on UDC. Tabl"
+      ],
+      "corrections": [
+        "The evidence resolves and every cited figure is exact. I pulled the arXiv LaTeX source (arxiv.org/e-print/2101.04356) and independently the published EACL PDF (aclanthology.org/2021.eacl-main.12.pdf). Confirmed: (1) tables/effectiveness_table.tex is Table 1 (inputted at paper.tex:114, before calibra",
+        "Verified against primary source, not a summary: downloaded the arXiv e-print (arxiv.org/e-print/2101.04356), read tables/effectiveness_table.tex and tables/calibration_table.tex directly, and cross-checked every cell against pdftotext of the peer-reviewed EACL PDF (aclanthology.org/2021.eacl-main.12"
+      ]
+    },
+    "Using rank/engagement as a relevance proxy does not merely add noise \\u2014 it converges to the WRONG ranker, and the error is asymptotic, so more data never fixes it. Naive rank-SVM trained on clicks has an essentially FLAT learning curve; propensity-weighted training approaches the full-information skyline.": {
+      "refuted": 0,
+      "kept": 3,
+      "reasons": [],
+      "corrections": [
+        "Every quote and number resolves verbatim in the primary source (arXiv:1608.04468, WSDM 2017), read at ar5iv: the \"essentially flat... asymptotic bias... does not decrease with more data\" sentence (Sec. 7.2), the p_r=(1/rank)^eta bias model with eta=1/eps_-=0.1 giving ~33% noisy clicks and 10% examin",
+        "The source exists and says what is claimed, verbatim. I downloaded arXiv:1608.04468 (PDF -> text) and separately pulled the ar5iv HTML the evidence names; both contain the exact sentence \"Furthermore, Naive SVM-Rank cannot make effective use of additional data and its learning curve is essentially f",
+        "Could not refute \u2014 this is the rare claim where every quoted string is verbatim and every number reproduces, in BOTH the arXiv preprint (ar5iv 1608.04468, only v1 exists) and the WSDM 2017 camera-ready (cs.cornell.edu/people/tj/publications/joachims_etal_17a.pdf). Verbatim confirmed: \"Naive SVM-Rank"
+      ]
+    },
+    "Venue/citation rank as a quality proxy inverts hard: of 18 deep-learning top-n recommendation papers from KDD/SIGIR/WWW/RecSys 2015-2018, only 7 (39%) were reproducible, 6 of those 7 were beaten by simple tuned kNN or graph baselines, and in one case 'a non-personalized method that recommends the most popular items to everyone was the best one in terms of certain accuracy measures'.": {
+      "refuted": 1,
+      "kept": 2,
+      "reasons": [
+        "The numbers and quotes check out against the primary source, but the headline claim is not what the source establishes, and two riders are contradicted by it.\n\nVERIFIED (arXiv:1907.06902 PDF, read in full): \u00a72.1 \"we ended up with a collection of 18 relevant papers\" from KDD, SIGIR, TheWebConf (WWW),"
+      ],
+      "corrections": [
+        "The evidence resolves and the empirical core is verbatim-accurate, but the framing overreaches in three places.\n\nCONFIRMED (ar5iv HTML of arXiv:1907.06902 v3, fetched and read directly):\n- Sec. 2.1: \"long papers ... between 2015 and 2018 in the following four conference series: KDD, SIGIR, TheWebCon",
+        "Every load-bearing number and the quote check out verbatim against the camera-ready PDF and the ar5iv HTML (fetched to /private/tmp/claude-501/-Users-seventyleven-Desktop/47bf30ba-3257-44d3-a6e3-5cfa643debb0/scratchpad/recsys19_verify_68427/{p.pdf,p_pdf.txt,p.txt}).\n\nCONFIRMED, with protocol: Sec. 2"
+      ]
+    },
+    "The 'right answer' a filter is trained to keep is often not the best answer available: on MS MARCO, crowd assessors prefer a neural ranker's top passage over the official gold label 58.6% of the time when they disagree, the official gold labels win only 46.6% of their head-to-head pairings, and a PERFECT ranker under the official labels scores MRR@10 = 0.3320 under preference labels.": {
+      "refuted": 0,
+      "kept": 3,
+      "reasons": [],
+      "corrections": [
+        "Opened the source and checked every figure. arXiv:2109.00062 \"Shallow pooling for sparse labels\" (Arabzadeh, Vtyurina, Yan, Clarke) exists and states each number verbatim. Sec 2.1: \"the development set comprises 6,980 queries... In the development set 6,590 queries (94%) have only a single qrel and ",
+        "Every number in the claim is verbatim correct against the primary source (arXiv:2109.00062v2 TeX source, cross-checked against the cited ar5iv rendering): 6,980 dev queries with 6,590 (94%) single-qrel; Category A 1,228 vs 640 (65.7%) and Category B 2,116 vs 2,996 (58.6%); preference qrels 1,598/91.",
+        "All three headline numbers survive verification against the primary source (arXiv:2109.00062v2, downloaded PDF, pdftotext \u2014 not the ar5iv rendering). (1) 58.6% \u2014 Table 2, Category B: 2,996 of 5,112 queries where ranker top-1 != qrel; 2996/5112 = 58.607%; \u00a73.2 says \"nearly 59%\". (2) 46.6% \u2014 \u00a75.1 verb"
+      ]
+    },
+    "The diagnostic that separates 'genuinely bad' from 'actually good but unlabelled' is gradient VARIANCE, not score, and the operational rule falls out of it: sample negatives whose relevance score sits NEAR a known positive's score, not at the top of the list. Gradient means decay gently across the top 200 (1.0 -> 0.25) while gradient variances of the top 10 are dramatically larger \\u2014 because those are false negatives.": {
+      "refuted": 0,
+      "kept": 3,
+      "reasons": [],
+      "corrections": [
+        "The source resolves and says almost exactly this. arXiv:2210.11773 (SimANS, Zhou et al., EMNLP 2022 Industry Track, ACL Anthology 2022.emnlp-industry.56, pp. 548-559) Sec. 3.2 states verbatim: \"the gradient means of the top 200 negatives are still in the same order of magnitude (1.0 -> 0.25), while ",
+        "Read the primary source directly (ar5iv HTML of arXiv:2210.11773 converted to text, plus the ACL Anthology record), not a digest. Every load-bearing element resolves verbatim. Sec. 3.2: \"the gradient means of the top 200 negatives are still in the same order of magnitude (1.0\u27f60.25), while the gradie",
+        "Verified against the arXiv LaTeX source (arxiv.org/e-print/2210.11773, emnlp2022.tex), not a summary. Every quoted element is verbatim accurate: the gradient curve (\"the gradient means of the top 200 negatives are still in the same order of magnitude (1.0->0.25), while the gradient variances of the "
+      ]
+    },
+    "The exchange rate for a second independent reader is measured and near-symmetric: one screener gets sensitivity 86.6% (95% CI 80.6\\u201391.2) / specificity 79.2%; two screeners OR-combined get 97.5% (95.1\\u201398.8) / 68.7%. Buying +10.9pp of recall costs \\u221210.5pp of specificity \\u2014 redundancy is not free, it is a trade the field makes knowingly because the loss function is asymmetric.": {
+      "refuted": 0,
+      "kept": 3,
+      "reasons": [],
+      "corrections": [
+        "The evidence resolves and says what is claimed. Europe PMC (PMID 31972274) and Crossref both return DOI 10.1016/j.jclinepi.2020.01.005 = Gartlehner G, Affengruber L, Titscher V, Noel-Storr A, Dooley G, Ballarini N, Koenig F, \"Single-reviewer abstract screening missed 13 percent of relevant studies: ",
+        "SURVIVES on angle 1 (mechanism real, not aspiration/vendor), with three framing overstatements that need trimming.\n\nCONFIRMED VERBATIM. All six numbers and every protocol detail match the source, retrieved independently from Europe PMC (resultType=core), Semantic Scholar, OpenAlex, and the Maastrich",
+        "Every number in the claim is verbatim correct against the published full text (retrieved via Wayback from the journal's own OA page), and the OR-combination rule is confirmed in Methods \u00a72.6. So the claim is not refuted. But its load-bearing word \u2014 \"measured\" \u2014 does not survive the protocol. No part"
+      ]
+    },
+    "The shipped Cochrane RCT Classifier rejects candidates before any full-text read using a three-dataset procedure with a hard abstain rule: train (280,620 Embase records, 20,454 = 7.3% positive), calibrate the threshold on a DIFFERENT set (49,025 Clinical Hedges records) by ordering all records by score and reading off the probability at exactly 99% recall, then evaluate recall on a THIRD set of 58,283 studies actually included in 4,296 real Cochrane Reviews. At the chosen threshold: precision 8.3% (1 in 12 retrieved is a true positive), specificity 0.63, C=0.978, Brier 0.048, and 58% of records auto-discarded.": {
+      "refuted": 0,
+      "kept": 3,
+      "reasons": [],
+      "corrections": [
+        "The evidence resolves and says what the claim says. Local copy PMC8168828.txt (+ .xml) confirms the citation (Thomas, J Clin Epidemiol 133:140-151, 2021) and every number: \u00a73 \"280,620 Embase records ... 20,454 (7.3%) were deemed to be RCTs\"; \u00a73.1 \"The 49,025 records from the Clinical Hedges data set",
+        "All figures resolve verbatim in the local source (PMC8168828.txt = Thomas et al., J Clin Epidemiol 2021;133:140-151, PMID 33171275): 280,620 / 20,454 (7.3%) training (\u00a73); 49,025 Clinical Hedges with 1,587 RCTs (\u00a72.4); the order-by-score-and-read-off-99%-recall threshold procedure near-verbatim in \u00a7",
+        "Every element checks out verbatim in PMC8168828 (Thomas et al., J Clin Epidemiol 2021;133:140-151, doi 10.1016/j.jclinepi.2020.11.003, PMID 33171275), read in full at scratchpad/pmc/PMC8168828.txt. Training: \"screening of 280,620 Embase records (January 2014 to July 2016) by Cochrane Crowd. Of these"
+      ]
+    },
+    "That classifier's 5.7 points of recall come entirely from an ABSTAIN rule, not from the model: records with fewer than 400 characters of abstract or 15 characters of title are never scored \\u2014 they route to a human. With thin records fed in, recall is 93.8% (3,600 of 58,283 lost); with them routed out, 99.5% (224 lost). The paper calls 94% 'unacceptably low'.": {
+      "refuted": 0,
+      "kept": 3,
+      "reasons": [],
+      "corrections": [
+        "I fetched the source and checked every number against the text, not a summary. The paper is real and is what's cited: James Thomas et al., \"Machine learning reduced workload with minimal risk of missing studies: development and evaluation of a randomized controlled trial classifier for Cochrane Revi",
+        "Read the primary source directly (fetched https://pmc.ncbi.nlm.nih.gov/articles/PMC8168828/ \u2014 Thomas et al., J Clin Epidemiol 2021;133:140-151, \"Machine learning reduced workload with minimal risk of missing studies\"; local text at /private/tmp/claude-501/-Users-seventyleven-Desktop/47bf30ba-3257-44",
+        "Every load-bearing number and quote resolved against the primary source (PMC8168828, full text read). \u00a72.6 \"Excluded data\" states the 400-char abstract / 15-char title cutoffs verbatim and confirms that below-cutoff records \"are referred for manual screening by members of the Cochrane Crowd\" in the "
+      ]
+    },
+    "The accreting stopping rule that works is a hypergeometric test on the UNSEEN pool: sample from the not-yet-screened remainder, test H0 'recall < target', stop when you can reject it at your chosen confidence. Ranked quasi-sampling saved a mean 17% of work and missed the 95% recall target in 0.95% of cases; random sampling 15% / 3.29%. The cheap heuristics fail: baseline-inclusion-rate sampling missed the target 39.67% of the time with a modal work saving of 0%, and 'stop after 50 consecutive irrelevant' saved 41% of the work but missed the target in 39% of cases.": {
+      "refuted": 0,
+      "kept": 3,
+      "reasons": [],
+      "corrections": [
+        "Could not refute. Every number in the claim matches the source verbatim in PMC7700715 \u00a7Results: \"saving a mean of 17% of the work compared to 15%, and missing the target in only 0.95% compared to 3.29% of cases\"; BIR \"misses the 95% recall target in 39.67% of cases, while the most common work saving",
+        "The evidence fully resolves and every number is verbatim correct. The local copy is the genuine article (XML metadata: Systematic Reviews 2020;9, PMID 33248464, DOI 10.1186/s13643-020-01521-4, Callaghan & Muller-Hansen, \"Statistical stopping criteria for automated screening in systematic reviews\"). ",
+        "Every number in the claim is verbatim in the source and its protocol resolves. PMC7700715 \u00a7Results: \"saving a mean of 17% of the work compared to 15%, and missing the target in only 0.95% compared to 3.29% of cases\"; \"misses the 95% recall target in 39.67% of cases, while the most common work saving"
+      ]
+    },
+    "Almost nobody measures what a false negative COSTS. Across 16 full-text screening-methodology papers I read, exactly one goes downstream from 'we missed X%' to 'did the answer change'. Waffenschmidt 2019 found that in 3 of 7 single screenings (18,148 references) the meta-analysis findings would have changed substantially \\u2014 and all 3 were the same less-experienced reviewer. The other 4, by experienced reviewers, had no or negligible impact. The miss rate itself splits the same way: median 3% missed (range 0\\u201321%) for 6 experienced reviewers vs 13% (0\\u201358%) for 3 inexperienced.": {
+      "refuted": 1,
+      "kept": 2,
+      "reasons": [
+        "REFUTED on the evidence, not on the source. Corpus: /private/tmp/claude-501/-Users-seventyleven-Desktop/47bf30ba-3257-44d3-a6e3-5cfa643debb0/scratchpad/pmc/\n\nWHAT SURVIVES \u2014 every Waffenschmidt number is verbatim correct. PMC6599339.txt/.xml confirms BMC Med Res Methodol 19:132 (2019), IQWiG Cologne"
+      ],
+      "corrections": [
+        "I opened the primary source and the local corpus. SUBSTANCE CONFIRMED, RECEIPT REFUTED.\n\nSource exists and is exactly as cited: /private/tmp/claude-501/-Users-seventyleven-Desktop/47bf30ba-3257-44d3-a6e3-5cfa643debb0/scratchpad/pmc/PMC6599339.xml \u2192 Waffenschmidt S, Knelangen M, Sieben W, et al., \"Si",
+        "Substance survives; the offered receipt does not. VERIFIED verbatim in the full text on disk (pmc/PMC6599339.txt): \"The impact of missing studies on the findings of meta-analyses had been reported in 2 evaluations for 7 single screenings including a total of 18,148 references. In 3 of these 7 single"
+      ]
+    },
+    "There is a published spec for what makes a stopping rule legitimate, and its third clause invalidates every hand-tuned threshold: a rule must (1) target a user-set recall level, (2) emit a calibrated confidence \\u2014 at 95%, it must trigger before the target is met no more than 5% of the time \\u2014 and (3) be 'free from additional parameters that require knowledge of the screening outcomes to be set effectively'. 'Stop after X consecutive irrelevant' fails (3), because the user has no way to know the right X a priori. Meanwhile the field's own guidance has not caught up: Cochrane Handbook 6.4 still does not recommend early stopping, and PRISMA 2020 requires only 'details of automation tools used', with no rationale for the stopping decision \\u2014 while 46 screening tools shipped as of January 2024, many with ML prioritisation and no validated stopping rule.": {
+      "refuted": 1,
+      "kept": 2,
+      "reasons": [
+        "The three attributes are quoted accurately (clause 3 is verbatim), and the Cochrane 6.4 / PRISMA 2020 / 46-tools sentences all exist in PMC11583672. But the claim's framing inverts the source's status and its number lacks protocol. (1) \"There is a published spec\" \u2014 the article is typed article-type="
+      ],
+      "corrections": [
+        "Skeptic angle 0 clears fully: the evidence exists, resolves, and is cited to the right section. Callaghan M, M\u00fcller-Hansen F, Bond M, Hamel C, Devane D, Kusa W, O'Mara-Eves A, Spijker R, Stevenson M, Stansfield C, Thomas J, Minx JC, \"Computer-assisted screening in systematic evidence synthesis requi",
+        "I read the full PMC text directly (/private/tmp/claude-501/-Users-seventyleven-Desktop/47bf30ba-3257-44d3-a6e3-5cfa643debb0/scratchpad/pmc/PMC11583672.txt and .xml). Every quote and number in the claim checks out verbatim, so the claim survives \u2014 but three framings need correction, and the skeptic a"
+      ]
+    },
+    "The recall/precision exchange rate for pushing a classifier to a recall target is steep and measured: the same ensemble model scored recall 0.902 / precision 0.953 at a balanced 0.5 cutoff, and after moving the cutoff to hit recall 0.99, precision fell to 0.353 / 0.483 / 0.400 across three datasets. Roughly 9 points of recall cost 55\\u201360 points of precision. In practice this is accepted because the base rate is brutal: standard database retrieval yields only ~7% true RCTs, and ML-assisted double screening measured recall 0.998 versus 0.919 for a single human reviewer, at 45.4% average labour saving (74.4% in a stepwise configuration).": {
+      "refuted": 1,
+      "kept": 2,
+      "reasons": [
+        "The quoted figures are all verbatim-correct in Qin et al. 2025 (Res Synth Methods 16(2):350-363, PMC12527483), but three of the claim's load-bearing moves fail on protocol and denominator.\n\n(1) THE EXCHANGE RATE IS A CROSS-DATASET SUBTRACTION, AND ITS RANGE IS WRONG. Table 1 (0.5 cutoff) reports ONL"
+      ],
+      "corrections": [
+        "Skeptic angle 0 fails to refute: both sources resolve and say what is attributed to them, nearly verbatim. PMC12527483 (Qin et al., Res Synth Methods 2025) \u00a73.1.1 gives recall 0.902 / precision 0.953, and the protocol is stated as \"our model (balance) with a 0.5 cutoff\" \u2014 the claim's \"balanced 0.5 c",
+        "The mechanism survives skeptic angle 1: this is a peer-reviewed methods paper (Res Synth Methods 2025;16(2):350-363, doi 10.1017/rsm.2025.3) with a real held-out external set, not an aspiration or vendor claim, and every quoted number appears verbatim in the source. The balanced cutoff is literally "
+      ]
+    },
+    "The rule that CAUGHT them is a distinctive-token grep in the note->source direction with `0 hits` as the reject signal \\u2014 and it is entirely manual. The protocol: resolve every section to its source video by enumerating the channel and matching speaker+title+duration (33/33 resolved, durations matching to the second in 31 cases), fetch captions for all 50 videos, then for each section pull its most distinctive assertions (numbers with units, product and model names, quoted strings, benchmark names, API identifiers) and `grep -i` each against that talk's own captions.": {
+      "refuted": 0,
+      "kept": 3,
+      "reasons": [],
+      "corrections": [
+        "The cited evidence exists and says nearly all of this. /Users/seventyleven/Desktop/researchfms/Transcripts/_queue/sweep_2026-08-04/audit_dlai.md \u00a71 carries the yt-dlp --flat-playlist --playlist-end 700 command over 570 videos, \"33 distinct source videos, 913 minutes / 15.2 hours, 155,764 caption wor",
+        "Nearly everything checked out, and several parts I could verify independently rather than take on the audit's word. Recomputing from audit_dlai.md's own triage table reproduces every headline aggregate exactly: 33 distinct video ids, 155,764 source words, 57,840 section words over 62 mapped rows, 91",
+        "The mechanism is real, dated, executed, and independently reproducible \u2014 not an aspiration and not a vendor claim. I re-fetched captions today with the repo's own pipeline (fetch_batch.sh's yt-dlp call + clean_vtt.py) for two of the 33 videos and got source-word counts matching the audit's table EXA"
+      ]
+    },
+    "The only BLOCKING depth gate is orthogonal to fabrication, and using it as a fabrication proxy is worse than useless. Recomputed from the audit's own triage table: SUSPECT (fabricated) sections have median retention 18.0% and THIN (faithful) sections have median retention 18.0% \\u2014 identical. Zero of 21 SUSPECT and zero of 41 THIN clear the 75% floor. Cutting the 21 lowest-retention sections would delete 14 faithful sections to catch 7 fabricated ones.": {
+      "refuted": 0,
+      "kept": 3,
+      "reasons": [],
+      "corrections": [
+        "Could not refute; every load-bearing element reproduced from the named primary source. (1) Arithmetic: parsing the 62 retention-bearing rows of audit_dlai.md \u00a74 gives SUSPECT n=21 median 18.0 mean 19.47 range 5.5-44.6 and THIN n=41 median 18.0 mean 22.81 range 7.2-59.5 \u2014 exactly as claimed; 0/21 and",
+        "Evidence resolves and the entire numeric payload reproduces exactly on an independent re-parse of \u00a74 of /Users/seventyleven/Desktop/researchfms/Transcripts/_queue/sweep_2026-08-04/audit_dlai.md: 62 rows carry both a retention figure and a verdict; SUSPECT n=21 median 18.0% mean 19.47% range 5.5-44.6",
+        "The arithmetic reproduces exactly and independently. Parsing the 83-row triage table in audit_dlai.md \u00a74: 62 rows carry both a retention figure and a verdict (21 SUSPECT \u2014 4 of the 25 SUSPECT rows have \"\u2014\" retention; 41 THIN). SUSPECT median 18.0%, mean 19.47%, range 5.5\u201344.6%. THIN median 18.0%, me"
+      ]
+    },
+    "In badresearch's funnel, popularity beats every quality dimension COMBINED by design, and the arithmetic is exact. The composite is `rrf + utility/18 * (1/60)`. The full 0->18 utility swing is worth 1/60 = 0.01667. One extra SERP sighting at rank 1 is worth 1/(60+1) = 0.01639. So a candidate that appears in two more (query, provider) lists outranks a candidate with a perfect authority+novelty+stance+coverage+redundancy+freshness score. RRF consensus is explicitly uncapped.": {
+      "refuted": 0,
+      "kept": 3,
+      "reasons": [],
+      "corrections": [
+        "Every cited line resolves verbatim and the mechanism is real, confirmed by executing the shipped code. rank.py:131 is `return rrf + util * (1.0 / rrf_k)`; the \"Consensus is deliberately UNCAPPED\" docstring is at :48-51; the novelty line is at :85. It is not dead code: orchestrator.py:221 calls `rank",
+        "The mechanism is real, executable, and load-bearing \u2014 not an aspiration. Verified: rank.py:131 is literally `rrf + util * (1.0 / rrf_k)` with `util = utility_score(...)/18.0`; rrf_k=60 in BOTH modes (config.py:57 full, :68 light); the \"Consensus is deliberately UNCAPPED\" and \"RRF dominates; utility ",
+        "Every load-bearing part survives direct source verification. rank.py:129-131 is exactly `rrf + (utility_score/18.0) * (1.0/rrf_k)`; rrf_k is 60 in BOTH modes (config.py:57, :68) with no CLI/env/override path in src/, so the composite is literally `rrf + utility/18 * (1/60)`. The 'deliberately UNCAPP"
+      ]
+    },
+    "compound-v moves the filter OFF the query and ONTO the publisher, on an explicit and measured false-negative argument: 'a false positive costs one transcript; a false negative costs a source you never knew existed.' The measurement behind it: YouTube's own in-channel search returned 9 results where a local title sweep over the same channels returned 338 \\u2014 a 37.6x recall gap. The reasoning for the publisher registry is that the noise is not keyword-filterable because 'it uses the same words as the real thing. It is filterable by WHO PUBLISHED IT.'": {
+      "refuted": 1,
+      "kept": 2,
+      "reasons": [
+        "The design half is verbatim-true; the measured half \u2014 the only empirical backing \u2014 fails on all three tests. (1) NO PROTOCOL: \"9 vs 338\" appears exactly once in the whole repo (references/public-sources.md:55, added in bc87fb0, 2026-09-02) with no query, no regex, no channel count, no per-channel li"
+      ],
+      "corrections": [
+        "Every citation resolves at exactly the cited line against a clean working tree (git status empty for all three files). yt.sh:201, channels.tsv:12 and public-sources.md:56 each carry the false-negative sentence verbatim (channels.tsv wraps it onto line 13; public-sources.md:55 is the measurement imme",
+        "The mechanism is real code, not an aspiration or a vendor claim, and every structural part of the claim resolved. The sentence appears verbatim at all three cited locations (yt.sh:201, channels.tsv:12-13, public-sources.md:56-57 \u2014 yt.sh uses a comma, the other two a semicolon). `csearch` is document"
+      ]
+    },
+    "A false-negative in the owner's own retrieval tooling, measured today and traceable to a single character: `TRANSCRIPTS_*.md` is a PREFIX glob matching 41 files where `*TRANSCRIPT*.md` matches 42. The missing file is ICML_TRANSCRIPTS.md \\u2014 23,000 lines, 761 `**Authors:**` rows, ~3,074 distinct researcher names, more than the other 41 files hold combined. For a 'find all the researchers' question the glob hid 77% of the enumerable population.": {
+      "refuted": 0,
+      "kept": 3,
+      "reasons": [],
+      "corrections": [
+        "Reproduced every load-bearing number independently on disk, from a re-runnable one-line protocol. `ls TRANSCRIPTS_*.md` returns 41, `ls *TRANSCRIPT*.md` returns 42, and `comm` on the two sorted lists gives exactly one delta: ICML_TRANSCRIPTS.md. That file is literally 23,000 lines (`wc -l` \u2192 23000, ",
+        "The core is real and I reproduced it independently today. Commit 652cfd4 exists with the quoted message verbatim; docs/sweeps/2026-09-09-roster-recall.md exists and says this. Re-measured live: TRANSCRIPTS_*.md -> 41, *TRANSCRIPT*.md -> 42, dropped file ICML_TRANSCRIPTS.md, which is 23,000 lines exa",
+        "Could not refute the substance; it survives independent measurement. Verified live in /Users/seventyleven/Desktop/researchfms/Transcripts: `TRANSCRIPTS_*.md` matches 41, `*TRANSCRIPT*.md` matches 42, and `comm` shows the single dropped file is ICML_TRANSCRIPTS.md. That file is exactly 23,000 lines w"
+      ]
+    },
+    "An accreting filter with a false-negative canary now exists on disk, written today and UNTRACKED \\u2014 checks/discriminate.py. A reject-signal is a token that recurs across REJECTED items and appears in NO accepted item (MIN_SUPPORT=2); known-good items are planted in the pool, and if the learned rules would kill one, the run is told WHICH RULE did it before the cut ships. With no canaries the verdict is `None` and prints UNMEASURED, never `True`.": {
+      "refuted": 1,
+      "kept": 2,
+      "reasons": [
+        "The mechanism half verifies exactly; the warrant number and the tracking status do not.\n\nVERIFIED: MIN_SUPPORT=2 at discriminate.py:39. Reject-signal = token recurring across rejects minus all accepted tokens (reject_signals()). _why_rejected() names the rule and its support count before the cut. Wi"
+      ],
+      "corrections": [
+        "Skeptic angle 1 fails to land: the mechanism is real and executable, not an aspiration. I drove it end-to-end rather than reading it. `./.venv/bin/bad discriminate --decisions ... --candidates ... --canaries ...` learned {'tools':2,'roundup':2,'listicle':2} from 3 prior decisions, cut a candidate na",
+        "The evidence resolves and every load-bearing technical assertion survives execution, not just reading. discriminate.py (195 lines) exists with MIN_SUPPORT = 2 at line 39 exactly as cited; the reject-signal rule at :111-129 behaves as described when driven (two rejects sharing tokens yield {'blog':2,"
+      ]
+    },
+    "The `re-quality-gate` skill \\u2014 the owner's own 'Bullshit Detector' for deciding whether a candidate section is real work or padding \\u2014 is prose only. It has no executable check, no script, no threshold; it is a table of questions and a 4-tier taxonomy. Its own case study measures what that costs: teardowns/NIA.md grew to 43,627 lines of which 'less than ~10% was load-bearing architectural content', and was rewritten to ~2,500 lines twelve days later.": {
+      "refuted": 0,
+      "kept": 3,
+      "reasons": [],
+      "corrections": [
+        "The cited evidence resolves completely and says what the claim says it says. /Users/seventyleven/.claude/skills/re-quality-gate/SKILL.md exists (105 lines, 7,718 bytes) and is the ONLY file in that directory \u2014 no scripts subdir, no reference files; the sibling re-source-first and re-server-side-hidd",
+        "The load-bearing half survives verification and is in fact strengthened. The skill is genuinely prose-only: all three copies on disk (~/.claude/skills/re-quality-gate/, researchfms/.agents/skills/, and the 20260803 backup) contain exactly one file, SKILL.md, 105 lines / 7,718 bytes, with no script, ",
+        "The structural half is fully confirmed and the line numbers survive independent verification in git; only the verb \"measures\" and one supporting-evidence line need correction.\n\nCONFIRMED. /Users/seventyleven/.claude/skills/re-quality-gate/ contains exactly one file, SKILL.md (105 lines, 7,718 bytes)"
+      ]
+    },
+    "MTEB computes, on EVERY retrieval and reranking evaluation, an nAUC abstention score that measures whether a filter's own confidence signal is better than random at choosing what to discard \\u2014 normalized between the oracle curve (abstain on the truly worst) and the flat curve (abstention does nothing). It needs no threshold and costs nothing: the confidence signals are read straight off the score vector.": {
+      "refuted": 0,
+      "kept": 3,
+      "reasons": [],
+      "corrections": [
+        "The mechanism is real running code, not an aspiration or vendor claim, and every cited line resolves at mteb@df7998e. Confirmed in /private/tmp/claude-501/-Users-seventyleven-Desktop/47bf30ba-3257-44d3-a6e3-5cfa643debb0/scratchpad/lane/mteb2/mteb/_evaluators/retrieval_metrics.py: confidence_scores a",
+        "The evidence resolves exactly. Cloned embeddings-benchmark/mteb; commit df7998eb exists (\"Include all benchmark memberships in task scores (#5425)\"). mteb/_evaluators/retrieval_metrics.py at that commit is 662 lines (sha1 ff866b514f9c8b4942b67c76e2cd6cb80992e512) and every cited line number is corre",
+        "Verified in source at the exact commit and by executing the code. Clone confirmed at df7998ebc8cee92d902f2532005bb3dedd7cce5a of github.com/embeddings-benchmark/mteb. Every cited line resolves: :25 is the 0.0-0.9 rate grid; confidence_scores at :273-299 (claim said 273-300, one blank line off) retur"
+      ]
+    },
+    "TRL logs `frac_reward_zero_std` \\u2014 the fraction of candidate groups where the discriminator produced NO spread and therefore no decision. It is the filter's abstention rate, measured every step, and it is free.": {
+      "refuted": 1,
+      "kept": 2,
+      "reasons": [
+        "Citations resolve exactly (trl@e78a93bd: is_std_zero at grpo_trainer.py:2806 and :2818, emitted :2848, nan_to_num at :2828 with the comment at :2826-2827), and \"free\"/\"does not accrete\" hold. The interpretive core is refuted three ways. (1) TRL's own doc (docs/source/grpo_trainer.md:189) defines it "
+      ],
+      "corrections": [
+        "Mechanism is real and every cited line resolves verbatim at trl@e78a93bd28fa12c61fc83ad97dff45dd24e3c2ac. grpo_trainer.py:2806 and :2818 are exactly `is_std_zero = torch.isclose(std_rewards, torch.zeros_like(std_rewards))  # for logging` (the sum_then_normalize and normalize_then_sum branches); :284",
+        "The cited evidence resolves exactly and verbatim. Commit e78a93bd28fa12c61fc83ad97dff45dd24e3c2ac exists (Sep 9 2026, \"Sync the model config pad token id with the tokenizer in the trainers (#7097)\"), and all five line numbers are correct to the line in trl/trainer/grpo_trainer.py: :2806 and :2818 ar"
+      ]
+    },
+    "open-instruct logs a TYPED discard ledger every training step: not 'we dropped N' but N broken into three named causes, each meaning something operationally different \\u2014 `all_zero` (every candidate scored 0), `all_solved` (every candidate scored max), `nonzero_std0` (every candidate scored the same middling value). The counters are returned as first-class fields, not just printed.": {
+      "refuted": 0,
+      "kept": 3,
+      "reasons": [],
+      "corrections": [
+        "Every cited line resolves exactly at open-instruct@ebd0c8e0c1d778085a4f26aacc2fd4d96f3515f5 (HEAD, 2026-09-03) in open_instruct/data_loader.py. Counters initialised :1046-1049; the `if group is None` branch attributes each discard via result.reward_scores[0] at :1134-1138 and logs `filtered={} (all_",
+        "Confirmed against the actual source, not a claim about it. Verified at allenai/open-instruct HEAD ebd0c8e0c1d778085a4f26aacc2fd4d96f3515f5, open_instruct/data_loader.py (1647 lines). Every cited line number is exact: the rejection is `if filter_zero_std_samples and np.std(result.reward_scores) == 0:",
+        "Every cited line resolves exactly at open-instruct@ebd0c8e0 (2026-09-03), in /private/tmp/claude-501/-Users-seventyleven-Desktop/47bf30ba-3257-44d3-a6e3-5cfa643debb0/scratchpad/oi/open-instruct (git show ebd0c8e0:open_instruct/data_loader.py). Counters initialised at :1046-1049; the three-way split "
+      ]
+    },
+    "A shipped LLM binary relevance filter has two OPPOSITE failure directions in the same file, one deliberate and one accidental. Deliberate: `default_label: str = 'RELEVANT'` \\u2014 a malformed judge response fails OPEN. Accidental: a document whose `<document id=X>` block never appears in the response gets score 0.0 and is silently rejected \\u2014 a truncated LLM answer deletes the tail of the candidate list. The docstring even contradicts the code it documents.": {
+      "refuted": 0,
+      "kept": 3,
+      "reasons": [],
+      "corrections": [
+        "Could not refute \u2014 every cited line resolves verbatim at the pinned commit and the behavior is stronger than claimed. Read /private/tmp/claude-501/-Users-seventyleven-Desktop/47bf30ba-3257-44d3-a6e3-5cfa643debb0/scratchpad/lane/rerankers/rerankers/models/llm_relevance_filter.py at git HEAD 5b9cbb073",
+        "Verified line-by-line against AnswerDotAI/rerankers at HEAD 5b9cbb0 (freshly cloned) and against the published PyPI wheel rerankers-0.10.0-py3-none-any.whl, which contains the identical file at the identical line numbers \u2014 so this is shipped code, not an aspiration or a vendor claim. Confirmed: `def",
+        "Verified directly against a clone at the cited commit 5b9cbb0 and reproduced both mechanisms by executing the code, not just reading it. All citations resolve exactly: :77 default_label=\"RELEVANT\", :103 assignment, :134 return self.default_label, :126-127 docstring saying it \"defaults to NOT_RELEVAN"
+      ]
+    },
+    "Ask the vendor for scores on EVERY candidate and make the cut yourself. `rerankers` sends `top_n`/`top_k` = `len(docs)` to every commercial reranking API rather than letting the provider truncate.": {
+      "refuted": 0,
+      "kept": 3,
+      "reasons": [],
+      "corrections": [
+        "Mechanism confirmed in executable code, not an aspiration or vendor claim. Cloned AnswerDotAI/rerankers; HEAD is exactly 5b9cbb0 (\"Fix typo in metadata check in utils.py (#70)\") \u2014 the pinned commit is also the current upstream tip (git ls-remote origin HEAD = 5b9cbb073335b02). /private/tmp/claude-50",
+        "Opened the cited file at the pinned commit in a fresh clone (github.com/AnswerDotAI/rerankers, HEAD = 5b9cbb0 \"Fix typo in metadata check in utils.py (#70)\", also origin/main at clone time). Every cited line is verbatim: api_rankers.py:119-121 `top_key = (\"top_n\" if self.api_provider not in [\"voyage",
+        "Verified at the exact cited commit, which is also current upstream main HEAD (5b9cbb0, \"Fix typo in metadata check in utils.py (#70)\"). All three cited line numbers resolve exactly: api_rankers.py:119-120 is the `\"top_n\" if self.api_provider not in [\"voyage\",\"mixedbread.ai\"] else \"top_k\"` ternary, :"
+      ]
+    },
+    "A maintainer documenting his own magic constant in the docstring: TRL's `fork_threshold_tokens` defaults to 1024 and the code says outright that a drift tally is 'the only observability on `fork_threshold_tokens`, which is otherwise a threshold tuned blind.' The tally records the DISTRIBUTION of the quantity being thresholded \\u2014 clean/realign/fork counts plus total and MAX drift.": {
+      "refuted": 0,
+      "kept": 3,
+      "reasons": [],
+      "corrections": [
+        "Verified at huggingface/trl commit e78a93bd (clean tree, remote confirmed as github.com/huggingface/trl). Every load-bearing element resolves: the quoted sentence is verbatim at async_rollout_worker.py:153-154; the comparison `drift < self._fork_threshold` is at :115; the tally dict is at :157 (clai",
+        "Every load-bearing element resolves at the cited commit. `git rev-parse e78a93b` = e78a93bd28fa (repo tip). The sentence is verbatim at async_rollout_worker.py:152-154; the `drift < self._fork_threshold` comparison is at :115 exactly; `default=1024` is at async_grpo_config.py:288-296 and, per blame,",
+        "Every cited artifact resolves at the cited commit. Verified against a checkout whose HEAD is e78a93bd28fa12c61fc83ad97dff45dd24e3c2ac. (1) The quoted sentence is verbatim at trl/experimental/async_grpo/async_rollout_worker.py:153-154: \"That tally is the only observability on `fork_threshold_tokens`,"
+      ]
+    },
+    "An ensemble discriminator that RANDOMIZES on total disagreement instead of abstaining. open-instruct's rejection sampling runs N reward models, takes each one's argmax, then majority-votes; when every model votes differently it picks one at random. Total judge disagreement is precisely the signal that the item is undecidable, and it is discarded. A 2-2 tie among 4 models resolves by Counter insertion order.": {
+      "refuted": 0,
+      "kept": 3,
+      "reasons": [],
+      "corrections": [
+        "Opened the cited source directly. Clone remote is https://github.com/allenai/open-instruct.git, HEAD ebd0c8e0c1d778085a4f26aacc2fd4d96f3515f5 \u2014 the cited commit. Every anchor resolves: majority_vote spans :205-228; the comment at :220 reads verbatim \"# Try to get ther majority vote, but if all model",
+        "Verified in source at the cited commit (clone at /private/tmp/claude-501/-Users-seventyleven-Desktop/47bf30ba-3257-44d3-a6e3-5cfa643debb0/scratchpad/oi/open-instruct, HEAD = ebd0c8e0c1d778085a4f26aacc2fd4d96f3515f5). open_instruct/rejection_sampling/rejection_sampling.py:205-228 is `majority_vote`; ",
+        "Could not refute. Verified against a fresh clone of github.com/allenai/open-instruct at the cited commit ebd0c8e0 (working tree clean; file blob 25535d6d matches HEAD, sha256 6756a294...). `majority_vote` is at :205-228; the comment 'Try to get ther majority vote, but if all models disagree, we rand"
+      ]
+    },
+    "Pyserini treats RANK as ground truth in both directions, and ships the negative half disabled. Rocchio pseudo-relevance feedback calls the top-N hits `relevant` and the bottom-N `nonrelevant` with no verification \\u2014 and the default weight on the negative evidence is gamma=0, so the code computes bottom-document vectors and then multiplies them by zero. Worse, at the shipped defaults (search k=10, bottom_fb_docs=10) the 'nonrelevant' set is byte-identical to the 'relevant' set.": {
+      "refuted": 1,
+      "kept": 2,
+      "reasons": [
+        "Checked the repo at the cited commit (/private/tmp/.../scratchpad/lane/pyserini, git rev-parse = b0ad28270848f9b34ca822827bf5f71717255e84). The line-level citations are almost all real, but the claim generalises a non-default code path to \"Pyserini\" and mis-states the shipped operating point, and it"
+      ],
+      "corrections": [
+        "Not refuted on skeptic angle 1: the mechanism is real executable code, not an aspiration or vendor claim, and every cited line resolves at pyserini@b0ad282 (verified in a clone at /private/tmp/claude-501/-Users-seventyleven-Desktop/47bf30ba-3257-44d3-a6e3-5cfa643debb0/scratchpad/lane/pyserini). Conf",
+        "Opened the source at the cited commit (clone at /private/tmp/claude-501/-Users-seventyleven-Desktop/47bf30ba-3257-44d3-a6e3-5cfa643debb0/scratchpad/lane/pyserini, HEAD = b0ad28270848f9b34ca822827bf5f71717255e84, \"Fix BRIGHT end timestamp (#2674)\"). Every constant and construct resolves, with two anc"
+      ]
+    },
+    "IR has a shipped metric for exactly 'how much of what my filter surfaced did nobody ever assess' \\u2014 judged@k in pyserini and Hole@k in MTEB \\u2014 and pyserini ships the anti-instrument right beside it: a `-remove-unjudged` flag that DELETES unassessed hits from the run before scoring, so the score improves by pretending they never existed.": {
+      "refuted": 0,
+      "kept": 2,
+      "reasons": [],
+      "corrections": [
+        "Verified against local clones at the exact cited commits (pyserini b0ad282, mteb df7998e). The pyserini half resolves fully and is understated: every cited line matches (`-remove-unjudged` at :75-76, the \"Discard non-judged hits\" filter at :117-124, judged@k with its definition comment at :125-131),",
+        "Could not refute the core finding; one attribution needs correction. VERIFIED EXACTLY (pyserini@b0ad282, pin matches): judged@k at trec_eval.py:125-131 with the quoted definition comment verbatim; -remove-unjudged popped at :75-76; \"# Discard non-judged hits\" filter at :117-124. The \"score improves\""
+      ]
+    },
+    "Two magic constants sitting on incommensurable scales, both `0.2`, both defaults in Python signatures, neither exposed in the project's config file. FlashRAG's Self-RAG thresholds a normalized token-probability ratio at 0.2; FLARE thresholds a raw per-token probability at 0.2 and reuses the SAME constant for a second, different job \\u2014 masking low-confidence tokens out of the follow-up query.": {
+      "refuted": 0,
+      "kept": 3,
+      "reasons": [],
+      "corrections": [
+        "The load-bearing half survives a line-by-line open at the pinned commit. FlashRAG@1ee5249 active_pipeline.py:101 and :695 both carry threshold=0.2 as Python signature defaults; :207-210 applies it to score_dict[\"[Retrieval]\"]/(Retrieval+No Retrieval), a ratio normalized to [0,1]; :736 applies it to ",
+        "Could not refute; every cited line and every semantic claim resolves against a fresh clone at the pinned commit 1ee5249. This is source code read directly, not an aspiration or vendor claim, so skeptic angle 1 fails at the outset. Verified: SelfRAG threshold=0.2 at :101 applied at :207-210 to score_",
+        "The load-bearing half survives verbatim at the pinned commit (FlashRAG 1ee5249, confirmed by git rev-parse), and the mechanism/denominator check strengthens it. Every anchor line is exact: Self-RAG `threshold=0.2` at active_pipeline.py:101, stored :138, applied :206-209 as p('[Retrieval]')/(p('[Retr"
+      ]
+    },
+    "When the adversary can call the detector, string-overlap detection does not degrade \\u2014 it goes to exactly zero. Yang et al.'s Algorithm 1 is a loop: rephrase with GPT-4, then run isContaminated(); repeat until it returns False. Measured F1 for 10-gram overlap on the resulting set: 0.000 on rephrased-English and rephrased-Chinese MMLU for all three subjects, and 0.000 on rephrased Python/C/JS HumanEval \\u2014 against 0.926-1.000 on the un-rephrased test set. A Llama-2-13B trained on that undetectable set reaches 85.9 on MMLU.": {
+      "refuted": 1,
+      "kept": 2,
+      "reasons": [
+        "The numbers are exact and the mechanism is real \u2014 I replicated it from released artifacts, so the \"aspiration/vendor claim\" angle fails. Table 5 10-gram (0.926/0/0, 1/0/0, 0.816/0/0), Table 6 (1/0/0/0), Table 2's 85.9, the 8-18% and the 12.8% all verify against arXiv:2311.04850v2. My own word-10-gra"
+      ],
+      "corrections": [
+        "The evidence resolves and says almost exactly this. Fetched arXiv:2311.04850v2 live (title \"Rethinking Benchmark and Contamination for Language Models with Rephrased Samples\"; submission history shows exactly v1 8 Nov 2023 / v2 11 Nov 2023), parsed the raw HTML tables rather than trusting a summariz",
+        "Verified against the primary source, not the HTML mirror alone: I pulled both arxiv.org/pdf/2311.04850v2 and arxiv.org/html/2311.04850v2 and read the tables directly (local copies: /private/tmp/claude-501/-Users-seventyleven-Desktop/47bf30ba-3257-44d3-a6e3-5cfa643debb0/scratchpad/y.txt and y_html.tx"
+      ]
+    },
+    "For 8 of 8 published membership-inference / contamination benchmarks, a classifier that never looks at the model at all beats the state-of-the-art detector. On WikiMIA \\u2014 the standard set for Min-K% and Min-K%++ \\u2014 bag-of-words gets 94.7% TPR@5%FPR vs the best model-based attack's 43.2%, and 99.0% AUC vs 83.9%. A regex over \\cite years gets 10.6% TPR at 1% FPR on arXiv, over twice the best attack's 5.9%.": {
+      "refuted": 0,
+      "kept": 3,
+      "reasons": [],
+      "corrections": [
+        "Could not refute. Fetched arXiv:2406.16201v2 live (2026-09-09); v2, 30 Mar 2025, is the latest version. Title, authors (Debeshee Das, Jie Zhang, Florian Tramer), and ETH Zurich affiliation all match. Every number in the claim is verbatim in the source: Table 1 lists 8 MI evaluation datasets and the ",
+        "I tried to break this and could not. Every load-bearing number resolves verbatim to the primary source, with its protocol attached.\n\nVERIFIED against https://arxiv.org/html/2406.16201v2 (fetched live, 2026-09-09; 144,860 bytes of LaTeXML HTML, parsed locally):\n- Abstract, verbatim: \"For 8 published ",
+        "Every load-bearing number resolves against the primary source read live (arXiv:2406.16201v2, Das/Zhang/Tram\u00e8r, ETH Zurich SPY Lab; only v1 and v2 exist; code repo ethz-spylab/Blind-MIA is live). Table 1/2: all 8 rows show the blind attack above the best reported model-based attack. WikiMIA TPR@5%FPR"
+      ]
+    },
+    "A contamination test with a proven false-positive-rate guarantee still flagged 14 of 57 MMLU test files as contaminated in two models that predate MMLU. The authors found this only because they ran two negative-control models; they then excluded those 14 files and reported the rest as heuristic evidence, not proof.": {
+      "refuted": 0,
+      "kept": 3,
+      "reasons": [],
+      "corrections": [
+        "The source resolves and confirms the load-bearing substance. arXiv:2310.17623v2 \u00a74.3 says verbatim: \"we first exclude those 14 test files from consideration for which our test flags either BioMedLM or GPT-2 as contaminated (both are negative controls as the GPT-2 family of models predates MMLU)\"; \"W",
+        "Read the primary source live (arXiv:2310.17623v2 \u00a74.3 and Appendix Table 4). Every load-bearing element resolves verbatim: the 14-file exclusion quote, the 43 survivors, the \"no longer provide a proof of contamination ... serves as heuristic evidence\" downgrade, the non-exchangeability cause sentenc",
+        "Verified live against a fresh fetch of https://arxiv.org/html/2310.17623v2 (v2, 24 Nov 2023, the latest version; authors Oren, Meister, Chatterji, Ladhak, Hashimoto \u2014 Stanford, as cited). Every verbatim quote in the claim is exact and in \u00a74.3, and the load-bearing number is real: \"we first exclude t"
+      ]
+    },
+    "Across 7 widely-deployed AI-text detectors, unanimous agreement was a defect signal, not a confidence signal. Average false-positive rate on 91 human-written TOEFL essays: 61.22% (vs 5.19% on 88 US 8th-grade essays). All 7 agreed on 18/91 (19.78%) \\u2014 and those unanimous cases had significantly LOWER perplexity than the rest (p=9.74e-05). The detectors were measuring linguistic variability, not authorship.": {
+      "refuted": 0,
+      "kept": 3,
+      "reasons": [],
+      "corrections": [
+        "Source resolves and every load-bearing number is exact. arXiv:2304.02819v3 fetched live (HTTP 200); authors, Stanford affiliations, and Patterns publication confirmed via Crossref (10.1016/j.patter.2023.100779, Patterns 4(7), Jul 2023). I did not stop at the prose \u2014 I cloned the authors' repo (githu",
+        "Every headline number checks out verbatim in arXiv:2304.02819v3 \u00a7Results AND reproduces exactly when recomputed from the authors' shipped per-detector scores (github.com/Weixin-Liang/ChatGPT-Detector-Bias, threshold 0.5): avg FPR 61.22% (TOEFL, n=91) vs 5.19% (ASAP US 8th grade, n=88); unanimous 18/",
+        "Could not refute the load-bearing half; I reproduced it from the authors' raw data rather than trusting the prose. Cloning github.com/Weixin-Liang/ChatGPT-Detector-Bias and binarizing every stored detector score at >0.5, the unweighted mean over the 7 detectors gives exactly 61.22% (TOEFL, n=91) and"
+      ]
+    },
+    "The cheapest and most authoritative pre-read reject in scholarly search \\u2014 'has this DOI been retracted?' \\u2014 has a false positive at the very top of the citation distribution. OpenAlex flags the 2020 Lancet Commission report on dementia (10,620 citations) as is_retracted:true. Its sole retraction link is a Lancet Public Health notice titled 'RETRACTED: Addressing hearing loss at all ages' whose update-to list names 4 DOIs, 3 of them unrelated S2468-2667 papers.": {
+      "refuted": 0,
+      "kept": 3,
+      "reasons": [],
+      "corrections": [
+        "Every cited call reproduces exactly as stated (re-run 2026-09-09). OpenAlex works?filter=is_retracted:true&sort=cited_by_count:desc returns W3046275966 / 10.1016/s0140-6736(20)30367-6 / cited_by_count 10620 / is_retracted true as the #1 result. Crossref on that DOI shows updated-by = exactly one ret",
+        "Every load-bearing element reproduced independently on 2026-09-09, and the headline is corroborated by a source the claim never invoked. OpenAlex still returns W3046275966 (10.1016/s0140-6736(20)30367-6, 10,620 cites) as the top is_retracted:true work. PubMed independently refutes that flag: PMID 32",
+        "Every element reproduces live and survives an independent third source. OpenAlex `filter=is_retracted:true&sort=cited_by_count:desc` returns W3046275966 / 10.1016/s0140-6736(20)30367-6 at 10620 citations, is_retracted true, with no provenance field on the record. Crossref 10.1016/s2468-2667(23)00083"
+      ]
+    },
+    "FineWeb shows how to DERIVE a filter from evidence instead of writing one: build a known-good and known-bad corpus, compute 50+ statistics on both, keep the metrics whose distributions diverge, and set thresholds where the bad corpus's density exceeds the good. 50 statistics \\u2192 16 candidate metric-threshold pairs \\u2192 3 survived a 28B-token ablation. 13 of 16 hand-derived filters failed to help.": {
+      "refuted": 1,
+      "kept": 2,
+      "reasons": [
+        "The METHOD half checks out verbatim in \u00a73.6 of arXiv:2406.17557v2 (I pulled the HTML and the appendix table directly). \"Over 50 high-level statistics\" on a high/low-quality pair (individually- vs globally-deduplicated 2013-48), keep the metrics whose distributions diverge, pick thresholds where the "
+      ],
+      "corrections": [
+        "Opened arXiv:2406.17557v2 HTML live. \u00a73.6 supports the method and every constant verbatim: \"over 50 high-level statistics\" computed on the individually- vs globally-deduplicated 2013-48 snapshot as the high-/low-quality pair; thresholds chosen where \"the lower quality dataset frequency was higher\"; ",
+        "Read the primary source live (arXiv:2406.17557v2 \u00a73.3/3.5/3.6 + Appendix E.4 Table 2, saved at /private/tmp/claude-501/-Users-seventyleven-Desktop/47bf30ba-3257-44d3-a6e3-5cfa643debb0/scratchpad/fw.html). The mechanism is real and executed, not an aspiration or vendor claim: >50 statistics on the in"
+      ]
+    },
+    "FineWeb-Edu is the working shape of a filter that gets sharper with accumulated knowledge \\u2014 an expensive reader labels a sample, a cheap model distils it, and the cheap model runs at corpus scale \\u2014 with all four constants published, plus (uniquely) a measurement of what the filter deletes. And it deliberately rejects exactly the register this project is searching for.": {
+      "refuted": 1,
+      "kept": 2,
+      "reasons": [
+        "Read arXiv:2406.17557v2 \u00a74, \u00a74.1, \u00a74.2 and Appendix F/Table 3 in full (fetched live). The MECHANISM half of the claim is verbatim accurate \u2014 460,000 pages scored 0-5 by Llama-3-70B-Instruct on an additive rubric, linear regressor on a FROZEN Snowflake-arctic-embed-m, 410,000 training rows, 20 epochs"
+      ],
+      "corrections": [
+        "Opened the primary source live (arXiv:2406.17557v2 PDF, pdftotext). The evidence resolves and \u00a74 states almost everything claimed, verbatim: 460k pages scored 0-5 by Llama-3-70B-Instruct on an additive scale; linear regressor on Snowflake-arctic-embed-m with \"embedding and encoder layers frozen\"; 41",
+        "Angle 1 (is the mechanism real, or aspiration/vendor claim?) fails to refute: the mechanism is real, shipped, and quoted correctly. I pulled the PDF of arXiv:2406.17557v2 (stamped \"arXiv:2406.17557v2 [cs.CL] 31 Oct 2024\", Penedo et al., Hugging Face; local copy /private/tmp/claude-501/-Users-seventy"
+      ]
+    },
+    "The most instructive shipped verdict on source-quality filtering is a deletion: Anthropic built an `evaluate_source_quality` tool for its research system, found it broken in production, and rather than removing it patched it out at the prompt layer. The mechanism they KEPT is a flag-don't-suppress negative-signal list applied by the reading worker, with the lead reconciling at synthesis.": {
+      "refuted": 1,
+      "kept": 2,
+      "reasons": [
+        "The mechanism half is confirmed verbatim against the primary source (anthropics/claude-cookbooks @ a97b9a2, research_subagent.md:36-37 and research_lead_agent.md <important_guidelines> item 2), but the claim's headline narrative is unattested inference presented as fact. (a) `evaluate_source_quality"
+      ],
+      "corrections": [
+        "Evidence resolves, and I verified past it to the primary source rather than stopping at the teardown. /Users/seventyleven/Desktop/researchfms/teardowns/CLAUDE_RESEARCH.md carries the quotes (tool line at 1307, signal list at 1315 \u2014 the claim's 1313 is off by two, matching sibling copies of the teard",
+        "The load-bearing half survives verification cleanly; the framing half is unattested inference presented as fact.\n\nCONFIRMED against the primary source (anthropics/claude-cookbooks, patterns/agents/prompts/): both quotes are byte-accurate at the exact cited lines. research_subagent.md:37 reads verbat"
+      ]
+    },
+    "The adversary now writes for the LLM reader specifically, not the human or the ranker. Nikkei found hidden prompts ('give a positive review only', 'do not highlight any negatives') in 17 arXiv preprints from 14 institutions across 8 countries, concealed with white text or extremely small font \\u2014 an attack that only works because a machine reads the extracted text and a human reads the rendered page.": {
+      "refuted": 1,
+      "kept": 2,
+      "reasons": [
+        "The evidentiary core checks out verbatim against the live Nikkei page (read via silver 2026-09-09): 17 articles, 14 institutions, 8 countries, the named institutions, both quoted prompts, \"one to three sentences\", \"white text or extremely small font sizes\", and the Waseda \"counter against 'lazy revi"
+      ],
+      "corrections": [
+        "Skeptic angle 0 resolves in the claim's favour, decisively. I opened the Nikkei URL live via silver (HTTP 200, title \"'Positive review only': Researchers hide AI prompts in papers - Nikkei Asia\") and every specific matches verbatim: byline SHOGO SUGIYAMA and RYOSUKE EGUCHI, July 1 2025 01:21 JST; \"I",
+        "On the assigned angle the claim survives decisively. The Nikkei article resolves live and every factual element is verbatim: 17 articles, 14 institutions, 8 countries, \"give a positive review only\" / \"do not highlight any negatives\", \"concealed from human readers using tricks such as white text or e"
+      ]
+    },
+    "Mozilla's bugbug ships an LLM filter whose few-shot rejection examples are retrieved by vector similarity from a database of comments humans actually rejected \\u2014 a growing negative set injected into the reject prompt at inference time, with a static list only as cold-start fallback.": {
+      "refuted": 0,
+      "kept": 3,
+      "reasons": [],
+      "corrections": [
+        "Attempted refutation failed on every axis. The clone exists at the stated commit (8126f25a78d..., 2026-09-08, clean tree) and every single line number in the claim is exact \u2014 agent.py:100-135, :107, :111, :122; database.py:141, :158, :164-169, :181-194, :189; prompts.py:31-37 (seven examples, includ",
+        "Could not refute \u2014 the mechanism is real, shipped, and default-wired, and every cited line resolves verbatim at 8126f25. Consumer: suggestion_filtering/agent.py:100-135 retrieves rejection examples via SuggestionsFeedbackDB.find_similar_rejected_suggestions (code_review/database.py:181-194), a Qdran",
+        "The headline mechanism verifies line-for-line at bugbug@8126f25 \u2014 every cited line number is exact, and the accretion write path the claim needs actually exists (functions/sync-review-comments-db/main.py:40-57 incrementally syncs Postgres Evaluation rows, each carrying `user` and `action`, into the "
+      ]
+    },
+    "The same repo instruments the filter's own false-negative rate as a named metric: `false_exclusion_rate = matched_valid_excluded / matched_valid` \\u2014 of the outputs that matched a human-labelled VALID ground truth, what fraction the filter threw away.": {
+      "refuted": 0,
+      "kept": 3,
+      "reasons": [],
+      "corrections": [
+        "Could not refute \u2014 the evidence resolves exactly. Cloned repo at mozilla/bugbug@8126f25a78d308cc5a834464ff43a2b48e9555d1 (commit message \"Add link to action_url (#6746)\"). bugbug/tools/code_review/scorer.py:284-288 is verbatim `\"false_exclusion_rate\": (total_matched_valid_excluded / total_matched_va",
+        "Core verified line-for-line at the cited commit. Cloned bugbug at HEAD 8126f25a78d3; bugbug/tools/code_review/scorer.py:284-288 defines `false_exclusion_rate = total_matched_valid_excluded / total_matched_valid` (guarded by >0), with `true_exclusion_rate` at :289-293, `overall_retention_rate` at :27",
+        "The load-bearing, checkable content verified exactly against the pinned commit: `false_exclusion_rate` is defined at scorer.py:284-288 with precisely the stated formula (`total_matched_valid_excluded / total_matched_valid`), `true_exclusion_rate` at :289-293, `overall_retention_rate` at :275, `misse"
+      ]
+    },
+    "ClueBot NG does not choose a score cutoff at all \\u2014 a human picks a FALSE-POSITIVE BUDGET and the threshold is computed to hit it while maximising catch rate; the recall this costs is published. At FP 0.25% it caught ~55% of vandalism; tightening to FP 0.1% dropped catch to ~40%.": {
+      "refuted": 1,
+      "kept": 2,
+      "reasons": [
+        "Three independent failures. (1) DATE/PROTOCOL: I traced all 157 revisions of User:ClueBot_NG/Documentation via the MediaWiki API. The 40%/55% pair was written 2010-11-30 and finalised 2011-01-08 and has NEVER changed since \u2014 every later diff is a typo fix or a vandalism revert. The page presents the"
+      ],
+      "corrections": [
+        "All cited evidence resolves and says what the claim says it says. Every Wikipedia quote is verbatim on User:ClueBot NG/Documentation (transcluded onto User:ClueBot NG); the FAQ quote is verbatim at User:ClueBot NG/FAQ:50; commit 62fb35b exists in github.com/cluebotng/core and conf/outputs.conf:62/63",
+        "The load-bearing half survives verification and is stronger than a vendor claim: every quote matches the live wikitext of User:ClueBot NG/Documentation and /FAQ exactly, and the mechanism is implemented in source I read \u2014 cbng-core src/standardprocessors.hpp:154-163 `calcThresholdFromFalsePositiveRa"
+      ]
+    },
+    "Google's Tricorder defines a false positive by the HUMAN'S SUBSEQUENT ACTION, not by correctness, and kills an entire analyzer when the accumulated Not-useful/Please-fix ratio crosses 10%.": {
+      "refuted": 1,
+      "kept": 2,
+      "reasons": [
+        "The definitional half is exact; the numeric half fails on protocol AND denominator, refuted by the paper's own cited source.\n\nCONFIRMED verbatim from the CACM PDF (extracted to /private/tmp/claude-501/-Users-seventyleven-Desktop/47bf30ba-3257-44d3-a6e3-5cfa643debb0/scratchpad/tricorder.txt): the eff"
+      ],
+      "corrections": [
+        "The source resolves and says what is claimed. I downloaded the PDF (HTTP 200, 607KB) and extracted text: it is Sadowski/Aftandilian/Eagle/Miller-Cushon/Jaspan, \"Lessons from Building Static Analysis Tools at Google,\" CACM Apr 2018, Vol 61 No 4, pp. 58-66, DOI 10.1145/3188720 \u2014 all metadata confirmed",
+        "Core survives on primary text; three specifics fail. CONFIRMED verbatim from the CACM PDF (fetched, pdftotext'd; page markers \"APRIL 2018 | VOL. 61 | NO. 4\", pp. 59-66, DOI 10.1145/3188720): the action-based definition, the \"ratio... above 10%... disables the analyzer\" sentence, the two-tier budget "
+      ]
+    },
+    "ASReview is the canonical accretive screener in code: after EVERY human label it refits the classifier on all labels so far \\u2014 accepts and rejects together \\u2014 and re-ranks the entire unseen pool.": {
+      "refuted": 0,
+      "kept": 3,
+      "reasons": [],
+      "corrections": [
+        "The evidence resolves exactly and the mechanism holds. Cloned asreview and checked out the cited commit: 79d568212b2b0a78f9fd7be3c5117dfb890489f9, \"Revert SYNERGY Cache Changes (#2603)\", Mon Aug 31 21:57:06 2026 +0200 \u2014 commit and date both match. Every cited line number in asreview/simulation/simul",
+        "Every citation resolves exactly at asreview@79d5682 (verified in a local clone; HEAD = 79d568212b2b0a78f9fd7be3c5117dfb890489f9, \"Revert SYNERGY Cache Changes (#2603)\", 2026-08-31). simulate.py:277/279/294-297/300-302/305/316 are line-accurate; the fit is over all of _results (accepts + rejects), th",
+        "Confirmed at the cited commit and executed. Fresh clone of asreview/asreview has HEAD = 79d568212b2b0a78f9fd7be3c5117dfb890489f9 (2026-08-31), matching the evidence. simulate.py:277-316 is verbatim as quoted at those exact line numbers (fit on self._results[\"label\"].values at :294-297, np.setdiff1d "
+      ]
+    },
+    "Cormack & Grossman's Auto TAR shows you do not need human rejections to bootstrap the negative side: fabricate one. Each round it temporarily adds 100 random collection documents labelled 'not relevant', trains, then removes them \\u2014 and it seeds from a SINGLE relevant document, deliberately rejecting a 1,000-document seed set.": {
+      "refuted": 0,
+      "kept": 3,
+      "reasons": [],
+      "corrections": [
+        "Source opened and confirmed (arXiv:1504.06868v1, PDF downloaded and text+page-image extracted). The mechanism is verbatim correct: \u00a73.1 steps (3)-(10) read exactly as quoted including \"Increase B by \u2308B/10\u2309\" (ceiling confirmed by rendering p.6; pdftotext drops the glyphs); \u00a73.3.2 confirms a fresh 100",
+        "Mechanism half is verbatim-correct against the primary PDF (arXiv:1504.06868v1, read locally at /private/tmp/claude-501/-Users-seventyleven-Desktop/47bf30ba-3257-44d3-a6e3-5cfa643debb0/scratchpad/cal.txt plus LaTeX source in cal1504/). \u00a73.1 steps (2)-(6),(10) and \u00a73.3.1/\u00a73.3.2 are quoted exactly; \"S",
+        "Could not refute the mechanism \u2014 it is verbatim correct against a byte-verified authentic copy of the source (local PDF sha256 290f97f5b974fb1906ddb986d73ad70cf93d3a26b406b092019b60a2bd280e6b, identical to a fresh pull of arxiv.org/pdf/1504.06868v1). \u00a73.1 steps (3) \"Set the initial batch size B to 1"
+      ]
+    },
+    "Blair & Maron (1985) is the false-negative cost nobody would have measured: lawyers stipulated they must retrieve \\u226575% of relevant documents and searched until they believed they had; the measured recall was ~20%, at ~80% precision.": {
+      "refuted": 0,
+      "kept": 3,
+      "reasons": [],
+      "corrections": [
+        "The evidence resolves and is verbatim-accurate. I downloaded arXiv:1504.06868 (Cormack & Grossman 2015) and extracted \u00a72: the offered quote matches word for word, including the 75% stipulation, \"on average, 20% (recall ~ 0.20)\", \"about 80% of the retrieved documents were relevant (precision ~ 0.80)\"",
+        "Could not refute; the claim survives with a protocol amendment. (1) The quoted passage is verbatim correct in arXiv:1504.06868 \u00a72 (verified against the downloaded PDF, lines 125-142). (2) The numbers hold against three sources independent of the quoted one: Grossman & Cormack 2011 (Rich. J.L. & Tech",
+        "Verified against the primary source, not just the quoting paper. I pulled Blair & Maron 1985 (CACM 28(3):289-299) itself via the Wayback copy of ACM's bronze-OA PDF (live ACM DL is Cloudflare/CAPTCHA-blocked to curl and to silver), plus arXiv:1504.06868. The C&G \u00a72 quote in the evidence block is ver"
+      ]
+    },
+    "ClusterFuzz keeps a real disposition cache: a human's `ignore` label on any one member of a crash-signature equivalence class permanently suppresses filing for the whole class, and every suppression writes the reason and the precedent onto the record.": {
+      "refuted": 0,
+      "kept": 3,
+      "reasons": [],
+      "corrections": [
+        "Every piece of cited evidence resolves at the named commit and says what the claim says. Verified in a local clone of google/clusterfuzz at e48fee477c7d561ceaed02d7599fdd47a0873883 (HEAD, 2026-09-08, \"[Mac] Add support for macOS ARM64 deployment packages\"), at /private/tmp/claude-501/-Users-seventyl",
+        "The load-bearing mechanism confirmed against primary source at the exact cited commit (clusterfuzz HEAD e48fee477c7d561ceaed02d7599fdd47a0873883). _check_and_update_similar_bug is at triage.py:225, called at :530 immediately before _file_issue; the equivalence class is the normalised signature at :2",
+        "The mechanism is real, shipping, scheduled, and unit-tested \u2014 not an aspiration or vendor claim. Verified in the clone at the cited commit e48fee4 (Sep 8 2026): every cited line resolves exactly (_check_and_update_similar_bug at triage.py:225, signature query :236-242, the three branches at :265-270"
+      ]
+    },
+    "SpamAssassin's auto-learner refuses to train on anything near its own decision boundary, requires two independent evidence channels, and lets the accumulated model VETO a contradictory new label \\u2014 the discipline that stops an accretive filter from poisoning itself.": {
+      "refuted": 0,
+      "kept": 3,
+      "reasons": [],
+      "corrections": [
+        "Every cited artifact resolves and says what is claimed. Local clone of apache/spamassassin is at c9a2765. AutoLearnThreshold.pm:86 = nonspam 0.1, :99 = spam 12.0, against Conf.pm:175 required_score default 5; the dead-band refusal string at :184 is verbatim. required_body_points/required_head_points",
+        "The mechanism is real, not aspirational. A fresh clone of apache/spamassassin at c9a2765 confirms every cited line: the band refusal (\"inside auto-learn thresholds, not considered ham or spam\") at AutoLearnThreshold.pm:184, defaults 0.1 (:95) and 12.0 (:122) against required_score 5 (Conf.pm:191); t",
+        "Verified against a fresh clone of apache/spamassassin at c9a2765718f9c9c4c6fb3fd16d1bb0f2b7881ab5 (current trunk HEAD). Every cited constant, line and log string resolves: AutoLearnThreshold.pm :86 (0.1) and :99 (12.0), the verbatim refusal \"inside auto-learn thresholds, not considered ham or spam\" "
+      ]
+    },
+    "bugbug's spam-bug model harvests its training labels from the moderators' own REVERSALS in the tracker \\u2014 a bug moved out of 'Invalid Bugs' becomes a hard negative \\u2014 and reconstructs each bug as it looked at filing time to stop the filter learning from information that only exists after triage.": {
+      "refuted": 1,
+      "kept": 2,
+      "reasons": [
+        "The mechanism exists but the claim inverts its proportions and misstates two of its parts. VERIFIED REAL (bugbug@8126f25a, read in clone): SpamBugModel.get_labels mines three rules from tracker state \u2014 product-change-out-of-'Invalid Bugs' -> 0, resolution=='FIXED' -> 0, product=='Invalid Bugs' -> 1,"
+      ],
+      "corrections": [
+        "The cited evidence resolves and the core two-part mechanism is real. At bugbug HEAD 8126f25a (clean tree), bugbug/models/spambug.py get_labels (real span 93-132) contains verbatim \"# A bug that was moved out of 'Invalid Bugs' is definitely a legitimate bug\" followed by classes[bug_id]=0, plus the FI",
+        "The load-bearing mechanism verifies verbatim at the stated commit (8126f25, HEAD 2026-09-08), but every number offered fails protocol and one supporting sub-claim is falsified.\n\nCONFIRMED: bugbug/models/spambug.py:93-132 get_labels derives labels purely from Bugzilla state \u2014 the comment \"# A bug tha"
+      ]
+    },
+    "arxiv-sanity-lite is the instructive near-miss: it trains a fresh classifier on the user's own accumulated tags at every request, but every untagged paper is silently a negative, so a paper the user looked at and rejected is indistinguishable from one they never saw.": {
+      "refuted": 0,
+      "kept": 2,
+      "reasons": [],
+      "corrections": [
+        "Every cited line resolves verbatim at the cited commit. Cloned karpathy/arxiv-sanity-lite; HEAD is d7a303b410b0246 (\"add thumbnails for papers, which apparently ppl like\", 2022-02-13). serve.py:120 is `def svm_rank(tags: str = '', pid: str = '', C: float = 0.01):` (C default 0.01 confirmed), the fun",
+        "Every code citation resolves line-exact at karpathy/arxiv-sanity-lite@d7a303b (verified in a fresh clone). serve.py:120 carries the C=0.01 default; :137 is literally `y = np.zeros(n, dtype=np.float32)`; :143-146 set only tagged pids to 1.0 and nothing in the repo ever writes a negative label; :152-1"
+      ]
+    }
+  },
+  "refuted": {
+    "The only shipped fetch-time content-quality gate in the lane, looks_like_junk(), rejects on structural signals only: content <300 chars; the literal strings 'just a moment / checking your browser / ray id / captcha / recaptcha / verify you are human / ddos protection / attention required'; 404/403/500/502 strings; PDF binary markers (endstream / endobj / /FlateDecode / %PDF-) in the first 2000 chars; non-printable ratio >15%; cookie-consent boilerplate when content <1500 chars. It runs AFTER the fetch but BEFORE the note is written, and it aborts \\u2014 no note is created.": {
+      "refuted": 5,
+      "kept": 1,
+      "reasons": [
+        "Checked against primary source, not just the teardown: the code exists locally at /Users/seventyleven/Desktop/researchfms/hyperresearch/src/hyperresearch/web/base.py and .../core/fetcher.py. Three material failures.\n\n(1) THE NUMBER IS MISLABELLED \u2014 and the claim's own supporting contrast is inverted",
+        "Mechanism is REAL (skeptic angle 1 survives): I read the executing code, not prose. looks_like_junk is at hyperresearch/src/hyperresearch/web/base.py:59-118 (login wall :32-57, _looks_like_binary crawl4ai_provider.py:50-67 \u2014 all cited line numbers exact), and core/fetcher.py:65-69 calls it after pro",
+        "Checked against upstream source, not just the teardown. Cloned github.com/jordan-gibbs/hyperresearch (HEAD 15010c5, 2026-08-04, version = \"0.10.0\") and compared to the local v0.8.6 tree the teardown was built from (/Users/seventyleven/Desktop/researchfms/hyperresearch/pyproject.toml:7). The teardown",
+        "Evidence resolves; the claim overstates it in three ways verified against primary source (the teardown is secondary \u2014 hyperresearch's actual source is on disk at /Users/seventyleven/Desktop/researchfms/hyperresearch/src/hyperresearch/).\n\nCONFIRMED: teardowns/HYPERRESEARCH.md:530, :531, :558, :1162, ",
+        "The mechanism is REAL \u2014 I read the actual source, not just the teardown. /Users/seventyleven/Desktop/researchfms/hyperresearch/src/hyperresearch/web/base.py:59-118 has looks_like_junk() with <300 chars (:69), CF/bot strings (:73-82), error strings (:85-92), PDF markers in content[:2000] (:100-103), "
+      ],
+      "corrections": [
+        "The cited evidence resolves and the core holds against primary source, not just the teardown. web/base.py at v0.8.6 has looks_like_junk() at exactly :59-118 and looks_like_login_wall() at :32-57; core/fetcher.py:57-70 confirms fetch -> login-wall -> junk -> write_note (:85); cli/fetch.py:333-341 emi"
+      ]
+    },
+    "HyperResearch demotes a rejected source instead of deleting it: a note's curation status becomes a BM25 score multiplier \\u2014 evergreen \\u00d71.5, stale \\u00d70.7, deprecated \\u00d70.3 \\u2014 applied after ranking and re-sorted. A source an earlier run judged worthless still surfaces at 30% weight, so a wrong rejection is recoverable by a later query instead of being invisible forever.": {
+      "refuted": 2,
+      "kept": 4,
+      "reasons": [
+        "The code path is real (skeptic angle 1 answered: search/fts.py:128-141 executes the multipliers, config.py:17-23 holds 1.5/0.3/0.7, both cli/search.py:91-100 and mcp/server.py:49-58 pass ranking), but the claim's operative conclusion does not survive three checks. (a) Two of the three multipliers ha",
+        "The constants are exact, but the load-bearing mechanism \u2014 \"still surfaces at 30% weight, so a wrong rejection is recoverable by a later query\" \u2014 is refuted on three independent grounds, all checked against the source clone at /Users/seventyleven/Desktop/researchfms/hyperresearch/src/hyperresearch/ r"
+      ],
+      "corrections": [
+        "Could not refute. Every cited line resolves verbatim in the teardown AND I verified the mechanism in the primary source clone at ~/Desktop/researchfms/hyperresearch/. fts.py:128-141 contains the exact multiplier block (evergreen*=1.5, deprecated*=0.3, stale*=0.7, then sort reverse=True); config.py:1",
+        "Skeptic angle 1 (aspiration vs. real mechanism) is ANSWERED IN THE CLAIM'S FAVOR. I did not rely on the teardown; I read a fresh clone of github.com/jordan-gibbs/hyperresearch (now v0.10.0, HEAD 15010c5 \u2014 the teardown was v0.8.6, so the mechanism has survived two minor versions). It is executable co",
+        "Verified at primary source, not just the teardown (repo at /Users/seventyleven/Desktop/researchfms/hyperresearch/). fts.py:128-141 applies exactly evergreen*boost, deprecated*penalize, stale*penalize then re-sorts descending; config.py:20-22 gives the defaults 1.5/0.3/0.7 and all 7 weights are overr",
+        "Every cited line resolves and says what is claimed, and I confirmed it in the primary source rather than only the teardown. search/fts.py runs `bm25(notes_fts, 0.0, tw, bw, tgw, aw) ... ORDER BY score LIMIT ? OFFSET ?`, takes `abs(score)`, then under `if ranking:` multiplies evergreen/deprecated/sta"
+      ]
+    },
+    "HyperResearch's rejections are pool-level, not per-item, and their output is MORE retrieval rather than a shorter list. Coverage check labels each atomic item Well-covered(4+)/Adequate(2-3)/Thin(1)/Uncovered(0) and fires Wave 2 (20-40 URLs, 3-5 fetchers) for every thin/uncovered item. The redundancy audit clusters sources sharing >60% of quoted_support passages as derivative, tags them derivative-of and \\u2014 verbatim \\u2014 'don't deprecate, discount in counting'; if an item's independent source count drops below 2 it fires Wave 3.": {
+      "refuted": 2,
+      "kept": 3,
+      "reasons": [
+        "The stage-2 mechanism resolves exactly against the shipped source, but the finding's framing sentence is reversed by evidence in the same pipeline, and two supporting assertions overstate the text.\n\nVERIFIED (hyperresearch v0.8.6, github.com/jordan-gibbs/hyperresearch, installed at /Users/seventylev",
+        "The mechanism description is mostly accurate as a reading of the prompt document, but the two load-bearing generalizations fail, and the numbers have no protocol.\n\n(1) \"Rejections are pool-level, not per-item\" is false. Per-item rejections exist and are the ONLY ones implemented in code: `WebResult."
+      ],
+      "corrections": [
+        "Opened both cited files; the core mechanics verify verbatim against the primary source (/Users/seventyleven/Desktop/researchfms/hyperresearch/src/hyperresearch/skills/hyperresearch-2-width-sweep.md), not just the teardown.\n\nCONFIRMED: :175-196 Step 2.5 Coverage check (MANDATORY) uses exactly \"Well-c",
+        "Evidence resolves and the mechanics are exact. HYPERRESEARCH.md:150 is the 2.6 bullet verbatim; the stage-2 block spans :119-238. Against the shipped primary (skills/hyperresearch-2-width-sweep.md, 279 lines) every cited range holds: coverage labels Well-covered(4+)/Adequate(2-3)/Thin(1)/Uncovered(0",
+        "The mechanism is real and executed, not aspirational \u2014 and it is not a vendor claim: hyperresearch is local source. Every number verified against the primary skill file /Users/seventyleven/Desktop/researchfms/hyperresearch/src/hyperresearch/skills/hyperresearch-2-width-sweep.md: the four coverage la"
+      ]
+    },
+    "Google's AI co-scientist rejects candidates in a compute-proportional cascade: initial review is cheap and tool-free and kills 50%+ of generations before they consume any search budget; full review makes web requests and runs only on survivors; deep-verification runs only on hypotheses that passed full review AND survived enough Elo tournament rounds. Ranking is pairwise debate, not absolute scoring, because 'how novel is this?' has no anchor while 'is X more novel than Y?' is calibrated by construction. Every hypothesis starts at Elo 1200; top-rated pairs get multi-turn debates, low-rated pairs get one-shot comparisons.": {
+      "refuted": 3,
+      "kept": 0,
+      "reasons": [
+        "The cited file exists (/Users/seventyleven/Desktop/researchfms/teardowns/AI_CO_SCIENTIST.md, 810 lines) and every cited line number resolves. I checked it against the primary source it claims to reproduce, arXiv:2502.18864v1 \"Towards an AI co-scientist\" (fetched full text). The Elo half of the claim",
+        "Verified against the primary source (arXiv:2502.18864v1, fetched and full-text searched). The skeleton is real, but the two load-bearing specifics fail. (1) THE NUMBER DOES NOT EXIST. \"kills 50%+ of generations\" appears nowhere in the paper \u2014 no discard rate, no yield, no survival count, no denomina",
+        "Checked against the primary source (arXiv:2502.18864v1, PDF downloaded and text-searched directly). Three load-bearing parts fail. (1) The \"kills 50%+ of generations\" figure does not exist in the paper \u2014 no percentage anywhere attaches to review filtering. It appears exactly once in the teardown, at"
+      ],
+      "corrections": []
+    },
+    "The AI co-scientist's own results contain the case against its pre-screen. The AML run pre-filtered 2,300 drugs \\u00d7 33 cancer types with a conjunction \\u2014 review score \\u22654 of 5 AND DepMap score \\u22650.99 \\u2014 and the existing-evidence cohort returned 5 tested / 3 active. The truly-novel cohort, whose best hit was KIRA6 at IC50 13 nM on KG-1, was generated 'without any external priors (no DepMap, no human seed)'. The highest-novelty result came from the arm with the prior-knowledge gate switched off.": {
+      "refuted": 3,
+      "kept": 0,
+      "reasons": [
+        "Every number checks out against the primary source, but the conclusion drawn from them inverts what the paper shows.\n\nVERIFIED in arXiv:2502.18864v1 \u00a74.5 (not just the teardown): \"we selected only pairs where the co-scientist review score >= 4 and the DepMap score >= 0.99\" with review score \"ranging",
+        "The cited lines exist and are transcribed correctly (teardown /Users/seventyleven/Desktop/researchfms/teardowns/AI_CO_SCIENTIST.md:507-514, 548-552, 761), and I verified every number against the primary source (arXiv:2502.18864v1 \u00a74.5, fetched HTML). The thresholds, the 5-tested/3-active and 3-teste",
+        "The numbers survive; the finding built on them does not.\n\nWHAT CHECKS OUT (paper \u00a74.5.1\u20134.5.2, verified verbatim, not just via the teardown): the conjunction gate is real \u2014 \"we selected only pairs where the co-scientist review score >= 4 and the DepMap score >= 0.99\"; the 2300 approved drugs x 33 ca"
+      ],
+      "corrections": []
+    },
+    "Ray Tune's ASHA culls relative to the current cohort instead of against fixed thresholds: reduction_factor=4 means only the top 25% survive each rung, with grace_period=1 guaranteeing a minimum run before any cull, max_t=100, brackets=1. The teardown names it 'the statistically-principled generalization of OpenEvolve's fixed cascade gates [0.5, 0.75, 0.9]' and says it is 'strictly better when the eval's score scale is unknown a priori'.": {
+      "refuted": 2,
+      "kept": 1,
+      "reasons": [
+        "The numeric half verifies; the comparative half and the accretion story do not, and one of them is backwards against code I executed.\n\nVERIFIED. Every default is exact, checked against Ray source at master and tags ray-2.9.0/2.30.0/2.44.1 (async_hyperband.py:59-69): time_attr='training_iteration', m",
+        "The parameter list survives; every interpretive claim built on it fails against Ray's source. VERIFIED: all eight defaults at /Users/seventyleven/Desktop/researchfms/teardowns/AEMON.md:2969 match ray/tune/schedulers/async_hyperband.py's AsyncHyperBandScheduler.__init__ byte-for-byte (time_attr='trai"
+      ],
+      "corrections": [
+        "Evidence resolves exactly and the factual core replicates against primary source, but two attached parts do not survive. CONFIRMED: /Users/seventyleven/Desktop/researchfms/teardowns/AEMON.md:2969 exists and contains both quoted phrases verbatim; all eight ASHA defaults match ray/tune/schedulers/asyn"
+      ]
+    },
+    "Feedly's replica fits its per-model relevance threshold by maximising F0.5, not F1 \\u2014 the comment is verbatim 'precision-leaning; a false topic is worse than a miss' \\u2014 with DEFAULT_THRESHOLD = 0.55, a grid over 0.05..0.96 step 0.01, and a floor 'so a head with no dev positives cannot fire on noise'. The threshold is per-model, matching Feedly's own debug UI showing '> 0.62'.": {
+      "refuted": 2,
+      "kept": 1,
+      "reasons": [
+        "The code-level half verifies verbatim at every cited line: the F0.5 comment (8494-8496), DEFAULT_THRESHOLD = 0.55 / F_BETA = 0.5 (8497-8498), np.arange(0.05, 0.96, 0.01) (8511), the y.sum()<3 or (1-y).sum()<3 guard (8508), FIXTURE_PASS_MIN = 0.97 (8275), and every recalibrator constant (30 / 8 / 0.0",
+        "The mechanism half is verbatim correct, but two stated facts fail. (1) THE NUMBER: 1,068 is the product 178 x 6, not a count, and it has no protocol behind it. The same document measures the corpus and hard-asserts the result at FEEDLY_PRODUCT_CODE.md:22320-22321 (EXPECT_POSITIVES = 535, EXPECT_NEGA"
+      ],
+      "corrections": [
+        "All cited evidence resolves at the exact lines given in /Users/seventyleven/Desktop/researchfms/teardowns/FEEDLY_PRODUCT_CODE.md (25,130 lines). :8494-8496 carries the comment verbatim, including \"precision-leaning; a false topic is worse than a miss\" and \"floor it so a head with no dev positives ca"
+      ]
+    },
+    "Turbopuffer prices the false negative of filter PLACEMENT with three measured numbers on the same workload: pre-filter gives 100% recall at 10 s; post-filter gives 20 ms but 'recall can be 0% if no candidates match'; their shipped target is 90% recall@10 at 25 ms via native attribute indexes matched to the cluster topology. Their observed query plan runs the predicate twice against two physical indexes \\u2014 a prefilters pass over a folded (quantized) index to cheaply prune clusters before the ANN scan, and a postfilters pass over the exact index to re-check survivors.": {
+      "refuted": 2,
+      "kept": 1,
+      "reasons": [
+        "The load-bearing word \"measured\" fails. I fetched the primary source (turbopuffer.com/blog/native-filtering, Bojan Serafimov, Jan 2025) with silver: the three numbers are a single illustrative markdown table \u2014 postfilter 0%/20ms, prefilter 100%/10s, target 90%/25ms \u2014 attached to a schematic 2-D diag",
+        "Every cited line resolves (one slip: the two-level bitmap is at :42 and :420, not :393), but the claim overstates the source on the axis that matters. I pulled the primary source behind TURBOPUFFER.md:398-401 \u2014 turbopuffer's \"Native filtering for high-recall vector search\" (Bojan Serafimov, Jan 21 2"
+      ],
+      "corrections": [
+        "The mechanism survives the skeptic angle cleanly; the epistemic label on the numbers does not. CONFIRMED: the two-pass plan is observed, not aspirational \u2014 TURBOPUFFER.md:12689-12712 is a verbatim explain_query capture from a live authed probe (probe log :12826-12835), and the plan text itself conta"
+      ]
+    },
+    "Firecrawl's engine 'quality' scores are a cost-preference ordering, not a content-quality measure: index (semantic cache) = 1000, wikipedia (Enterprise API) = 500, chrome-cdp = 50, plain fetch = 5, stealth-proxy variants NEGATIVE (-2, -5, -15), pdf/document = -20. Engines are selected by priorityThreshold = floor(sum_of_flag_priorities / 2) then sorted by (supportScore DESC, quality DESC). lockdown:true allows only index engines \\u2014 no live web fetch at all. Result: 40% of API calls never launch a browser.": {
+      "refuted": 3,
+      "kept": 0,
+      "reasons": [
+        "Evidence resolves \u2014 every cited line exists and says what is claimed \u2014 but the headline interpretation is inverted by the source it rests on.\n\nVERIFIED (teardown lines all resolve; independently confirmed against firecrawl HEAD e847d994, 2026-09-09, cloned at /private/tmp/.../scratchpad/fc):\n- FIREC",
+        "Verified against Firecrawl source at HEAD e847d99 (2026-09-09), not just the teardown. The mechanical scaffolding verifies verbatim: priorityThreshold = Math.floor(prioritySum/2) (engines/index.ts:951); sort by (supportScore DESC, effectiveQuality DESC) (:1030-1035); engpicker TlsClientOk gives tlsc",
+        "Skeptic angle 1 answers CLEAN \u2014 the mechanism is real, not aspirational. I cloned firecrawl/firecrawl at HEAD e847d994 (2026-09-09) and verified 7 of 7 load-bearing constants in apps/api/src/scraper/scrapeURL/engines/index.ts: every quality value the claim lists matches exactly (index 1000, wikipedi"
+      ],
+      "corrections": []
+    },
+    "The most precise-looking constants in the corpus's own Perplexity pipeline were the fabricated ones, and a later audit round refuted six of them by a method worth copying: fetch the CITED primary source and check the constant is present. Result verbatim \\u2014 'T5-XXL \\u2192 NOT PRESENT; entropy-0.85 cutoff \\u2192 NOT PRESENT; FastText \\u2192 NOT PRESENT; DeBERTa-v3 \\u2192 NOT PRESENT; XGBoost-0.7 \\u2192 NOT PRESENT; Fusion-in-Decoder-8K \\u2192 NOT PRESENT.' All six trace to one third-party GitHub repo that self-labels its contents as 'reverse engineering, and technical inference' with no primary cite.": {
+      "refuted": 2,
+      "kept": 1,
+      "reasons": [
+        "Evidence resolves and the verbatim quote is exact, but the load-bearing count is wrong and the headline framing inverts the finding. (1) I applied the claim's own method \u2014 fetched github.com/OmidZamani/perplexity-journey (last commit 2025-03-29, so byte-identical to the audit's 2026-05-30 fetch; no ",
+        "Falsified by direct check of the primary artifact. (1) \"All six trace to one third-party GitHub repo\" is false for one of six: I cloned OmidZamani/perplexity-journey and grepped it \u2014 XGBoost returns 0 hits; the only two \"0.7\" occurrences are an unrelated Diverse Beam Search / MMR lambda (README:107,"
+      ],
+      "corrections": [
+        "The load-bearing mechanism verifies exactly. Every cited line anchor resolves in /Users/seventyleven/Desktop/researchfms/teardowns/PERPLEXITY_DEEP.md: the six constants sit at :1207/:1208/:1231/:1256/:1257/:1258 inside the :1201-1276 diagram under a blanket \"based on the research.perplexity.ai paper"
+      ]
+    },
+    "Cora's stated product guarantee is 'nothing missed' \\u2014 verbatim 'high false-positive tolerance, near-zero false-negative tolerance on important mail' \\u2014 and the only false-negative-measuring knob in its shipped eval schema defaults to zero: singleton_sample = 0 (items sampled for false-negative evaluation), with singleton_rubric required only if singleton_sample > 0. Its eval library has no F1, no precision/recall, no confusion matrix, and the shipped evaluate() literally returns rand(0.1..1.0) with a comment saying implement a real one.": {
+      "refuted": 3,
+      "kept": 0,
+      "reasons": [
+        "The cited lines all exist and two components are verbatim-correct, but the claim's load-bearing juxtaposition is a misattribution, and a second element is overstated.\n\nCONFIRMED. (a) The guarantee at /Users/seventyleven/Desktop/researchfms/teardowns/CORA.md:18691-18694 is exactly as quoted, cited KN",
+        "The claim's central irony is a cross-repo misattribution. `singleton_sample = 0` is NOT in Cora's (or leva's) shipped eval schema. CORA.md:18706-18710 states plainly that leva v0.3.4 has NO LLM judge at all (\"a case-insensitive grep for `judge` across the entire repo returns zero hits\") and that the",
+        "The load-bearing number is welded to the wrong artifact. The claim says \"the only false-negative-measuring knob in ITS shipped eval schema defaults to zero: singleton_sample = 0\", attributing it to Cora. The source says the opposite: \u00a711.5.2 is titled \"LLM-as-judge: not in `leva`\" and states \"There "
+      ],
+      "corrections": []
+    },
+    "Firecrawl's extract reranker takes the opposite tie-break to Feedly's and says so in the prompt: 'If unsure, give 1.0' \\u2014 twice, on both the multi-entity and single-answer scoring ladders. Its ranking thresholds are 0.6 (single-answer) / 0.45 (multi-entity) on a gemini-2.5-pro pass over 5,000-link chunks, with a second pass if >100 links survive. But two shipped config constants are effectively disabled: INITIAL_SCORE_THRESHOLD_FOR_RELEVANCE and FALLBACK_SCORE_THRESHOLD_FOR_RELEVANCE are both 0.00000001, with MIN_REQUIRED_LINKS: 1.": {
+      "refuted": 3,
+      "kept": 0,
+      "reasons": [
+        "The cited lines all exist (FIRECRAWL.md:837, :859, :868, :877-887; AGENT_SECURITY_DEFENSE.md:588) and the numbers match the real repo at the teardown's clone date (firecrawl commit b52cf19d, 2026-04-22: THRESHOLD_FOR_SINGLEPAGE=0.6, THRESHOLD_FOR_MULTIENTITY=0.45, chunkSize=5000, gemini-2.5-pro vert",
+        "Verified against source (github.com/firecrawl/firecrawl, HEAD e847d99 cloned 2026-09-09, and commit 0ae6387b of 2026-04-20 \u2014 one day before the teardown's own clone date). Four failures. (1) NOT A SHIPPED MECHANISM: the reranker the claim describes (apps/api/src/lib/extract/reranker.ts + url-process",
+        "Checked against the primary source (github.com/firecrawl/firecrawl @ e847d994, Sep 9 2026, full history), not just the teardown. Four independent failures. (1) The \"verbatim\" quote does not exist. Across all 32 historical versions of apps/api/src/lib/extract/reranker.ts the string \"If unsure, give 1"
+      ],
+      "corrections": []
+    },
+    "Two shipped rankers explicitly beat a popularity/centrality proxy with a query-conditional one. GraphRAG ranks out-of-network edges by len(set(targets + sources)) \\u2014 how many distinct query-matched entities link to the outside entity \\u2014 admitted up to top_k_relationships \\u00d7 len(selected_entities) = 10 \\u00d7 20 = 200, so 'an entity that bridges several query-matched entities outranks a higher-degree entity that touches only one'. Nia's fusion trusts retrieval at 0.75 weight for pre_rerank_rank \\u2264 3, drops to 0.60 for ranks 4-10 and 0.40 beyond, with an extra -0.005 per rank past 10 \\u2014 because 'the reranker's value is in filtering noise from the long tail, not reordering high-confidence hits'.": {
+      "refuted": 3,
+      "kept": 0,
+      "reasons": [
+        "The GraphRAG mechanism is real and verified verbatim against shipped source, but the claim's unifying headline overstates it and misclassifies Nia. (1) \"Beats a popularity/centrality proxy\" is wrong: fetched microsoft/graphrag main, packages/graphrag/graphrag/query/context_builder/local_context.py \u2014",
+        "Every cited line resolves, and the GraphRAG mechanism verifies against real source (microsoft/graphrag @ f40e9a2, packages/graphrag/graphrag/query/context_builder/local_context.py:232-317; top_k_relationships=10 at config/defaults.py:268; top_k_entities=10 x oversample_scaler=2 at entity_extraction.",
+        "Refuted on both halves of the headline, and the Nia number fails the protocol test outright.\n\n(1) The Nia number is retracted in its own corpus, twice. The claim cites NIA.md:443 as \"verbatim\" code, but Nia's fusion runs server-side on a closed hosted API \u2014 \u00a75.2 is labeled \"[from D2 Probe E]\" and \"v"
+      ],
+      "corrections": []
+    },
+    "A filter trained on a FROZEN set of negatives has no performance guarantee at all \\u2014 the bound collapses to MRR ~ 1/|C| \\u2014 and empirically it buys top-of-list precision by destroying recall: BM25-mined static negatives give MRR@10 0.309 / R@100 0.813 against random negatives' 0.301 / 0.853 on MS MARCO passage, and 0.539 nDCG@10 / R@100 0.362 against 0.572 / 0.464 on the document task (a 10-point recall collapse).": {
+      "refuted": 3,
+      "kept": 0,
+      "reasons": [
+        "Source resolves and the theory half is verbatim correct, but the load-bearing empirical number is mislabeled and the causal story is contradicted by the same table. (1) NUMBER SPLICED ACROSS DATASETS: Table 2's eight columns are MARCO Dev Passage {MRR@10, R@100} | TREC DL Passage {NDCG@10, R@100} | ",
+        "Two of four headline numbers are attached to the wrong task, and the stated accretion condition is refuted by the paper's own best method.\n\n1) COLUMN MIX-UP. Table 2 columns are: [MARCO Dev Passage MRR@10, R@100 | TREC DL Passage nDCG@10, R@100 | MARCO Dev Doc MRR@100, R@100 | TREC DL Doc nDCG@10, R",
+        "Verified against the full ar5iv text of arXiv:2104.08051 (the claimed zhan.txt did not exist; I refetched) and arXiv:2007.00808. The quotes are real but the claim fails on three independent grounds.\n\n(1) THE DOCUMENT-TASK NUMBERS ARE SPLICED ACROSS TWO DATASETS. Table 2's columns are: MARCO Dev Pass"
+      ],
+      "corrections": []
+    },
+    "The cheap first stage's REJECTION CRITERION is structurally different from the expensive stage's scoring criterion, so it permanently deletes exactly what the expensive stage was best at. Stated as a design rule and quantified: BM25 requires at least one exact query term; recall@1000 is 85.7% (Anserini) vs 81.5% (Microsoft) for the *same* BM25 function, differing only in tokenization/stopwords/stemming.": {
+      "refuted": 2,
+      "kept": 1,
+      "reasons": [
+        "REFUTED \u2014 the quotes are real, but a real number is welded to a mechanism it does not measure, and the number's framing misstates the source.\n\n1) MECHANISM SWAP (fatal). 85.7% vs 81.5% is an Anserini-vs-Microsoft *implementation* comparison. It quantifies variance between two BM25 codebases. It does",
+        "Quotes verified verbatim against the live source (ar5iv, arXiv:1910.14424), but the synthesis overstates the paper in three load-bearing ways. (a) MECHANISM IS MOTIVATION, NOT RESULT: the paper's stated consequence of BM25's exact-match structure is only \"it is critical in H0 to optimize for recall,"
+      ],
+      "corrections": [
+        "The evidence fully resolves. arXiv:1910.14424 (Nogueira, Yang, Cho, Lin, \"Multi-Stage Document Ranking with BERT\", submitted 31 Oct 2019) exists with those exact authors, and I checked the claim against the arXiv e-print TeX source (main.tex), not just the saved extraction. Every quoted string and n"
+      ]
+    },
+    "Nobody measures false negatives because measuring them is arithmetically prohibitive at low base rates: a simple random sample that estimates recall to +/-0.05 at 95% confidence needs roughly 385 RELEVANT documents in it, so at 1% prevalence you must review ~38,500 documents just to audit your filter.": {
+      "refuted": 3,
+      "kept": 0,
+      "reasons": [
+        "The evidence resolves and the arithmetic half is verbatim, but the claim's headline assertion is contradicted by the same paragraph it quotes, and the section locator is wrong. (1) Locator error: the passage is in Section 2 (Background), under sample-based stopping rules \u2014 Section 3.2 is \"The '2399'",
+        "The quoted sentences are verbatim real (verified against the arXiv LaTeX source, 2-background.tex), and the arithmetic is textbook-correct (1.96^2*0.25/0.05^2 = 384.16 -> 385; 385/0.01 = 38,500). Everything else fails.\n\n(1) WRONG SECTION. The passage is in Sec. 2 (Background), not Sec. 3.2. Sec. 3.2",
+        "The arithmetic half checks out verbatim against the arXiv LaTeX source (2-background.tex, line 15), and I reproduced it independently: 1.96^2*0.25/0.05^2 = 384.15 -> \"roughly 385\"; 385/0.01 = 38,500. The mechanism is genuine sampling theory (cited to Lewis, \"Defining and Estimating Effectiveness in "
+      ],
+      "corrections": []
+    },
+    "A high-recall screening pipeline has a NAMED, PARAMETERISED false-negative cost function, and the standard operating points are published: recall target 80% in eDiscovery, 95% in medical systematic reviews. Cost = alpha_p*t_p + alpha_n*t_n + beta_p*m_p + beta_n*m_n, where t are docs read to train the filter and m are docs still needing review to hit target; benchmarked under (1,1,1,1) 'uniform' and (10,10,1,1) 'expensive'.": {
+      "refuted": 2,
+      "kept": 1,
+      "reasons": [
+        "Skeptic angle 1 fails: the mechanism is real, not aspiration or vendor copy. Sec. 3.3 of Mao/Koopman/Zuccon (ECIR 2024, arXiv:2401.08104) defines and then actually computes \"alpha_p t_p + alpha_n t_n + beta_p m_p + beta_n m_n\" under (1,1,1,1) \"uniform\" and (10,10,1,1) \"expensive\", and every results ",
+        "Most of the numbers check out verbatim, but three load-bearing statements overstate or invert the source, and one is flatly false.\n\nCONFIRMED against Sec. 3.3 / Tables 1-2 of arXiv:2401.08104v1 (ECIR 2024 reproducibility track; re-fetched clean): the cost structure (a_p,a_n,b_p,b_n) with cost = a_p*"
+      ],
+      "corrections": [
+        "The evidence resolves and the load-bearing half is verbatim correct. arXiv:2401.08104 (Mao, Koopman, Zuccon; arXiv abs confirms \"Accepted at ECIR 2024 (reproducibility)\", DOI 10.1007/978-3-031-56066-8_13) Sec. 3.3 states exactly: \"a recall target of 80% is common in eDiscovery; 95% in systematic rev"
+      ]
+    },
+    "The ceiling on any filter's measurable accuracy is the self-consistency of the judgement it imitates, and that number is roughly a coin flip: assessors shown a document a SECOND time agreed with their own first label only 52% of the time; two independent groups of trained TREC assessors agree at Cohen's kappa 0.52; labelling web pages for spam gets kappa 0.56.": {
+      "refuted": 3,
+      "kept": 0,
+      "reasons": [
+        "The source resolves and the four borrowed numbers are quoted verbatim and correctly attributed (arXiv:2309.10621, Sec. 4.1, the two paragraphs after Table 1). But the claim's load-bearing first sentence is refuted by that same passage, on four counts.\n\n(1) THE \"CEILING\" IS THE PAPER'S OPPOSITE CONCL",
+        "Every quoted number exists verbatim in Thomas et al., SIGIR 2024 (arXiv:2309.10621v3), \u00a74.1, and the prompt-sensitivity result (kappa 0.20 for \"R---M\" to 0.64 for \"-DNA-\", same GPT-4 at temperature 0, same stratified 3,000 TREC-Robust query:document pairs; 0.50-0.72 across 42 paraphrases) is exactly",
+        "The quotations are accurate but the finding's punchline \u2014 \"roughly a coin flip\" \u2014 is a unit conflation, and two of the three numbers do not survive their own protocol.\n\n(1) UNIT CONFLATION. The claim stacks 52% (a raw percentage) with \u03ba=0.52 and \u03ba=0.56 (chance-corrected) as instances of one thing. A"
+      ],
+      "corrections": []
+    },
+    "In-domain filter accuracy does not predict out-of-domain filter accuracy, and the gap is enormous: across 18 heterogeneous datasets, DPR averages -47.7% against BM25, DeepCT -27.9%, SPARTA -20.3%, ANCE -7.4% \\u2014 while the untrained lexical baseline holds. The only architecture that generalises is the one that reads query and candidate JOINTLY at scoring time (BM25+CE, +11%, beats BM25 on 16/18) and it costs 6,100ms CPU per query against BM25's 20ms \\u2014 a 305x price for the thing that works.": {
+      "refuted": 2,
+      "kept": 1,
+      "reasons": [
+        "The numbers are quoted correctly, but the load-bearing mechanism is refuted by the paper's own table \u2014 and by the sentence the claim is quoting from. (1) \"The only architecture that generalises is the one that reads query and candidate JOINTLY at scoring time\" is false against the source: BEIR Findi",
+        "Every quotation checks out verbatim, but the claim's load-bearing NUMBERS lack their protocol, and the paper's own instrument is biased toward the conclusion the claim draws.\n\nWHAT VERIFIED (arXiv:2104.08663v4 PDF, /private/tmp/claude-501/-Users-seventyleven-Desktop/47bf30ba-3257-44d3-a6e3-5cfa643de"
+      ],
+      "corrections": [
+        "The evidence resolves and says what is claimed. I re-fetched arXiv:2104.08663 from ar5iv independently and confirmed against the researcher's saved beir.txt (825 lines, identical on every cited line). Table 2's header gives column order BM25 | DeepCT | SPARTA | docT5query | DPR | ANCE | TAS-B | GenQ"
+      ]
+    },
+    "The second accreting mechanism is a per-run calibration sample with a kill switch: humans dual-screen ~19% of records to consensus, the automatic filter's rules are then fit against THAT consensus, and if the fitted filter cannot clear Krippendorff's alpha \\u2265 0.8 and F1 \\u2265 0.9 on the calibration sample, automation is abandoned for that run rather than tuned further. Crucially, if the HUMANS disagree with each other below 0.8 first, the fix is to rewrite the inclusion criteria, not to re-read (Step 2b).": {
+      "refuted": 3,
+      "kept": 0,
+      "reasons": [
+        "The source is real and I read it in full: Hilkenmeier, Stoltenberg & Stierle, \"Using full agreement across multiple large language models for title-and-abstract screening in systematic reviews: a proof-of-concept,\" Systematic Reviews 2026, PMC13263951 (local text dump: /private/tmp/claude-501/-Users",
+        "Source resolves and the case numbers check out verbatim (PMC13263951 = Hilkenmeier/Stoltenberg/Stierle, Syst Rev, PMID 42286747, DOI 10.1186/s13643-026-03228-4), but three load-bearing parts of the claim misstate the protocol. (1) The clause the claim itself flags as \"crucial\" is inverted. Step 2b i",
+        "Read verbatim at PMC13263951 (Hilkenmeier, Stoltenberg, Stierle, \"Using full agreement across multiple large language models for title-and-abstract screening in systematic reviews: a proof-of-concept,\" Systematic Reviews, DOI 10.1186/s13643-026-03228-4). Two load-bearing errors, plus a number with n"
+      ],
+      "corrections": []
+    },
+    "The field's standard instrument for measuring screening error is structurally blind to the error class it most cares about. The largest such study \\u2014 139,467 citations, 329,332 decisions, 85 reviewers, 25 systematic reviews \\u2014 reports a 10.76% (95% CI 7.43\\u201314.09) abstract-screening error rate, and then states: 'When both reviewers agree on excluding an abstract, this abstract disappears from the process; thus, a dual erroneous exclusion cannot be assessed.' The concordant false negative is unobservable by construction.": {
+      "refuted": 2,
+      "kept": 1,
+      "reasons": [
+        "The verbatim quote and every raw number check out against PLoS One 15(1):e0227742 (PMC6959565), but the thesis built on them does not. Three failures. (1) MECHANISM: the 10.76% denominator is \"the number of errors divided by the total number of screened abstracts (the total number of citations*2)\" \u2014",
+        "The source exists and every quoted number checks out verbatim \u2014 but the claim's two framing sentences overstate what the paper can support, and one is directly falsified by a contemporaneous study.\n\nWHAT VERIFIES (Wang Z, Nayfeh T, Tetzlaff J, O'Blenis P, Murad MH, PLoS ONE 2020;15(1):e0227742, PMID"
+      ],
+      "corrections": [
+        "I read the full primary source (PMC6959565 HTML, plus all four supplementary files: S1 Appendix, both reviewer PDFs, and the Response to Reviewers). The descriptive core of the claim is exactly right; the interpretive payload is not, so the claim survives only in corrected form.\n\nCONFIRMED VERBATIM."
+      ]
+    },
+    "What actually predicts a false exclusion is under-DESCRIPTION, not low quality. Abstracts that insufficiently reported study information were falsely excluded 18.4% of the time (95% CI 14.6\\u201322.8) versus 6.0% (4.4\\u20138.3) for those that reported sufficiently; not reporting the study design, 15.4% vs 9.4%. By design: NRSI 19.6% (12.7\\u201328.8), ITS 12.7%, RCT 9.3% (7.5\\u201311.7), NRCT 6.7%. The paper's own explanation is that this tracks reporting-guideline adherence (CONSORT for RCTs), not study design as such.": {
+      "refuted": 3,
+      "kept": 0,
+      "reasons": [
+        "The source resolves and every number checks out verbatim \u2014 but the claim's load-bearing contrast (\"under-DESCRIPTION, not low quality\") is contradicted in the same table, and \"predicts\" is a word the paper explicitly abandoned.\n\nVERIFIED (all exact): PMC13182097 = Affengruber, Emprechtinger, Persad,",
+        "Every number in the claim verifies verbatim against PMC13182097 (Affengruber et al., BMC Med Res Methodol 2026): 924 decisions, 826 correct inclusions, 98 false exclusions (10.6%), 73 primary studies, 260 reviewers; insufficient info 18.4% (14.6-22.8) vs sufficient 6.0% (4.4-8.3); design not reporte",
+        "The proportions are quoted accurately, but the load-bearing sentence \u2014 \"what actually PREDICTS a false exclusion is under-description, NOT low quality\" \u2014 is broken on both halves, and the protocol will not carry it.\n\n1. PREDICTION IS THE ONE THING THIS PAPER FAILED AT. The registered protocol (OSF 7"
+      ],
+      "corrections": []
+    },
+    "Time-on-decision as a confidence proxy is a global null that INVERTS by subgroup. Pooled: median 27.0s for a correct inclusion vs 28.0s for a false exclusion \\u2014 no discrimination at all. Split: native English reviewers made false exclusions FASTER than correct inclusions (18s vs 27s; 84.6% within 50s), non-natives SLOWER (34s vs 28s; 59.7%); researchers 19s vs 31s; students 61s vs 36s. A pooled 'fast decision = suspect' rule is exactly backwards for half the population.": {
+      "refuted": 3,
+      "kept": 0,
+      "reasons": [
+        "The paper is real and correctly cited (Waffenschmidt et al., \"Characteristics of studies falsely excluded during single-reviewer abstract screening: a meta-epidemiological analysis,\" BMC Med Res Methodol 2026, PMC13182097 / PMID 41942890), and most of the numbers are transcribed accurately. The clai",
+        "The evidence resolves \u2014 BMC Med Res Methodol 2026 Apr 7;26:117, doi 10.1186/s12874-026-02838-9, PMID 41942890, PMC13182097 (Affengruber et al.) exists, \u00a7\"Time for decisions\" exists, and the pooled 27.0/28.0, natives 84.6%/non-natives 59.7%, non-natives 34/28, researchers 19.0/31.0, and Table 2's 5 (",
+        "Source is real and most digits check out, but the finding overstates it on every axis the skeptic angle names \u2014 protocol, denominator, and unit.\n\nPAPER: Affengruber, Emprechtinger, Persad, Kleijnen, Gartlehner. BMC Med Res Methodol 2026;26:117, doi 10.1186/s12874-026-02838-9, PMC13182097 / PMID 4194"
+      ],
+      "corrections": []
+    },
+    "Popularity and journal rank are not used as a noise proxy in this field, and the one time it was tested it came back null. In 924 screening decisions, the proportions of false exclusions and correct inclusions were 'similar' across both Medline indexation status and SCImago Journal Rank. Where popularity DOES get used \\u2014 the citation graph as a retrieval route \\u2014 it inverts: automated citation searching simulated over 27 systematic reviews on OpenAlex and Semantic Scholar achieved median recall 35.79% (IQR 33.46), median precision 2.57%, median F3 0.028; it beat the reference Boolean search on precision and F1 (p<0.05) and LOST on recall and F3 (p<0.05).": {
+      "refuted": 2,
+      "kept": 1,
+      "reasons": [
+        "All three numeric payloads verify verbatim, but the load-bearing framing does not survive. (1) \"The one time it was tested it came back null\" is false on protocol: PMC13182097's journal-characteristics comparison is explicitly \"exploratory and descriptive\" \u2014 no chi-square, no regression, no CI, no c",
+        "Every number is verbatim accurate; the mechanism binding them is not, and the headline upgrades a failed analysis into a null. (1) THE NULL IS NOT A NULL. PMC13182097's pre-registered protocol (osf.io/7xhkj) planned a random forest predictor; it failed \u2014 \"the model exhibited low precision for the fa"
+      ],
+      "corrections": [
+        "All three citations resolve and every number is verbatim exact \u2014 I pulled the raw PMC text for each rather than trusting a summarizer. PMC13182097 (Affengruber et al., BMC Med Res Methodol 2026;26:117) contains the \"similar when considering both the Medline indexation status and SCImago Journal Rank"
+      ]
+    },
+    "The rule that LET THE 25 FABRICATIONS IN is not a weak threshold \\u2014 it is a KEY. Every source-grounding gate in _transcript_tools finds its source by regexing `^**Source:** ... `<11-char id>`` out of the section and `continue`s when it is absent; the audit's own \\u00a73b states \\\"The fabrication lives entirely in the sections with no **Source:** line.\\\" A section with no id is SKIPPED, never failed, so 100% of the invented content sat in the gates' blind spot by construction.": {
+      "refuted": 3,
+      "kept": 0,
+      "reasons": [
+        "The cited evidence resolves and the quoted strings are accurate (verbatim_check.py:107-108 `if not m or m.group(1) not in src:` / `continue`; entity_retention.py:157-158; audit line 87 verbatim; live grep on _quarantine/DEEPLEARNINGAI_UNSOURCED_2026-08-04.md returns exactly 25 `## ` sections and 0 `",
+        "Refuted by running the code. (1) The universal quantifier is false for a gate the evidence itself names: retention_check.py does NOT `continue` on a missing id \u2014 lines 31-36 do `vid = m.group(1) if m else \"??\"`, `sw = src.get(\"??\", 0)`, ret% = 0.0, which is under the 75% floor, lands in `under`, and",
+        "Three independent failures, all measured against the source, not argued.\n\n(1) \"Every source-grounding gate ... `continue`s when it is absent ... A section with no id is SKIPPED, never failed\" is false for retention_check.py, one of the four gates the claim itself offers as evidence. Lines 31-36 do N"
+      ],
+      "corrections": []
+    },
+    "In the gate runner, the only two checks that touch the SOURCE'S CONTENT are non-blocking by construction. checkall_v4.sh computes eight blocking flags \\u2014 all of them format or volume, computed on the note alone or on note-vs-source word COUNT \\u2014 and two advisory ones, `fig?` (figure retention) and `ent?` (entity retention), which fall through the failure `case` into the pass branch.": {
+      "refuted": 3,
+      "kept": 0,
+      "reasons": [
+        "The cited line exists verbatim at checkall_v4.sh:92, and the structural half of the claim is exactly right: 8 blocking flag assignments (lines 77-84), 2 advisory (85-86), and fig?/ent? match no pattern in the failure case so they fall to line 93 and are counted as PASS. Both accretion sub-claims als",
+        "The claim's central mechanism is false: a blocking flag DOES touch the source's content. VERBATIM-FAIL is set at checkall_v4.sh:81 and matched into the failure branch by the `case` at :92, and it is computed by verbatim_check.py, which ingests the source transcript (`glob(f\"{W}/txt/*.txt\")`, :97-98)",
+        "The headline is false. THREE checks in checkall_v4.sh touch the source's content, and one of them blocks. verbatim_check.py loads the full source transcript from {W}/txt/*.txt, tokenises it, builds n-gram sets and finds maximal shared word SEQUENCES between note and source (longest_shared_runs, line"
+      ],
+      "corrections": []
+    },
+    "Quote density is a real invention SMELL at the batch level and NOT a per-item gate, measured on the owner's own quarantined fabrication. Nobody can quote a source they never read. The 25 fabricated sections carry 1.7 marked quotations per 1,000 words against 7.5 for the surviving corpus they were cut from (4.4x) and a house median of 13.1 across 41 corpora. But per section the separation collapses: fabricated median 0.9 vs faithful 3.1, and the floor of 8 flags 100% of fabricated AND 81% of faithful sections.": {
+      "refuted": 2,
+      "kept": 1,
+      "reasons": [
+        "The measurements reproduce but the mechanism does not survive a control the owner's own corpus already contains. Live: quarantine 1.7, primary 7.5 (4.41x); per-section FAB n=25 p25 0.0, 44% zero, 25/25 below 8; PRIMARY n=125 median 3.1, p25 0.9, 22% zero, 103/125 below floor; prose_style prints \"cle",
+        "The per-item half reproduces exactly, but the headline batch-level half fails on both protocol and denominator.\n\n(1) DENOMINATOR \u2014 the 4.4x is a comparison-group artifact, not an invention signal. TRANSCRIPTS_DEEPLEARNINGAI.md is three H1 blocks with unrelated quote discipline: \"AI Dev 25 Complete C"
+      ],
+      "corrections": [
+        "The evidence resolves and the load-bearing measurements reproduce live, to the decimal. quote_density.py run on _quarantine/DEEPLEARNINGAI_UNSOURCED_2026-08-04.md returns 1.7 and on TRANSCRIPTS_DEEPLEARNINGAI.md returns 7.5 (4.4x). Re-running the same quote-state counter per '## ' section over secti"
+      ]
+    },
+    "The one instrument on disk that computes a FALSE-NEGATIVE number is checks/coverage.py \\u2014 Lincoln-Petersen capture-recapture over two independent search passes \\u2014 and it is the only place that encodes exactly where popularity inverts: two rank-ordered passes agree about the head and are silent about the tail TOGETHER, so their inflated overlap shrinks the estimated population and reports HIGH coverage precisely when the obscure tail was missed by both. It refuses to produce an estimate rather than produce a flattering one.": {
+      "refuted": 2,
+      "kept": 1,
+      "reasons": [
+        "The mechanism half checks out verbatim: coverage.py:39 `_RANKED` matches the quote exactly, `_dependence_caveat()` refuses same-lane and both-ranked pairs (verified empirically: estimated_total=None, coverage=None), `best_estimate()` returns max(totals) over independent pairs (6.0 over a 3-lane fixt",
+        "The code descriptions in the claim are accurate line-by-line, but three load-bearing assertions fail when run rather than read.\n\n(1) UNIQUENESS IS FALSE. /Users/seventyleven/Desktop/badresearch/src/bad_research/grounding/recall_harness.py is an older on-disk instrument that computes a false-negative"
+      ],
+      "corrections": [
+        "The mechanism is real, not aspirational: every quoted code fact checks out verbatim at /Users/seventyleven/Desktop/badresearch/src/bad_research/checks/coverage.py (line 39 _RANKED tuple; _dependence_caveat refusing same-lane and both-ranked; estimate_coverage returning None/None there and on zero ov"
+      ]
+    },
+    "The only filter in six repos whose threshold is DERIVED FROM ACCUMULATED EXPERIENCE rather than picked: FlashRAG's SKRJudger decides whether to retrieve by kNN over a memory of past questions labelled `ir_better`/`ir_worse` (did retrieval actually help?), and compares the local class delta against the GLOBAL class prior scaled to k \\u2014 `int(training_data_delta * self.topk / self.training_data_num)`. No magic constant anywhere in the decision. The memory is of OUTCOMES, not of relevance judgments.": {
+      "refuted": 2,
+      "kept": 1,
+      "reasons": [
+        "The citations resolve exactly \u2014 FlashRAG@1ee5249, /private/tmp/claude-501/-Users-seventyleven-Desktop/47bf30ba-3257-44d3-a6e3-5cfa643debb0/scratchpad/lane/flashrag/flashrag/judger/judger.py: SKRJudger at 37-128, the prior term `int(training_data_delta * self.topk / self.training_data_num)` verbatim ",
+        "Cloned FlashRAG (HEAD == 1ee5249, verified) and the upstream THUNLP-MT/SKR repo it ports. All line citations are accurate (judger.py:37-128, :110-124, :116, :121, :47, :60-64; pipeline.py:142,164) and the int() arithmetic is correct \u2014 but the three load-bearing assertions fail. (1) The memory is NOT"
+      ],
+      "corrections": [
+        "The mechanism is real, not an aspiration or vendor claim \u2014 I read the exact file at the cited commit (1ee5249) and every line reference resolves: SKRJudger at judger.py:37-128, the prior term `int(training_data_delta * self.topk / self.training_data_num)` verbatim at :116 and :121, topk default 5 at"
+      ]
+    },
+    "Two shipped accretive filters that learn WITHIN a run, and both keep the hard cases rather than the high-scoring ones. TRL's replay buffer scores a candidate group by `advantages.abs() * std_rewards` \\u2014 it retains the groups the judges DISAGREED about most, evicting the rest from a 64-slot min-heap. open-instruct's `no_resampling_pass_rate` permanently excludes a prompt from the pool once its measured pass rate crosses a threshold, and the exclusion set is checkpointed.": {
+      "refuted": 3,
+      "kept": 0,
+      "reasons": [
+        "Every citation resolves exactly at the cited commits (trl@e78a93bd, open-instruct@ebd0c8e0) \u2014 line 602, the heap at 29-58, config default 64, and all five open-instruct line refs are verbatim correct. But the claim's unifying assertion (\"both keep the hard cases rather than the high-scoring ones\") i",
+        "The open-instruct half verifies line-for-line; the TRL half does not survive. (1) MECHANISM DOES NOT RUN AS DESCRIBED. The quoted line exists verbatim at trainer.py:602, but its only production caller violates the shape contract. `advantages` and `grouped_std_rewards` are built FLAT (rewards.view(-1",
+        "Verified at the exact claimed commits (trl e78a93bd, open-instruct ebd0c8e0). The open-instruct half checks out line-for-line, and TRL's quoted expression, min-heap eviction and default 64 are real. Three material failures sink the claim as stated.\n\n(1) WRONG MECHANISM \u2014 \"judges DISAGREED\" does not "
+      ],
+      "corrections": []
+    },
+    "Popularity is used as a relevance LABEL at training time and is completely absent as a runtime signal \\u2014 and the frozen-in version is invisible to the contamination check that is supposed to catch it. Across all six repos the only mention of votes or citations is a commented-out inventory of BGE's training pairs: `(title, upvoted answer)` from StackExchange, `(title, body)` from Reddit, `(title, citation title) (abstract, citation abstract)` from S2ORC. Those lines are commented out because those corpora are 'not in mteb', so they can never intersect a benchmark name and are silently dropped from the zero-shot test.": {
+      "refuted": 2,
+      "kept": 1,
+      "reasons": [
+        "Line-number citations and the negative grep all replicate exactly at mteb@df7998e (bge_models.py:101/114/115, repeated 161/162; model_meta.py:1301 is_zero_shot_on with the set intersection at 1322-1323; the four-term grep hits 1 file in MTEB and 0 in the other five repos). But three load-bearing par",
+        "Every line number checks out (mteb HEAD is df7998eb; :101 \"# not in mteb\", :114 stackexchange, :115 s2orc, :116 close, repeat at :160-162; model_meta.py :1301/:1322/:1323), and the negative grep replicates exactly (0 files in FlashRAG/pyserini/rerankers/trl/open-instruct, 1 in mteb). The mechanism s"
+      ],
+      "corrections": [
+        "All six repos were cloned locally (scratchpad/lane/*, mteb2 at df7998e) and every cited line resolves exactly. bge_models.py:101 is `# not in mteb`; :113-115 carry the reddit/stackexchange-upvoted-answer/s2orc-citation-pair comments verbatim, repeating at :159-162 (the claim's \":161\" is off by one f"
+      ]
+    },
+    "Proof of fraud does not reduce popularity. OpenAlex holds 135,236 works flagged retracted; the most-cited genuinely-retracted one has 5,537 citations, the Wakefield MMR paper (retracted 2010) still shows 2,962, and the Surgisphere hydroxychloroquine paper 4,968. Citation count \\u2014 the standard authority proxy \\u2014 is unmoved by retraction, and is in fact a positive predictor of being caught, since retraction requires attention.": {
+      "refuted": 3,
+      "kept": 0,
+      "reasons": [
+        "The load-bearing half of the claim \u2014 that citation count is \"a positive predictor of being caught\" and that popularity ANTI-accretes for fraudulent items \u2014 is refuted by the same API in the same query shape the claim used. Retraction rate declines monotonically with citations: 0.0709% (1-9 cites), 0",
+        "Evidence resolves and the headline numbers reproduce exactly (count=135236; 5537/4968/4302/4262/2962/2925), but four checks fail. (1) MISATTRIBUTION: 4,968 is Gautret et al. (Raoult/IJAA), not \"the Surgisphere hydroxychloroquine paper.\" Surgisphere is Mehra/Desai \u2014 NEJM 10.1056/nejmoa2007621 at 1,49",
+        "Four independent failures; the central mechanism is measurably backwards.\n\n1) A NAMED NUMBER IS MISATTRIBUTED ~4x. \"the Surgisphere hydroxychloroquine paper 4,968\" is false. 4,968 belongs to Gautret et al., Int J Antimicrob Agents 2020 (10.1016/j.ijantimicag.2020.105949) \u2014 the Raoult/Marseille study"
+      ],
+      "corrections": []
+    },
+    "Cloudflare's AI Labyrinth \\u2014 generated pages that are 'real and related to scientific facts, just not relevant or proprietary to the site being crawled' \\u2014 is defeated by three checks that all cost nothing, because Cloudflare's own construction requires them: every labyrinth page carries a noindex meta directive, the link into it is CSS-hidden on the referring page, and the whole thing is served ONLY to clients already classified as unverified bots.": {
+      "refuted": 2,
+      "kept": 1,
+      "reasons": [
+        "The three quotes verify verbatim (read live 2026-09-09 via silver, https://blog.cloudflare.com/ai-labyrinth/), but the claim's operative structure \u2014 \"three checks that all cost nothing\" \u2014 fails on two of its three legs, and the specific implementation details it asserts are single-source vendor asse",
+        "The three quotes are verbatim and correct, but the claim's structure fails on all three legs plus its warrant. (1) The third \"check\" is not a check. \"Served only to clients already classified as unverified bots\" is a server-side gating property with no client-side observable \u2014 a crawler cannot query"
+      ],
+      "corrections": [
+        "Evidence resolves and is verbatim. Read live 2026-09-09 via silver at https://blog.cloudflare.com/ai-labyrinth/: all seven quoted strings appear exactly as offered, including \"Each generated page includes appropriate meta directives to protect SEO by preventing search engine indexing\", \"these links "
+      ]
+    },
+    "This project's own pre-read reject is a five-regex fixed rule list with a hard-coded domain table, it has no counter anywhere, and when I ran it it silently deleted realistic candidates from simonwillison.net, danluu.com, blog.pragmaticengineer.com, karpathy.github.io and research.google/blog \\u2014 while passing a spam-shaped URL whose snippet happened to be well-formed.": {
+      "refuted": 3,
+      "kept": 0,
+      "reasons": [
+        "The code half checks out; the measured half does not, and it is the half carrying the claim's force. Verified: prefilter.py's signal block (13-59, claim said 14-59), SEO_FARM_BLOCK_THRESHOLD=2 at :25 exactly, DOMAIN_TIER at :74-82 (claim said 71-79) with the exact multipliers, allowlists at :85-100 ",
+        "The mechanism half checks out; the harm half does not. Confirmed by source: seo_farm_score is real code wired into gather() at Stage B.6 (orchestrator.py:211), threshold 2 at prefilter.py:25, DOMAIN_TIER at :74-82 (claim said :71-79) with exactly the stated multipliers, curated sets at :85-100 (clai",
+        "The structural half verifies, the measurement does not. Verified true: prefilter.py is a fixed rule list with SEO_FARM_BLOCK_THRESHOLD = 2 (line 25); DOMAIN_TIER at 74-82 with exactly the quoted multipliers; prefetch_garbage_gate at orchestrator.py:87-117 rejects with a bare `continue` and returns o"
+      ],
+      "corrections": []
+    },
+    "ClueBot NG uses tenure as an EXEMPTION from rejection, never as a promotion \\u2014 and the exemption is revoked by accumulated human complaints: >50 edits buys immunity only while the user's warning ratio stays under 10%.": {
+      "refuted": 2,
+      "kept": 1,
+      "reasons": [
+        "The quoted code resolves verbatim, but two of the finding's three load-bearing assertions are contradicted by the sources it cites.\n\nVERIFIED (clone at /private/tmp/claude-501/-Users-seventyleven-Desktop/47bf30ba-3257-44d3-a6e3-5cfa643debb0/scratchpad/clones/cbng-bot, HEAD = 2b7129cf692b24473d8245ae",
+        "Verified against the named commit (git rev-parse HEAD = 2b7129cf692b24473d8245ae24ff26063d0869cb, remote github.com/cluebotng/bot.git). The STRUCTURAL half survives: action_functions.php:193-234 is verbatim as quoted, every line number is correct (:205 creator, :208-213 tenure block, :215-216 TFA, :"
+      ],
+      "corrections": [
+        "Skeptic angle 1 fails: the mechanism is real executing code, not aspiration. Verified against a clone of github.com/cluebotng/bot at the exact named commit 2b7129cf692b24473d8245ae24ff26063d0869cb (/private/tmp/claude-501/-Users-seventyleven-Desktop/47bf30ba-3257-44d3-a6e3-5cfa643debb0/scratchpad/cl"
+      ]
+    },
+    "The same paper measures the survivor effect: the identical class of finding is judged a 'real problem' 74% of the time at compile time and only 21% of the time on checked-in code \\u2014 precision is a property of the STAGE, not of the filter.": {
+      "refuted": 2,
+      "kept": 1,
+      "reasons": [
+        "The quote is verbatim-accurate and the same-check comparison is real, but the claim overstates the source on three counts and the numbers arrive without protocol. (a) The paper does not MEASURE the survivor effect. Its own words are \"Google developers PERCEIVE that issues flagged at compile time... ",
+        "Quote is verbatim (Sadowski et al., CACM 61(4) 2018, DOI 10.1145/3188720; extracted text lines 375-388), but the claim overstates it on three counts and the number has no protocol. (1) The paper does NOT measure the survivor effect: it measures developer PERCEPTION (\"Google developers perceive that "
+      ],
+      "corrections": [
+        "Evidence resolves and is verbatim. The passage is in Sadowski, Aftandilian, Eagle, Miller-Cushon & Jaspan, \"Lessons from Building Static Analysis Tools at Google,\" CACM 61(4), April 2018 (DOI 10.1145/3188720), section \"Reporting issues sooner is better\" \u2014 found at /private/tmp/claude-501/-Users-seve"
+      ]
+    },
+    "ClusterFuzz down-weights SOURCES by measured novelty yield, not by popularity, and gives unknown sources a 5x exploration bonus \\u2014 a source that keeps returning things you already have is penalised even when everything it returns is true.": {
+      "refuted": 2,
+      "kept": 1,
+      "reasons": [
+        "REFUTED \u2014 verified at clusterfuzz e48fee4 (local clone HEAD confirmed). The literals are real but three of the claim's four pillars overstate or misread the source.\n\n(1) The 5x is not a guarantee and is not for \"unknown\" sources. NEW_FUZZER_SPECIFICATION requires the pair to ALREADY have logged Test",
+        "Skeptic angle 1 answers in the claim's favour \u2014 the mechanism is real code, not aspiration. I cloned google/clusterfuzz, checked out e48fee47 (which is HEAD), and every constant quoted is verbatim in src/clusterfuzz/_internal/cron/fuzzer_and_job_weights.py: `0.75 as new_weight` (:178) gated by `ABS("
+      ],
+      "corrections": [
+        "The cited evidence resolves and the load-bearing mechanism is accurate. At clusterfuzz@e48fee4 (verified as a real commit), src/clusterfuzz/_internal/cron/fuzzer_and_job_weights.py contains COVERAGE_UNCHANGED_SPECIFICATION at :220-223 setting `0.75 as new_weight` (:178) under the exact predicate quo"
+      ]
+    },
+    "SpamAssassin's TxRep is source reputation done as count-NORMALISED regression to that source's own mean, with a single human correction worth \\u00b120 against a threshold of 5.0 \\u2014 volume buys nothing, and a manual verdict outweighs many automatic ones.": {
+      "refuted": 3,
+      "kept": 0,
+      "reasons": [
+        "The evidence exists and every cited line resolves at apache/spamassassin c9a2765 (verified clone, origin github.com/apache/spamassassin.git): :275-303 is the txrep_factor block, :285 the documented formula, :298 default 0.5, :302 the [0,1] range check, :377-395 and :400-418 the learn penalty/bonus (",
+        "Verified against the cited commit (c9a2765 resolves; TxRep.pm read in full). The count-normalised-regression half is real, but three load-bearing assertions fail. (1) \"\u00b120 against a threshold of 5.0\" is a category error: at :1390 `$msgscore = (defined $self->{learning})? $self->{learning} : $pms->ge",
+        "The cited lines and defaults are all genuine (verified against apache/spamassassin at c9a2765, a real automated \"promotions validated\" commit), but three of the claim's four assertions fail against the code. (1) \"A manual verdict outweighs many automatic ones\" is INVERTED against the file's own docu"
+      ],
+      "corrections": []
+    },
+    "DSPy \\u2014 the standard library for assembling prompts from a run's own examples \\u2014 keeps only the SUCCESSES. Failures increment an error counter and are discarded. The negative set is thrown away by default.": {
+      "refuted": 3,
+      "kept": 0,
+      "reasons": [
+        "The citations all resolve verbatim at f70d08a (verified against a fresh clone; that SHA is HEAD), so the evidence is real \u2014 but the claim overstates it in three ways and misdescribes one mechanism. (1) Mechanism error: `self.error_count` at bootstrap.py:214-222 increments ONLY inside `except Excepti",
+        "The mechanism is real \u2014 this is code, not aspiration (skeptic angle 1 passes). I cloned dspy fresh; HEAD is f70d08a5b, matching the cited commit, and every cited line resolves verbatim: bootstrap.py:206 metric-decides-success, :223 `if success:` gating the entire demo-collection block, :42 `max_boot",
+        "The narrow code reading of bootstrap.py is exact, but the generalisation to \"DSPy\" is false at the same commit, and two supporting sub-claims are wrong.\n\nVERIFIED TRUE (clone at /private/tmp/claude-501/-Users-seventyleven-Desktop/47bf30ba-3257-44d3-a6e3-5cfa643debb0/scratchpad/dspy_refute, HEAD = f7"
+      ],
+      "corrections": []
+    }
+  }
+}
