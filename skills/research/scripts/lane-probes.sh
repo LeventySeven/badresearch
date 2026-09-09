@@ -35,7 +35,7 @@ say(){ printf '%-22s %-12s %s\n' "$1" "$2" "$3"; [ "$2" = UNCLASSIFIED ] && fail
 
 # 1. local-corpus — four roots, enumerated live. A count written down is stale by construction.
 t=$(find "$R/researchfms/teardowns"        -maxdepth 1 -name '*.md'            2>/dev/null | wc -l | tr -d ' ')
-r=$(find "$R/researchfms/Transcripts"      -maxdepth 1 -name 'TRANSCRIPTS_*.md' 2>/dev/null | wc -l | tr -d ' ')
+r=$(find "$R/researchfms/Transcripts"      -maxdepth 1 -name '*TRANSCRIPT*.md' 2>/dev/null | wc -l | tr -d ' ')
 a=$(find "$R/guidesfm/research/articles"   -maxdepth 1 -name '*.md'            2>/dev/null | wc -l | tr -d ' ')
 x=$(find "$R/guidesfm/research/x-guides"   -maxdepth 1 -name '*.md'            2>/dev/null | wc -l | tr -d ' ')
 if [ "$t$r$a$x" = "0000" ]; then say local-corpus MISSING "no root resolved under $R"

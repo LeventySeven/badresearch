@@ -38,7 +38,7 @@ pre-stage plus one context-owning agent (`:6886`, `:6998`). Cause: context lost 
 ```sh
 R=/Users/seventyleven/Desktop
 echo "teardowns   $(find $R/researchfms/teardowns -maxdepth 1 -name '*.md' | wc -l)"
-echo "transcripts $(find $R/researchfms/Transcripts -maxdepth 1 -name 'TRANSCRIPTS_*.md' | wc -l)"
+echo "transcripts $(find $R/researchfms/Transcripts -maxdepth 1 -name '*TRANSCRIPT*.md' | wc -l)"   # *TRANSCRIPT* not TRANSCRIPTS_* — see the trap below
 echo "articles    $(find $R/guidesfm/research/articles -maxdepth 1 -name '*.md' | wc -l)"
 echo "x-guides    $(find $R/guidesfm/research/x-guides -maxdepth 1 -name '*.md' | wc -l)"
 ```
@@ -59,6 +59,13 @@ echo "x-guides    $(find $R/guidesfm/research/x-guides -maxdepth 1 -name '*.md' 
 - A manifest entry is a ROUTE, never a citation. Never quote `_manifest.json` or a `GUIDES_*.md` map.
 
 ## Traps
+- **`TRANSCRIPTS_*.md` is a PREFIX glob and the directory does not only use that prefix.** Measured
+  2026-09-09: it matches 41 files and silently drops `ICML_TRANSCRIPTS.md` — 23,000 lines, 761
+  `**Authors:**` rows, ~3,074 distinct researcher names, i.e. **more names than the other 41 files
+  hold combined**. It also drops `ICML_2026_NEXT_SESSION.md`. Use `*TRANSCRIPT*.md`. A glob that
+  returns a plausible number is the worst kind of wrong: 41 looked right, matched the count written in
+  the corpus map, and was missing the largest source in the lane. Anchor on the distinctive substring,
+  not on the prefix somebody happened to use first.
 - **`-r` in `teardowns/` is forbidden.** The folder holds 36,870 files, only 407 of which are the
   flat breakdowns. Measured: `grep -l "retrieval" *.md` -> 182 breakdowns; `grep -rl "retrieval" .`
   -> 368, of which **135 are vendored source** (`x-algorithm/phoenix/run_retrieval.py`,
