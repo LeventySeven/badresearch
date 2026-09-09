@@ -146,4 +146,8 @@ from bad_research.cli.discriminate_cmds import screening_stop_cmd as _screening_
 
 app.command("screening-stop")(_screening_stop_cmd)
 
+from bad_research.cli.discriminate_cmds import cascade_cmd as _cascade_cmd
+
+app.command("cascade")(_cascade_cmd)
+
 __all__ = ["app"]

@@ -91,3 +91,51 @@ def screening_stop_cmd(
         typer.echo(f"  {v.caveat}")
     if not v.stop:
         raise typer.Exit(code=1)
+
+
+def cascade_cmd(
+    candidates: Path = typer.Option(..., "--candidates", help="One candidate per line."),
+    decisions: Path = typer.Option(None, "--decisions", help="JSON list of {item,verdict,because} the run already made. Omit on run 1."),
+    canaries: Path = typer.Option(None, "--canaries", help="Known-good items that MUST survive. One per line."),
+    json_out: bool = typer.Option(False, "--json", "-j"),
+) -> None:
+    """Screen in two layers: the free fixed web prefilter, then what this run learned.
+
+    The ordering is the point. The fixed layer costs nothing and never improves;
+    the learned one costs decisions and compounds, so it should never spend a
+    decision on something already obviously junk. Every cut names the layer that
+    made it, because a regex's `reject` and a run's `reject` are different claims.
+
+    The layer counts carry `web-prefilter-skipped` explicitly: an item with no URL
+    in it -- a person, a filename, a transcript heading -- is invisible to the web
+    layer, and a layer that cannot see an item must not be recorded as having
+    passed it.
+    """
+    from bad_research.checks.cascade import cascade_screen
+
+    d = Discriminator(canaries=set(_lines(canaries)) if canaries else set())
+    if decisions:
+        raw = json.loads(decisions.read_text(encoding="utf-8"))
+        for r in (raw["decisions"] if isinstance(raw, dict) else raw):
+            d.record(Decision(r["item"], r["verdict"], r.get("because", "")))
+
+    report = cascade_screen(_lines(candidates), d)
+
+    if json_out:
+        typer.echo(json.dumps({**report.to_dict(),
+                               "learned_signals": d.reject_signals()}, indent=2))
+    else:
+        typer.echo(f"cascade | considered {report.considered} | kept {len(report.kept)} "
+                   f"| cut {len(report.rejected)}")
+        for layer, n in sorted(report.by_layer.items()):
+            typer.echo(f"    {layer:24s} {n}")
+        for c in report.rejected[:8]:
+            typer.echo(f"    CUT  {c.item[:52]:52s} <- {c.because}")
+        if report.canaries_killed:
+            typer.echo(f"\n  CANARY DEAD ({len(report.canaries_killed)}):")
+            for c in report.canaries_killed:
+                typer.echo(f"    {c.item[:52]:52s} <- {c.because}")
+        typer.echo(f"\n  {report.caveat}")
+
+    if report.safe is False:
+        raise typer.Exit(code=1)

@@ -22,6 +22,18 @@ accepted one. Two decisions buy nothing; fifteen bought five real signals. `bad 
 exclusion is the load-bearing half: a token present in even one accepted item is about the subject
 matter, and learning it is how a filter starts deleting the good ones.
 
+**Run them in that order, not in parallel.** A fixed rule costs nothing and never improves; a learned
+one costs decisions and compounds — so the accreting layer should never spend a decision on something
+already obviously junk. `bad cascade` composes them: the shipped web prefilter first (`seo_farm_score`,
+`domain_tier`, `is_blocklisted` — measured here at 2 signals on a content farm, 0 on arXiv, which it
+tiers `reference`), then the learned filter on survivors only. Two things it must report and does:
+every cut names **which layer** made it, because a regex's *reject* and a run's *reject* are different
+claims; and an item carrying no URL — a person, a filename, a transcript heading — is counted as
+`web-prefilter-skipped`, never as a pass, because the web layer returns `seo=0 / tier=blog` on all of
+them and a layer that cannot see an item must not be recorded as having cleared it. The canary verdict
+is taken over the **whole cascade**: this was wrong first, reading only the second layer, so a canary
+the regex killed came back as *tested nothing* and the report printed clean.
+
 ## The three rules that keep a filter honest
 
 **Abstain rather than reject when you do not have enough to judge.** This is where the recall actually
