@@ -104,6 +104,10 @@ def grounding_surface_cmd(
         help="minimal|low|medium|high; 'high' uses the verifier's self-consistency "
              "vote on the high-stakes band (keyless, N host samples).",
     ),
+    note_bodies: str = typer.Option(
+        None, "--note-bodies", "--sources",
+        help="JSON {id: body} map — grade a report with no vault behind it.",
+    ),
     out: str = typer.Option(
         None, "--out", "-o",
         help="Write the markdown ledger to this path (default: stdout / JSON).",
@@ -115,13 +119,20 @@ def grounding_surface_cmd(
 
     Reuses the CitationVerifier output (does not modify the verifier). On the
     keyless path the paraphrase band is flagged `needs_host_judgment` rather than
-    silently rubber-stamped — the honest auditability surface."""
+    silently rubber-stamped — the honest auditability surface.
+
+    Standalone: pass `--note-bodies`/`--sources` (a JSON {id: body} map) to grade a
+    report that has no vault behind it. The shared adapter `_verify_report` has
+    accepted that argument all along and its two siblings (`verify-citations`,
+    `uncited-gate`) expose it; this command did not, so on any report whose sources
+    are files or URLs the ledger bound zero anchors and printed "No cited claims
+    found" — a clean-looking empty that is indistinguishable from a clean report."""
     from bad_research.cli.research import _verify_report
 
     if not Path(report).is_file():
         raise typer.BadParameter(f"report not found: {report}")
 
-    findings = _verify_report(report, vault_tag, effort=effort)
+    findings = _verify_report(report, vault_tag, effort=effort, note_bodies_path=note_bodies)
 
     if json_output:
         n_host = sum(1 for f in findings if f.get("needs_host_judgment"))
