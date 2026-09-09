@@ -121,3 +121,89 @@ that is itself Anglophone-shaped.
 Two independent methods, both run to exhaustion of their own entry points, hold well under half of what
 they jointly imply exists. That is the honest answer to "how good is our research at this", and no
 precision gate in the kit would have surfaced it.
+
+## Pass C — link-walk, three hops from six seeds
+
+`link-walk | hops 3 | 11 person-nodes expanded, ~50 pages/APIs fetched | names 1,284 | search engine
+used: ZERO`
+
+### "This method does not terminate" — and the number behind it
+
+It expanded **4 of 774** hop-1 nodes. Every one returned a *larger* frontier than the seed did:
+
+| node expanded | co-authors reached | new |
+|---|---:|---:|
+| Stella Biderman | 240 | 213 |
+| David Bau | 179 | 146 |
+| Nathan Lambert | 187 | 165 |
+| Owain Evans | 103 | 61 |
+
+At ~90 new per node, a **complete hop-2 sweep is ≈70,000 names**, and hop 3 is unbounded. So the 1,284
+is where it chose to cut, and *which four nodes it expanded determines the entire shape of hops 2–3* —
+which it names as a bias rather than a finding.
+
+The hop distribution inverts the intuition: 774 at hop 1 (60%), 471 at hop 2 (37%), **39 at hop 3+
+(3%)** — and hop 3 is small only because it stopped. The obscure people are at **hop 1**, in one
+well-connected mentor's co-author list: Neel Nanda's 243 direct co-authors are largely MATS scholars
+and first-year PhD students with one paper each. *A single seed's co-author list is the long tail.*
+
+### The finding that answers the question you actually asked
+
+> *"'Obscure' in this roster means **institutionally obscure but graph-connected** — which is not what
+> you asked for. It cannot find, even in principle, the person with one excellent essay, no co-authors,
+> no paper, and no inbound link from these six. That is the exact population your prompt says is the
+> point of the exercise, and a link-walk is the **worst** of the three methods for it."*
+
+It also reported the walk is **one-way**: reference lists are cheap to follow, but "who cites them
+back" needs a citation index and Semantic Scholar returned HTTP 429 on every call. So the entire
+population that *builds on* the seeds is absent — and it predicted that is exactly where a
+search-based reader would score, i.e. where the overlap would be lowest.
+
+And it cut ~1,400 name-slots from mega-author artifacts (BIG-bench 451, GPT-4o card 420, GPT-4 report
+281) as a judgement call, saying plainly: *"if your other readers include any of those people, the
+non-overlap is my cut line, not their absence from the graph."*
+
+---
+
+# THE ANSWER
+
+| pair | overlap | estimated population | coverage |
+|---|---:|---:|---:|
+| A × B | 486 | ≈ 10,500 | 40% |
+| A × C | 306 | ≈ **12,800** | 31% |
+
+Taking the **least flattering** pair — dependence between passes only ever inflates coverage, so the
+pair that agreed least is the least contaminated:
+
+> **held ≈ 4,957 · estimated population ≈ 12,800 · COVERAGE ≈ 39% · still unfound ≈ 7,900**
+
+Three methods, each run until its own entry points were exhausted, jointly hold **under two fifths** of
+what they imply exists. And the errors point the same way as before: the sampled overlaps were tested
+only against A's ICML slice, and all three passes over-weight Anglophone safety/interpretability work,
+which inflates overlap → shrinks the population → inflates coverage. **39% is the optimistic reading.**
+
+## Why — and it is structural, not effort
+
+Each method is blind to a different population, and they were asked to say so:
+
+| method | cannot see |
+|---|---|
+| **A** local corpus | anyone who only publishes papers; anyone non-Anglophone; heavily Anthropic-shaped (32 vs OpenAI 14, DeepMind 5) |
+| **B** live web | **institutions, not people** — anyone at a lab with no public roster (DeepMind, OpenAI, FAIR, MSR, Mistral, xAI); anyone who left; talks and podcasts entirely (blocked by egress policy) |
+| **C** link-walk | anyone not *graph-connected* — no co-authors, no citations, no inbound link. Pre-2012 generation absent (Hinton, Schmidhuber, Hochreiter, Pearl: **zero**). Whole subfields missing: speech, recsys, time-series, graph learning, AutoML, ML compilers — **Tri Dao and FlashAttention never appear** |
+
+**The person you named — great, unpopular, no institution, no co-authors — is missed by all three**, and
+C says so about itself in as many words. That is the honest answer: the instrument as built cannot do
+the thing asked, and now the missing lanes are named rather than guessed.
+
+## The lanes that would move the number, each named by a reader who hit its wall
+
+1. **Who cites them back** — Semantic Scholar 429'd on every call. C says this is the largest single
+   correctable gap.
+2. **Paper acknowledgement sections** — dense with obscure names; C walked blog acknowledgements (2 hits
+   in 9 posts) and never opened the papers'.
+3. **Programme committees, MATS/ARENA/SPAR rosters, lab *alumni* pages, GitHub contributor graphs** — all
+   are links people themselves make, none was walked.
+4. **Non-Anglophone venues.** Chinese labs appear in all three passes only as *organisation names*.
+   Masakhane 404'd, Deep Learning Indaba timed out twice: **unmeasured, not empty.**
+5. **The talk/podcast lane** — closed outright by silver's own egress policy.
