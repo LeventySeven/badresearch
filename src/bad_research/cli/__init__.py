@@ -142,4 +142,8 @@ from bad_research.cli.discriminate_cmds import discriminate_cmd as _discriminate
 
 app.command("discriminate")(_discriminate_cmd)
 
+from bad_research.cli.discriminate_cmds import screening_stop_cmd as _screening_stop_cmd
+
+app.command("screening-stop")(_screening_stop_cmd)
+
 __all__ = ["app"]

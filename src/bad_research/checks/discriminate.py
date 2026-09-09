@@ -77,6 +77,7 @@ class ScreenReport:
     considered: int
     kept: tuple[Cut, ...]
     rejected: tuple[Cut, ...]
+    abstained: tuple[Cut, ...]
     canaries_killed: tuple[Cut, ...]
     canaries_untested: tuple[str, ...]
     safe: bool | None
@@ -87,6 +88,7 @@ class ScreenReport:
             "considered": self.considered,
             "kept": [c.item for c in self.kept],
             "rejected": [{"item": c.item, "because": c.because} for c in self.rejected],
+            "abstained": [{"item": c.item, "because": c.because} for c in self.abstained],
             "canaries_killed": [{"item": c.item, "because": c.because} for c in self.canaries_killed],
             "canaries_untested": list(self.canaries_untested),
             "safe": self.safe,
@@ -104,6 +106,14 @@ class Discriminator:
 
     decisions: list[Decision] = field(default_factory=list)
     canaries: set[str] = field(default_factory=set)
+    # Never classify an item you do not have enough of -- pass it through instead.
+    # From the sweep: a shipped clinical screening classifier's 5.7 points of
+    # recall came ENTIRELY from an abstain rule of exactly this shape, not from
+    # the model. Without it the pipeline silently deleted 3,600 real included
+    # studies; with it, 224. A short item matches few tokens, so a token-based
+    # filter is least reliable exactly where it looks most confident. Defaults to
+    # 0 (off) so switching it on is a deliberate choice, not a surprise.
+    min_evidence_chars: int = 0
 
     def record(self, d: Decision) -> None:
         self.decisions.append(d)
@@ -140,9 +150,15 @@ class Discriminator:
         signals = self.reject_signals()
         kept: list[Cut] = []
         rejected: list[Cut] = []
+        abstained: list[Cut] = []
         considered = 0
         for c in candidates:
             considered += 1
+            if self.min_evidence_chars and len(c.strip()) < self.min_evidence_chars:
+                abstained.append(Cut(c, f"ABSTAIN — too little to judge on "
+                                        f"({len(c.strip())} < {self.min_evidence_chars} chars); "
+                                        "passed through rather than cut"))
+                continue
             why = self._why_rejected(c, signals)
             (rejected if why else kept).append(Cut(c, why or "no reject-signal matched"))
 
@@ -163,7 +179,7 @@ class Discriminator:
         # ever have touched the canary. Proximity heuristics could not separate the
         # two, because the person's own NAME supplies the shared vocabulary. So the
         # rule is the strict one: screened, or it tested nothing.
-        screened = {c.item for c in [*kept, *rejected]}
+        screened = {c.item for c in [*kept, *rejected, *abstained]}
         untested = tuple(c for c in sorted(self.canaries) if c not in screened)
 
         if not self.canaries:
@@ -189,7 +205,8 @@ class Discriminator:
                 + (f"; {len(untested)} were not in the pool and tested nothing. " if untested else ". ")
                 + "That bounds the false-negative rate only for garbage resembling those items."
             )
-        return ScreenReport(considered, tuple(kept), tuple(rejected), killed, untested, safe, caveat)
+        return ScreenReport(considered, tuple(kept), tuple(rejected), tuple(abstained),
+                            killed, untested, safe, caveat)
 
 
 @dataclass(frozen=True)

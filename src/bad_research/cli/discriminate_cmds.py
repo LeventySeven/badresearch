@@ -60,3 +60,34 @@ def discriminate_cmd(
 
     if report.safe is False:
         raise typer.Exit(code=1)
+
+
+def screening_stop_cmd(
+    found: int = typer.Option(..., "--found", help="Relevant items screening has turned up so far."),
+    unseen: int = typer.Option(..., "--unseen", help="Size of the not-yet-screened remainder."),
+    sample: int = typer.Option(..., "--sample", help="How many you drew AT RANDOM from that remainder."),
+    sample_relevant: int = typer.Option(0, "--sample-relevant", help="Relevant items in that sample."),
+    target_recall: float = typer.Option(0.95, "--target-recall"),
+    alpha: float = typer.Option(0.05, "--alpha"),
+    json_out: bool = typer.Option(False, "--json", "-j"),
+) -> None:
+    """May the screen stop, at a stated recall with a stated confidence? Exit 1 if not.
+
+    The alternative is stopping when the hits feel like they have dried up, which
+    is how a breadth run ends with no error bar at all.
+    """
+    from bad_research.checks.screening_stop import can_stop
+
+    v = can_stop(found, unseen, sample, sample_relevant,
+                 target_recall=target_recall, alpha=alpha)
+    if json_out:
+        typer.echo(json.dumps(v.to_dict(), indent=2))
+    else:
+        typer.echo(f"screening-stop | found {found} | unseen {unseen} | "
+                   f"random sample {sample} -> {sample_relevant} relevant")
+        typer.echo(f"  may miss at most {v.max_missable} and still hold {target_recall:.0%} recall")
+        typer.echo(f"  p = {v.p_value:.4f}   {'STOP' if v.stop else 'KEEP SCREENING'}")
+        typer.echo(f"  {v.why}")
+        typer.echo(f"  {v.caveat}")
+    if not v.stop:
+        raise typer.Exit(code=1)

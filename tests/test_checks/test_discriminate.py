@@ -202,3 +202,44 @@ def test_with_no_known_good_the_recall_is_None_not_one():
     from bad_research.checks.discriminate import rank_by_signal
     r = rank_by_signal({"a": "arXiv"}, r"arXiv")
     assert r.recall_at_k is None, "an unmeasured screen must not report perfect recall"
+
+
+# ── the abstain rule: where the recall actually comes from ────────────────────
+
+def test_an_item_too_thin_to_judge_is_ABSTAINED_not_rejected():
+    """From the sweep, verified in the survivor slate: a shipped clinical screening
+    classifier's 5.7 points of recall came ENTIRELY from an abstain rule, not from
+    the model — records below a minimum length are never classified and always
+    passed through. Without it the pipeline silently deleted 3,600 real included
+    studies; with it, 224. A 3,376-study difference from one rule about
+    insufficient input.
+
+    A short item matches few tokens, so a token-based filter is at its least
+    reliable exactly where it looks most confident.
+    """
+    d = Discriminator(min_evidence_chars=25)
+    for n in ("Karen Ops | recruiting coordinator", "Dan Ops | events coordinator",
+              "Ann Ops | facilities coordinator"):
+        d.record(Decision(n, "reject", "ops"))
+    d.record(Decision("Sewon Min | Silo LM retrieval work", "accept", "artifact"))
+    r = d.screen(["A. Coordinator", "Pat Newperson | events coordinator, no papers"])
+    assert [a.item for a in r.abstained] == ["A. Coordinator"]
+    assert "too little" in r.abstained[0].because.lower()
+    assert [c.item for c in r.rejected] == ["Pat Newperson | events coordinator, no papers"]
+
+
+def test_abstention_is_reported_in_the_denominator():
+    d = Discriminator(min_evidence_chars=25)
+    d.record(Decision("X | recruiting coordinator role", "reject", "ops"))
+    d.record(Decision("Y | events coordinator role", "reject", "ops"))
+    d.record(Decision("Z | first-author paper on retrieval", "accept", "artifact"))
+    r = d.screen(["tiny", "also tiny", "Q | events coordinator role here"])
+    assert r.considered == 3 and len(r.abstained) == 2 and len(r.rejected) == 1
+
+
+def test_abstain_defaults_OFF_so_it_is_a_choice_not_a_surprise():
+    d = Discriminator()
+    d.record(Decision("X | recruiting coordinator", "reject", "ops"))
+    d.record(Decision("Y | events coordinator", "reject", "ops"))
+    d.record(Decision("Z | first-author paper", "accept", "artifact"))
+    assert d.screen(["tiny"]).abstained == ()

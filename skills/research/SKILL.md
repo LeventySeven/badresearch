@@ -44,7 +44,8 @@ you generate yourself:
 **A query names a frontier item AND is one sentence saying what evidence you want.** The measured
 default is keyword soup — grep-trained models emit regex-shaped piles into retrievers wanting language.
 
-**"Find all X" is a different job**: set not claim, recall not precision — `references/breadth.md`.
+Two adjacent jobs this section does not cover: `references/breadth.md` ("find all X" — recall, not
+precision) and `references/noise.md` (telling real from plausible, before you read it).
 
 Stop when nothing new arrived **and nothing you promised is still open** — both halves, since a round
 can add three entities and close no cell while both counters read as progress. With a floor and a
@@ -150,14 +151,13 @@ was wasted, and a 50-line window cut that to one in five.
   date, or a `file:line` inside a package you installed. `FILE.md:1-2383` is the shape of a citation,
   not a citation. A claim whose source you cannot land does not ship; its mechanism may, said as one.
 - **Bind the citation when you write the sentence, from the retrieval you just did.** Draft-then-attach
-  produced phantom references at up to 21%; constructing the citation from the retrieval call measured
-  **zero** over 75 papers. Never reconstruct grounding for a paragraph already written.
+  produced phantom references at up to 21%; building it from the retrieval call measured **zero** over
+  75 papers. Never reconstruct grounding for a paragraph already written.
 - **A citation claims the span SUPPORTS the sentence, not merely that the span exists.** Read the span
   against the sentence and land on one of three: it supports the claim, it contradicts it, or your
   sentence goes beyond it. The third is common — say where you extrapolated, or cut it.
-- **Verify a retrieved object by its properties, not its name** — date, unit, scale, and whether its
-  contents fall where you expected. Measured: roughly 50% → 90%. A package, profile or file that
-  *resolves* is not evidence you got the one you meant.
+- **Verify a retrieved object by its properties, not its name** — date, unit, scale, whether contents
+  fall where expected. Measured 50% → 90%; a thing that *resolves* is not the thing you meant.
 - **Count distinct actors, not distinct URLs** — and say how each was reached. Collapse by person,
   company and orbit; one practitioner supplied eleven of ninety-six findings across three lanes each
   believing itself independent. Sources reached by frontier-chaining are **not independent
@@ -167,8 +167,8 @@ was wasted, and a 50-line window cut that to one in five.
   and see whether the trend is there too.
 - **Captions are substance, never quotation** — a *manual* track rendered "Claude Code" as "Cloud Code"
   throughout. Paraphrase. A retrieval tool's digest is its words, not the page's.
-- **Mechanical sweeps produce candidates, never verdicts** — five returning 110/58/52/29/20 hits
-  collapsed to 31/0/0/0/0 on reading. Base rate, not luck; re-check the survivors.
+- **Mechanical sweeps produce candidates, never verdicts** — 110/58/52/29/20 hits collapsed to
+  31/0/0/0/0 on reading. Base rate, not luck; re-check the survivors.
 
 `references/evidence.md`: shipped span-width and quote caps, the subject-controlled source pool, an
 earlier agent's query trail masquerading as a source, and the denominator of silence.

@@ -375,6 +375,49 @@
           "evidence": "passed \u2014 driven end to end. Re-enumerated every corrected claim against disk and all five agree (x-guides 67, guides 4, teardowns 407, transcripts 41, core-guides 3). Every ~/Desktop path named in the map resolves, with the single dead one struck through and explicitly labelled rather than deleted, so a reader who remembers it learns it is gone instead of silently finding nothing. Backup of the pre-edit file kept in the session scratchpad."
         }
       ]
+    },
+    {
+      "id": "S9",
+      "capability": "It tells the real thing from the garbage that looks like it \u2014 before paying to read \u2014 and the filter gets sharper as the run learns.",
+      "check": "Adversarial + measured. (a) A cold structural signal must rank a real pool against known ground truth and report recall@k. (b) An accreting filter must demonstrably sharpen as decisions accumulate. (c) A planted known-good item must SURVIVE, and a deliberately over-learned filter must be caught killing it. (d) A screening stop must carry a stated recall at a stated confidence, and must refuse to fire early in a run however clean the sample.",
+      "unknown": "Whether a token-level filter is strong enough to be worth the false negatives it will cause.",
+      "confidence": 0.65,
+      "shape": "",
+      "trap": "",
+      "delete": [],
+      "rows": [
+        {
+          "id": "S9-1",
+          "does": "cold-start: a cheap structural signal ranks a real pool, recall@k measured against ground truth",
+          "status": "passed",
+          "evidence": "passed \u2014 measured on the owner's corpus, not a fixture. 407 teardowns, 5 known from a prior reader to carry researcher names, ranked by author/arXiv marker count at zero cost: top 5 -> 60%, top 10 -> 80%, top 20 -> 100%, and 313 of 407 score ZERO and are free to exclude. A 20x cut in reading cost at full recall on the known set. rank_by_signal returns recall_at_k=None rather than 1.0 when nobody planted known-good items \u2014 an unmeasured screen must not report perfect recall. Both limits stated in the docstring: the signal is question-specific and inherits none of this measurement elsewhere, and 5 known-good is a tiny denominator."
+        },
+        {
+          "id": "S9-2",
+          "does": "the filter ACCRETES \u2014 more decisions produce a sharper filter",
+          "status": "passed",
+          "evidence": "passed \u2014 driven at the CLI. 15 prior decisions produced 5 learned reject-signals ('operations' x5, 'chief' x3, 'officer' x3, 'operating' x2, 'technology' x2); two decisions produce at most one. The exclusion is the load-bearing half and is tested: a token appearing in even ONE accepted item is refused as a signal, because that is how a filter starts deleting the good ones."
+        },
+        {
+          "id": "S9-3",
+          "does": "the canary catches an over-learned filter, and says which rule killed the known-good item",
+          "status": "passed",
+          "evidence": "passed \u2014 reproduced a REAL failure. Last night a reader cut 156 Ai2 rows for 'no observed artifact' and named Iz Beltagy, Sewon Min and Tim Dettmers among the casualties: 'my false-negative, not their false-positive.' Fed 8 decisions from a directory that mixes researchers with ops, the filter learned 'allen' and 'institute' mean garbage and killed all five named researchers; the canary fired, named the rule, exit 1. DEFECT FOUND BY DRIVING IT, after two weaker heuristics failed: a canary written 'Tim Dettmers | QLoRA, bitsandbytes' reported SURVIVED while the pool item 'Tim Dettmers | Allen Institute for AI' was cut \u2014 same person, different form, and proximity tests could not separate them because the person's own NAME supplies the shared vocabulary. Rule is now strict: a canary must literally be IN the screened pool or the verdict is None."
+        },
+        {
+          "id": "S9-4",
+          "does": "abstain rather than reject when there is too little to judge",
+          "status": "passed",
+          "evidence": "passed \u2014 taken from the sweep and verified in the survivor slate. A shipped clinical screening classifier's 5.7 points of recall came ENTIRELY from an abstain rule, not from the model: records below a minimum length are never classified and always pass through. Without it the pipeline silently deleted 3,600 real included studies; with it, 224 \u2014 a 3,376-study difference from one rule about insufficient input. Implemented as min_evidence_chars, defaulting to 0 so switching it on is a deliberate choice; abstentions are counted in the denominator, never silently dropped."
+        },
+        {
+          "id": "S9-5",
+          "is_check": true,
+          "does": "END TO END: a screening stop with a stated recall at a stated confidence, refusing to fire early",
+          "status": "passed",
+          "evidence": "passed \u2014 `bad screening-stop`, exact hypergeometric from math.comb, no dependency. Mechanism verified against the primary source before building on it (Callaghan & Muller-Hansen 2020, Syst Rev 9:273, read live: 'flexible statistical stopping criteria... rejecting a hypothesis of having missed a given recall target', ~17% work reduction). Driven as a user: found 95 / unseen 200 / random sample 110 clean -> p=0.0076, STOP, exit 0; found 5 / unseen 400 / same clean sample -> p=0.7250, KEEP SCREENING, exit 1. The criterion never changed \u2014 only what the run knows. Two numbers the code corrected me on: a sample of 60 from 200 gives p=0.114 (my fixture was optimistic), and the real cost is 80 of 200, i.e. 40% of the remainder must be sampled to license a 95%-recall stop. The random-sample assumption is repeated in the OUTPUT, not left in a docstring."
+        }
+      ]
     }
   ],
   "order": [
