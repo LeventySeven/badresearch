@@ -44,11 +44,13 @@ you generate yourself:
 **A query names a frontier item AND is one sentence saying what evidence you want.** The measured
 default is keyword soup — grep-trained models emit regex-shaped piles into retrievers wanting language.
 
-Stop when nothing new arrived **and nothing you promised is still open** — both halves, because a
-round can add three entities and close no cell while both counters read as progress. With a floor and
-a patience: a run answered on **fewer than ~5 distinct retrievals** was answered from what you already
-had, and one quiet round is noise where **two** consecutive is the signal. A cell nothing can fill is
-abandoned *with a reason*, never dropped. (`bad frontier-observe --promise/--close/--abandon`.)
+**"Find all X" is a different job**: set not claim, recall not precision — `references/breadth.md`.
+
+Stop when nothing new arrived **and nothing you promised is still open** — both halves, since a round
+can add three entities and close no cell while both counters read as progress. With a floor and a
+patience: a run answered on **fewer than ~5 distinct retrievals** was answered from what you had, and
+one quiet round is noise where **two** consecutive is the signal. A cell nothing can fill is abandoned
+*with a reason*. (`bad frontier-observe --promise/--close/--abandon`.)
 
 ## Contradictions are the second half of the job
 
@@ -152,13 +154,13 @@ was wasted, and a 50-line window cut that to one in five.
   **zero** over 75 papers. Never reconstruct grounding for a paragraph already written.
 - **A citation claims the span SUPPORTS the sentence, not merely that the span exists.** Read the span
   against the sentence and land on one of three: it supports the claim, it contradicts it, or your
-  sentence goes beyond it. The third is the common one — say where you extrapolated, or cut it.
+  sentence goes beyond it. The third is common — say where you extrapolated, or cut it.
 - **Verify a retrieved object by its properties, not its name** — date, unit, scale, and whether its
   contents fall where you expected. Measured: roughly 50% → 90%. A package, profile or file that
   *resolves* is not evidence you got the one you meant.
 - **Count distinct actors, not distinct URLs** — and say how each was reached. Collapse by person,
-  company and orbit; one practitioner supplied eleven of ninety-six findings across three lanes that
-  each believed they were independent. Sources reached by frontier-chaining are **not independent
+  company and orbit; one practitioner supplied eleven of ninety-six findings across three lanes each
+  believing itself independent. Sources reached by frontier-chaining are **not independent
   corroboration** — each was chosen because the last one pointed at it.
 - **A number needs its protocol, and a correlation needs a control.** Resolution, window, unit — hourly
   sampling understated a peak by 700%. Then check the population where your proposed cause is *absent*
