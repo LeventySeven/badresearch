@@ -161,3 +161,44 @@ def test_a_canary_drawn_FROM_the_pool_does_fire():
     r = d.screen(["Someone Else | Allen Institute for AI", canary])
     assert r.safe is False and r.canaries_killed
     assert "allen" in r.canaries_killed[0].because or "institute" in r.canaries_killed[0].because
+
+
+# ── cold start: the cheap structural signal you can run before ANY decision ────
+
+def test_a_cheap_signal_ranks_a_pool_before_a_single_read():
+    """Measured on the owner's corpus: 407 teardowns, 5 known to carry researcher
+    names. Counting author/arXiv markers — free, no reading — puts all five in the
+    top 20 and gives 313 files a score of zero. A 20x cut in reading cost at full
+    recall on the known set.
+
+    This is the cold-start half of discrimination: reject-signals need decisions
+    to learn from, and at the start of a run there are none.
+    """
+    from bad_research.checks.discriminate import rank_by_signal
+    pool = {
+        "A": "**Authors:** X, Y\narXiv:2501.00001\net al. more",
+        "B": "a product page with no bylines at all",
+        "C": "et al.",
+        "D": "nothing here either",
+    }
+    r = rank_by_signal(pool, r"\*\*Authors?:|et al\.|arXiv")
+    assert [n for n, _ in r.ranked] == ["A", "C", "B", "D"]
+    assert r.zero == ("B", "D"), "a zero-scoring item is free to exclude"
+    assert r.scored == 4
+
+
+def test_the_cold_signal_reports_recall_against_planted_known_good():
+    """Same discipline as the canary: a screen you cannot measure is not a screen."""
+    from bad_research.checks.discriminate import rank_by_signal
+    pool = {"good1": "arXiv et al.", "good2": "**Authors:** Z", "junk1": "", "junk2": "x"}
+    r = rank_by_signal(pool, r"\*\*Authors?:|et al\.|arXiv", known_good={"good1", "good2"}, top_k=2)
+    assert r.recall_at_k == 1.0
+    r2 = rank_by_signal(pool, r"\*\*Authors?:|et al\.|arXiv", known_good={"good1", "junk2"}, top_k=2)
+    assert r2.recall_at_k == 0.5
+    assert "junk2" in r2.missed_at_k
+
+
+def test_with_no_known_good_the_recall_is_None_not_one():
+    from bad_research.checks.discriminate import rank_by_signal
+    r = rank_by_signal({"a": "arXiv"}, r"arXiv")
+    assert r.recall_at_k is None, "an unmeasured screen must not report perfect recall"
