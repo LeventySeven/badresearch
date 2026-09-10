@@ -211,13 +211,26 @@ def test_the_skill_is_not_a_chain():
     stopped being a judgment about the question and become a form to complete.
     """
     body = SKILL.read_text(encoding="utf-8")
-    # The refusals section quotes the predecessor's shape in order to refuse it, so
-    # exempt the section that does the refusing.
-    head, _, _ = body.partition("## What this skill refuses")
+    # The refusals section quotes the predecessor's shape in order to refuse it, so it is
+    # exempt — but ONLY it. This used to exempt everything from that heading to the end of
+    # the file, which left the closing sections unguarded: a planted eight-stage pipeline
+    # appended to the file passed this test cleanly. Cut out the refusals block and check
+    # everything on both sides of it.
+    before, sep, rest = body.partition("## What this skill refuses")
+    after = rest.partition("## The answer")[2] if sep else ""
+    head = before + "\n" + after
     for pattern, what in (
         (r"Skill\(skill:", "a Skill() dispatch call"),
         (r"^\s*\|?\s*(?:Step\s+)?\d+(?:\.\d+)?\s*\|\s*`?bad-research-", "a numbered step table row"),
         (r"\bstep \d+(?:\.\d+)? →", "a step arrow"),
+        # Ordinal PROSE, which is how a chain grows back without ever naming a step
+        # skill. A Reckon restored an eight-stage pipeline into this file using nothing
+        # but these words, and the guard above stayed green because it only knew the old
+        # chain's vocabulary. One numbered stage is a clarification; three are a pipeline.
+        (r"^#{2,3}\s+(?:Stage|Phase|Step)\s+\d", "a numbered stage heading"),
+        (r"\b(?:Stage|Phase)\s+\d+\s*(?:->|→)", "a stage arrow"),
+        (r"\bin this exact order\b", "an imposed execution order"),
+        (r"\bdo not skip (?:a|any) (?:stage|step|phase)\b", "a do-not-skip rule"),
     ):
         m = re.search(pattern, head, re.M)
         assert not m, f"SKILL.md has {what}: {m.group(0)!r} — the chain is coming back"

@@ -88,6 +88,45 @@ class StopCounters:
         return self.last_new_domains < MIN_NEW_DOMAINS and self.last_new_entities == 0
 
 
+_QWORD = re.compile(r"[a-z0-9][a-z0-9._+-]*")
+
+
+def _content_seq(query: str) -> list[str]:
+    """The query's content words, lowercased, in order."""
+    return [w for w in _QWORD.findall(query.casefold()) if w not in _STOP_QUERY]
+
+
+_STOP_QUERY = frozenset(
+    "a an and are as at be by did do does for from how in into is it of on or the to"
+    " was were what when where which who why with you your".split()
+)
+
+
+def is_rephrase_of(query: str, prior: str) -> bool:
+    """True when `query` is `prior` with words bolted on.
+
+    The gate's rule is that a query must NAME a frontier item. That is necessary and it
+    is not sufficient, and the gap is exploitable in one move: repeat your first query
+    verbatim and append a frontier token. Measured — "Is Postgres faster than MySQL for
+    OLTP" then "...for OLTP workloads" was ALLOWED, naming Postgres and MySQL, both of
+    which were frontier items only because the model had typed them into `--entities`
+    itself. So the gate was checking the model's own output against the model's own
+    output.
+
+    Containment is the unambiguous signal and the reason this can be cheap: a genuinely
+    new question does not contain the old one word for word. "what pgbench scale factor
+    did they use" shares no run of content words with the query above, and must pass.
+    """
+    new, old = _content_seq(query), _content_seq(prior)
+    if not old or len(old) < 3:
+        return False
+    # old appears as a contiguous run inside new -> you asked this and added words
+    for i in range(len(new) - len(old) + 1):
+        if new[i:i + len(old)] == old:
+            return True
+    return False
+
+
 @dataclass
 class FrontierState:
     """Durable frontier + the run log that makes the gate auditable.
@@ -222,8 +261,15 @@ class FrontierState:
         """Gate one query and append the decision to the run log."""
         first = not self.log
         allowed, named = gate_query(query, self.frontier, first=first)
+        rephrase_of = ""
+        if allowed and not first:
+            for prev in (e["query"] for e in self.log):
+                if is_rephrase_of(query, prev):
+                    allowed, named, rephrase_of = False, [], prev
+                    break
         self.log.append(
-            {"query": query, "first": first, "allowed": allowed, "named": named}
+            {"query": query, "first": first, "allowed": allowed, "named": named,
+             **({"rephrase_of": rephrase_of} if rephrase_of else {})}
         )
         return allowed, named
 
