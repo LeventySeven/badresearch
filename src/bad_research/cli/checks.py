@@ -214,7 +214,7 @@ def absence_gate_cmd(
 
     r = find_absence_claims(report.read_text(encoding="utf-8"))
     if json_out:
-        typer.echo(_json.dumps(r.to_dict(), indent=2))
+        typer.echo(json.dumps(r.to_dict(), indent=2))
     else:
         typer.echo(f"absence-gate | {len(r.claims)} absence claim(s) | "
                    f"{len(r.unscoped)} name no search scope")

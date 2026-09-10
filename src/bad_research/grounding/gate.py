@@ -181,6 +181,40 @@ def is_factual_claim(sentence: str) -> bool:
     return len(non_initial) >= 1
 
 
+# The two citation forms the skill actually prescribes, which this gate used to call
+# `critical: uncited-claim`.
+#
+# Measured: a two-sentence report written in exactly the forms at SKILL.md's "What counts
+# as evidence" -- a backticked `path:line` span, and a URL carrying its fetch date -- came
+# back with EVERY sentence critical. The gate only knew `[N]` and `[[note-id]]`, which is
+# the vault-era shape; the merged skill deliberately keeps no vault. So a user who followed
+# the prose got a report that failed its own gate, which is worse than a gate that passes
+# on nothing: it actively punishes the documented behaviour.
+#
+# These are citations, but they are NOT vault anchors, so they deliberately skip the
+# anchor-resolution below rather than being reported as dangling. The gate's claim is
+# "this sentence points at something a reader can open", never "this was verified".
+_DIRECT_SPAN = re.compile(
+    r"""(?x)
+      (?: [\w./~-]+ \.[A-Za-z0-9]{1,6} : \d+ (?:-\d+)? )   # path/to/file.ext:52  or :52-58
+    | (?: https?://\S+ )                                    # a URL (dated-ness checked below)
+    """
+)
+_FETCH_DATE = re.compile(r"\b(?:fetched|retrieved|as of|probed|accessed)\b", re.I)
+
+
+def _has_direct_span(sentence: str) -> bool:
+    """True when the sentence points at something a reader can open themselves."""
+    m = _DIRECT_SPAN.search(sentence)
+    if m is None:
+        return False
+    if m.group(0).startswith("http"):
+        # A bare URL is not a citation here -- the skill requires the fetch date with it,
+        # because a URL without one cannot be checked against what you actually read.
+        return bool(_FETCH_DATE.search(sentence))
+    return True
+
+
 def no_uncited_claim_gate(report_md: str, anchors: AnchorStore) -> list[Finding]:
     findings: list[Finding] = []
     body = strip_sources_section(report_md)
@@ -189,9 +223,15 @@ def no_uncited_claim_gate(report_md: str, anchors: AnchorStore) -> list[Finding]
             continue
         cites = extract_citations(sent)
         if not cites:
+            if _has_direct_span(sent):
+                # Cited in the form the skill prescribes. Nothing to resolve against the
+                # vault, and saying nothing is correct -- inventing a finding here is what
+                # made the gate fight its own documentation.
+                continue
             findings.append(Finding(
                 "uncited-claim", "critical", sent,
-                "Non-trivial factual sentence carries no citation. Add a vault cite or hedge/cut."))
+                "Non-trivial factual sentence carries no citation. Add a `path:line` span, "
+                "a URL with its fetch date, a vault cite -- or hedge/cut."))
             continue
         for c in cites:
             anchor = anchors.get(c)

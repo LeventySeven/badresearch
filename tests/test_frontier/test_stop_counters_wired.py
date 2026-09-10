@@ -17,7 +17,7 @@ import json
 import subprocess
 from pathlib import Path
 
-from bad_research.frontier import FrontierState
+from bad_research.frontier import MIN_RETRIEVALS, FrontierState
 
 BAD = str(Path(__file__).resolve().parents[2] / ".venv" / "bin" / "bad")
 
@@ -31,8 +31,9 @@ def test_observing_a_round_records_the_deltas(tmp_path: Path):
 
 def test_a_round_that_adds_nothing_new_says_stop(tmp_path: Path):
     st = FrontierState()
-    st.observe_round(domains={"a.com", "b.com"}, entities={"H200"})
-    st.observe_round(domains={"a.com"}, entities={"H200"})
+    _past_the_floor(st)
+    st.observe_round(domains={"a.com"}, entities=set())   # quiet 1 — noise
+    st.observe_round(domains={"a.com"}, entities=set())   # quiet 2 — the signal
     assert st.last_new_domains == 0 and st.last_new_entities == 0
     assert st.should_stop() is True
 
@@ -66,9 +67,19 @@ def test_the_cli_reports_the_computed_stop_signal(tmp_path: Path):
     out = json.loads(r.stdout)
     assert out["new_domains"] == 2 and out["should_stop"] is False
 
+    # Spend the documented floor before a quiet round can mean anything, then take TWO
+    # quiet rounds — one is noise. Driven through the CLI because that is the surface the
+    # skill's command block names, and the library path is not the one a reader uses.
+    for i in range(MIN_RETRIEVALS):
+        subprocess.run([BAD, "frontier-observe", "--state", str(p),
+                        "--domains", f"d{i}.com", "--entities", f"E{i}", "--json"],
+                       capture_output=True, text=True, check=False)
+    subprocess.run([BAD, "frontier-observe", "--state", str(p),
+                    "--domains", "a.com", "--json"],
+                   capture_output=True, text=True, check=False)
     r2 = subprocess.run(
         [BAD, "frontier-observe", "--state", str(p),
-         "--domains", "a.com", "--entities", "H200", "--json"],
+         "--domains", "a.com", "--json"],
         capture_output=True, text=True, check=False,
     )
     out2 = json.loads(r2.stdout)
@@ -82,3 +93,23 @@ def test_stop_counters_has_a_production_caller():
                           capture_output=True, text=True, check=False).stdout.splitlines()
     callers = [h for h in hits if "class StopCounters" not in h and "__pycache__" not in h]
     assert callers, "StopCounters is defined but called from nowhere in src/ — it does not run"
+
+
+# The floor and the patience, added after the code and the prose were found to disagree
+#
+# These tests were written against the CODE, which stopped after two rounds and one quiet
+# one. `SKILL.md` has always said something stricter: "a run answered on fewer than ~5
+# distinct retrievals was answered from what you had, and one quiet round is noise where
+# two consecutive is the signal." A Reckon drove the two CLI commands and got STOP at two
+# retrievals, so the rule the reader was given was not the rule the counter enforced.
+#
+# The spec wins: the skill is the artifact the owner specified, the code is its
+# implementation. So these now assert the documented behaviour, and the helper below
+# spends the floor explicitly rather than hiding it.
+
+
+def _past_the_floor(st):
+    """Advance the run past MIN_RETRIEVALS with productive rounds, then return it."""
+    for i in range(MIN_RETRIEVALS):
+        st.observe_round(domains={f"d{i}.com"}, entities={f"E{i}"})
+    return st

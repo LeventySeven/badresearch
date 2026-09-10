@@ -12,13 +12,12 @@ description: >-
 
 A searcher looks one thing up. A researcher finds one thing, and what he found tells him what to look
 for next — so his second question is one he could not have asked first. That compounding is the whole
-job, and it is the only hard thing here. Of seven open-source research engines read in source, exactly
-one generates its next question from evidence it retrieved and did not use; the rest re-decompose the
-original question and call it iteration.
+job, and it is the only hard thing here. Of **eleven open-source research engines read in source** —
+those eleven, not "the field" — exactly one generates its next question from evidence it retrieved and
+did not use; the rest re-decompose the original question and call it iteration.
 
-**Everything below is what a good answer looks like, not a sequence to execute.** What you may not skip
-are the refusals — marked MUST, few, and each there because skipping it produced a confidently wrong
-answer.
+**Everything below is what a good answer looks like, not a sequence to execute.** What you may not
+skip are the refusals — marked MUST, each there because skipping it produced a confidently wrong answer.
 
 ---
 
@@ -46,16 +45,26 @@ you generate yourself:
   EMPTY (the record is kept and this is not in it) is evidence against your claim; MISSING or BLOCKED
   is evidence of nothing. This is not a licence to manufacture a disagreement — it tests a premise.
 
+**The sixth kind of query is the one the whole method is named for: name TWO frontier items and ask
+what connects them.** Everything above follows one finding forward. This asks what a fact from source
+A implies about a fact from source B — a question you could not have asked before reading both, and
+the one a one-step search can never reach. The owner's own words for it: *"he finds one thing... he
+connects these two things. After that he finds — since he knows these two things, he knows a lot
+more."*
+
+Take two items from different reads and ask whether they share a cause, contradict, bound each other,
+or one dates the other. Most pairs connect to nothing — that is the expected yield, and the cost is
+one query. **This is not the graph**: nothing is built or stored; the connection is made in the
+question and, if it holds, lands in the answer.
+
 **A query names a frontier item AND is one sentence saying what evidence you want.** The measured
 default is keyword soup — grep-trained models emit regex-shaped piles into retrievers wanting language.
 
-**MUST search AGAINST your emerging position, not only for it.** For each load-bearing claim, run
-the contrarian queries — *criticism of X*, *limitations of X*, *why X doesn't work* — and go look
-for an **independent rerun** of any result you are leaning on. Counter-evidence found before a
-draft exists costs nothing to act on; the same finding after drafting becomes a patch against a
-structure already committed, and that is the whole reason this is a retrieval rule rather than a
-review one. **A failed adversarial search is a reportable finding that RAISES confidence** — say
-so in those words, because an unreported failed search is indistinguishable from one never run.
+**MUST search AGAINST your emerging position while you are still retrieving** — *criticism of X*,
+*limitations of X*, and an **independent rerun** of any result you lean on. Before a draft exists
+that costs nothing; after, it is a patch against committed structure. **A failed adversarial search
+RAISES confidence and is reportable** — unreported, it is indistinguishable from one never run. What
+to do with what comes back is the rivals section below.
 
 Two adjacent jobs this section does not cover: `references/breadth.md` ("find all X" — recall, not
 precision) and `references/noise.md` (telling real from plausible, before you read it).
@@ -77,14 +86,13 @@ one quiet round is noise where **two** consecutive is the signal. A cell nothing
 
 ## Name the rivals, then delete the evidence that cannot separate them
 
-Every rule above adds. All five frontier items add, and searching *against* your position still
-operates on the one hypothesis you already hold. None of them can answer the question that decides
-whether any of your evidence counts: **what else would have produced exactly this?**
+Every rule above adds, and searching *against* your position still works on the one hypothesis you
+hold. None answers the question that decides whether your evidence counts at all: **what else would
+have produced exactly this?**
 
-**MUST name at least two rival explanations before you commit to one, and MUST carry them into the
-answer.** Not into your reasoning — into the output. A real finding and a conspiracy theory have the
-same abductive shape and leave the same retrieval trail: both retrieve confirming spans, both explain
-away the rest. The list of rivals is the only thing on the page that tells them apart.
+**MUST name at least two rival explanations before committing, and carry them into the answer** — the
+output, not your reasoning. A real finding and a conspiracy theory have the same abductive shape and
+leave the same retrieval trail; the list of rivals is the only thing on the page that separates them.
 
 Then use them to *cut*, which is why this costs less than it sounds:
 
@@ -185,23 +193,19 @@ traps, and what counts as evidence there. Do not read them all up front.
 | **EXHAUSTED** | you ran out of budget, quota or rate limit mid-run | nothing; name the quota and what went unasked |
 | **IRRELEVANT-BY-DESIGN** | the fetch succeeded and the prose is real, accurate and quotable — about something else | nothing; and every check you have will pass on it |
 
-The fifth defeats every check here, because it returns real, quotable prose about something else —
-so check the page is about its source. Two shapes are not lane states at all: **a lane you did not
-drive is not a lane that came back empty**, and **the record itself was filtered by the outcome you
-are studying**. Adoption gets announced and reversion does not; a failed replication is rarely
-written up. So an absence in a literature is weak evidence of absence in the world, and it is the
-one inference this table's EMPTY row otherwise licenses.
+The fifth returns real, quotable prose about something else, so check the page is about its source.
+Two shapes are not lane states at all: **a lane you did not drive is not a lane that came back
+empty**, and **the record itself was filtered by the outcome you study** — adoption is announced,
+reversion is not, so an absence in a literature is weak evidence of absence in the world, which is
+the one inference EMPTY otherwise licenses.
 
-**A raw fetch cannot tell these states apart; `silver` is the instrument that can** — it separates a
-refusal from a missing page, detects a bot-wall and renders the interstitial you are told to quote,
-and reaches what a client-rendered shell hides (measured: `curl` 9 words, browser session the actual
-content). It is not a bypass and does not solve CAPTCHAs. **So never file a web lane EMPTY or BLOCKED
-on a raw fetch alone — re-run it through `silver` first.** `references/lanes/web-live.md`.
+**A raw fetch cannot tell these states apart; `silver` can** — it separates a refusal from a missing
+page, renders the bot-wall interstitial you are told to quote, and reaches what a client-rendered
+shell hides (measured: `curl` 9 words). Not a bypass; it does not solve CAPTCHAs. **Never file a web
+lane EMPTY or BLOCKED on a raw fetch alone.** `references/lanes/web-live.md`.
 
-**Before concluding absence, widen — then say what you could have detected.** One literal phrase
-returning zero is not evidence. `references/absence.md` carries the rest: what an EMPTY must state to
-count, the four query-construction rules from people who search professionally, and the two shapes
-above in full.
+**Before concluding absence, widen — then say what you could have detected**; one literal phrase
+returning zero is not evidence. `references/absence.md` has the rest.
 
 **Do not build an index over any of this** — no embeddings, no findings cache, no summary of summaries.
 A production findings-cache measured zero hits in 133 attempts, and these corpora grow most days, so a
@@ -287,17 +291,20 @@ bad quote-drift-gate    --report r.md --note-bodies n.json  # a quotation still 
 bad figure-support-gate --report r.md --note-bodies n.json  # a cited figure IS in the note cited
 bad no-source-claim-gate --report r.md --notes n.json       # "no source was found" is checked
 bad absence-gate --report r.md                             # an absence claim that says where you looked
-bad uncited-gate ; bad recitation-gate ; bash scripts/lane-probes.sh
+bad uncited-gate  --report r.md --vault-tag run            # every factual sentence carries a span
+bash scripts/lane-probes.sh    # relative to THIS skill's dir — cd there, or give the full path
 ```
 
-**A check that can only pass is not a check** — two ways to fail that. Break it on purpose and watch it
-go red; then try to *beat* it with a shortcut, because if a degenerate answer passes, the check is not
-ready. Measured here: a draft whose every sentence was false but carried a marker to a real note came
-back clean from `uncited-gate`, which measures citation *presence*.
+**Exit 2 is not a refusal — it means the command never ran** (missing option; 127 is a missing
+script). These gates exit 0 clean and 1 blocked, so a caller reading `$?` reads either as "blocked".
+`references/checks.md` carries that and the `n.json` / `c.json` / `d.json` shapes you must write
+yourself.
 
-**Run the arm where your explanation is absent.** Feed the system scrambled or empty input and see
-whether it still answers confidently; to claim accumulated findings helped, re-run with the store
-*wiped* and report the difference. If the answer barely moves you measured the model, not the corpus.
+**A check that can only pass is not a check.** Break it on purpose and watch it go red, then try to
+*beat* it — a degenerate answer that passes means it is not ready. Measured: a draft whose every
+sentence was false but carried a marker to a real note came back clean from `uncited-gate`, which
+measures citation *presence*. **And run the arm where your explanation is absent** — scrambled or
+empty input, or the store wiped. If the answer barely moves, you measured the model, not the corpus.
 
 **A check never run and a check that passed must never look the same in your report.**
 
@@ -334,11 +341,9 @@ come back wearing the words *thorough* and *rigorous*.
   that never communicate amplify one agent's error **17.2×** against 4.4× through a validating
   orchestrator, and the frontier-chained tier is sequential by definition. Fan out reading, when
   results combine by union. Never as a MUST.
-- **A mandatory multi-draft ensemble and a mandatory synthesizer.** That is fanning out judgment,
-  twice, as an obligation, at double the cost — for a gain measured **once, by the seller of the
-  product, on one benchmark whose authors say it excluded long-horizon tasks**. This used to read
-  "a gain nobody measured", which was false and which `references/delegation.md` contradicted three
-  files away. The true version is the stronger refusal.
+- **A mandatory multi-draft ensemble and a mandatory synthesizer.** Fanning out judgment twice, as
+  an obligation, at double the cost — for a gain measured **once, by the seller, on one benchmark
+  its own authors say excluded long-horizon tasks** (`references/delegation.md`).
 - **Word floors** — *"argumentative: 5,000–10,000 words"*. Blind-judged, a one-fact answer from
   this skill spent ~700 of ~1,180 extra words addressed to the harness rather than the person, and
   lost on proportion to a 436-word reply. Length is not thoroughness, and a floor makes padding

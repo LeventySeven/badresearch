@@ -298,3 +298,28 @@ improves. It is not a general ceiling on test-time compute: on agentic long-hori
 is reported as very far out and sometimes not observed at all within practical budgets, and for
 stronger models it is pushed further or disappears. So do not carry the turnover number into an
 agentic loop. It bounds a ranked-sampling selector, and only that.
+
+
+# The files you have to write yourself, and the exit codes
+
+**Nothing generates these.** A gate that names an input no command produces is a gate nobody runs.
+
+| file | shape |
+|---|---|
+| `n.json` | `{"<id>": "<the body text you actually read>"}` — what a quote or figure is checked against |
+| `c.json` | a list of `{subject, value, unit, source, as_of}`, one entry per side of a disagreement |
+| `d.json` | a list of `{contradiction_id, kind, reason}`; `kind` is `ranked` or `unresolved`. `[]` is legal and means "none disposed yet" |
+
+**Exit codes, because two of them lie.** These gates exit **0** when clean and **1** when they block,
+so a caller reading `$?` treats any non-zero as a refusal. But a missing required option exits **2**
+and a missing script exits **127** — both then read as *a gate that fired and blocked you*, when the
+truth is *the gate never ran*. That is the exact confusion this skill's own rule forbids: a check
+never run and a check that passed must never look the same. Test for 2 and 127 explicitly.
+
+Measured: driven cold from a scratch directory, the skill's command block returned exit 2 from
+`uncited-gate` and `recitation-gate` and 127 from `lane-probes.sh`, and every one of those would have
+been reported as a passing gate by a caller that only asked "was it non-zero?".
+
+**And run them from a directory you control.** A stale `inspect.py` sitting in `/tmp` shadows the
+stdlib module and every command dies on import — which surfaces as a traceback that looks like a gate
+failure. Verified during this run: five gates "exited 1" from `/tmp` and all five were that crash.

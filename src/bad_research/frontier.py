@@ -15,6 +15,15 @@ from pathlib import Path
 MIN_NEW_DOMAINS = 2   # MIN_SOURCES_PER_SUBQ / RESERVE_FOR_SYNTHESIS land with the lane (slice 2)
 
 
+# Both were prose-only until a Reckon drove the two commands and got STOP after two
+# retrievals and ONE quiet round. `SKILL.md`: "a run answered on fewer than ~5 distinct
+# retrievals was answered from what you had, and one quiet round is noise where two
+# consecutive is the signal." A rule the skill states and the code it names does not
+# enforce is worse than an unstated one -- the reader believes the counter holds it.
+MIN_RETRIEVALS = 5
+QUIET_PATIENCE = 2
+
+
 @dataclass
 class Frontier:
     """Entities/quantities learned from a read and not yet explored."""
@@ -102,6 +111,9 @@ class FrontierState:
     steps: int = 0
     last_new_domains: int = 0
     last_new_entities: int = 0
+    # Consecutive quiet rounds. Persisted, because the patience rule is only real
+    # if it survives the process boundary the two CLI commands sit either side of.
+    quiet_streak: int = 0
     # What the answer OWES. The scalar counters above say what arrived; these say
     # what is still promised. A round can add three entities and close no cell,
     # and both counters rise while the answer has not advanced -- which is why the
@@ -174,6 +186,8 @@ class FrontierState:
         self.seen_domains, self.seen_entities = c.seen_domains, c.seen_entities
         self.steps = c.steps
         self.last_new_domains, self.last_new_entities = c.last_new_domains, c.last_new_entities
+        quiet = self.last_new_domains < MIN_NEW_DOMAINS and self.last_new_entities == 0
+        self.quiet_streak = self.quiet_streak + 1 if quiet else 0
         self.rounds.append({
             "step": self.steps,
             "new_domains": self.last_new_domains,
@@ -190,10 +204,15 @@ class FrontierState:
         run open forever on a cell nothing can fill -- which is why `abandon_cell`
         exists and takes a reason.
         """
-        if self.steps < 2:
+        # The floor and the patience, which lived only in prose until a Reckon drove the
+        # two commands and got STOP after two retrievals and ONE quiet round. A rule
+        # stated in the skill and absent from the code it names is worse than an
+        # unstated one: the reader believes the counter enforces it.
+        if self.steps < MIN_RETRIEVALS:
             return False
-        quiet = self.last_new_domains < MIN_NEW_DOMAINS and self.last_new_entities == 0
-        return quiet and not self.open_cells
+        # `quiet_streak` is computed once per round in `observe_round`, so asking twice
+        # cannot advance it. One quiet round is noise; two consecutive is the signal.
+        return self.quiet_streak >= QUIET_PATIENCE and not self.open_cells
 
     @property
     def frontier(self) -> Frontier:
@@ -223,6 +242,7 @@ class FrontierState:
                     "steps": self.steps,
                     "last_new_domains": self.last_new_domains,
                     "last_new_entities": self.last_new_entities,
+                    "quiet_streak": self.quiet_streak,
                 },
                 indent=2,
             ),
@@ -246,6 +266,7 @@ class FrontierState:
             steps=int(d.get("steps", 0)),
             last_new_domains=int(d.get("last_new_domains", 0)),
             last_new_entities=int(d.get("last_new_entities", 0)),
+            quiet_streak=int(d.get("quiet_streak", 0)),
         )
 
 

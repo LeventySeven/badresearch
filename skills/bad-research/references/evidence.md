@@ -262,3 +262,17 @@ thing you want to measure.
 So an **absence in a literature is weak evidence of absence in the world**, and it is precisely the
 inference an EMPTY lane otherwise licenses. Say which filter produced the record before you read a
 silence as a result.
+
+# A correction this skill had to make to its own opening sentence
+
+`SKILL.md` opened with *"Of seven open-source research engines read in source…"*. The sweep behind
+it read **eleven**, and says so twice. So the thesis sentence of a document that MUSTs a denominator
+beside any count carried a wrong one — which is the failure mode in its purest form, because nobody
+audits the sentence they are most sure of.
+
+Two things were wrong, not one. The number, and the scope: the finding is about eleven OSS research
+engines chosen for that lane, not about the field. A twelfth, shipped in a regulated domain where
+"is this supported" is a legal requirement, binds claims to supporting evidence properly — with a
+separately trained extractor (BM25 HA=65 against trained HA=94; generative models asked to do the
+same extraction score F=5.6 and F=26.8) — and publishes the one class it cannot bind: negative and
+absent assertions, whose evidence is the source's silence.
