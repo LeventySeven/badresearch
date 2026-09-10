@@ -97,13 +97,22 @@ case "$o" in
 esac
 
 # 6. practitioner-video — a stderr banner means partial failure, NOT an empty tier.
-o=$(cd "$CV" 2>/dev/null && timeout 300 bash scripts/yt.sh sweep "agent" 12 podcast 2>/tmp/yt.err); rc=$?
+# A missing root is MISSING, not BLOCKED. `cd "$CV" 2>/dev/null` fails silently when the
+# kit is not installed, yt.sh is then not found, and the stderr banner was filed BLOCKED --
+# which by this skill's own table means "a wall refused you" and licenses a different
+# conclusion from "the lane is DOWN". A lane misreporting its own state is the exact
+# failure these probes exist to prevent, so the root is checked before the tool runs.
+if [ ! -x "$CV/scripts/yt.sh" ]; then
+  say practitioner-video MISSING "no yt.sh at $CV/scripts/ — lane root does not resolve"
+else
+o=$(cd "$CV" && timeout 300 bash scripts/yt.sh sweep "agent" 12 podcast 2>/tmp/yt.err); rc=$?
 n=$(printf '%s' "$o" | sed -n 's/^# \([0-9][0-9]*\) titles matched\..*/\1/p' | head -1)
 if [ -s /tmp/yt.err ]; then say practitioner-video BLOCKED "$(head -1 /tmp/yt.err)"
 elif [ "$rc" -ne 0 ]; then say practitioner-video BLOCKED "exit $rc"
 elif [ "${n:-x}" = 0 ]; then say practitioner-video EMPTY "0 titles matched, no stderr banner"
 elif [ -n "${n:-}" ]; then say practitioner-video WORKING "$n titles matched"
 else say practitioner-video UNCLASSIFIED "no footer line"; fi
+fi
 
 # 7. live-instrument — an instrument that cannot answer is BROKEN, not a zero.
 if [ -z "$REPO" ]; then

@@ -8,7 +8,7 @@
 
 ## Commands
 ```bash
-P=/Users/seventyleven/Desktop/compound-v/references/practitioners.tsv
+P=~/Desktop/compound-v/references/practitioners.tsv
 # Roster: 3 TAB-separated cols (x-handle, who they are, what they shipped/operate). Header is
 # COMMENT LINES (#), not a header row — 45 data rows under ~37 lines of preamble as of 2026-09-08.
 grep -v -e '^#' -e '^$' "$P" | awk -F'\t' '{print $1"\t"$2}'        # -> 45 rows
@@ -40,7 +40,7 @@ WebSearch "<name> <topic>" allowed_domains:["<their blog domain from gh api>"]  
 
 ## Reachability probe
 ```bash
-P=/Users/seventyleven/Desktop/compound-v/references/practitioners.tsv
+P=~/Desktop/compound-v/references/practitioners.tsv
 printf 'roster=%s gh=%s\n' "$(grep -c -v -e '^#' -e '^$' "$P" 2>&1)" "$(gh api users/simonw --jq .login 2>&1|head -1)"
 ```
 - **WORKING** → `roster=45 gh=simonw` (integer ≥1 and a bare login)
@@ -89,7 +89,7 @@ Never cite a WebSearch digest as a quotation — it is a paraphrase (`~/.claude/
 - **Prominence ≠ track record on this question.** `bcherny` created Claude Code; his blog's 17 essays are all
   pre-2024 frontend/TypeScript and say nothing about agent harnesses. gh `followers` (10,914) predicted nothing.
 - **Corroboration that isn't.** One practitioner supplied ~11 of 96 findings counted as three independent lanes
-  (`/Users/seventyleven/Desktop/compound-v/references/corroboration.md:16`); one commercial orbit supplied
+  (`~/Desktop/compound-v/references/corroboration.md:16`); one commercial orbit supplied
   ~18 of 59 (`:30`). A per-item check structurally cannot see this — only the chair over the pooled set can.
 - **X read paths (2026-09-08):** `WebFetch https://x.com/<u>` → **HTTP 402 Payment Required** (verified).
   Anonymous `silver read https://x.com/<u>` → profile header **and timeline post text DO come back** (163 lines

@@ -7,7 +7,7 @@
 - Do NOT reach here for a quotable line. This lane cannot produce quotations (see Traps).
 
 ## Commands
-All run from `/Users/seventyleven/Desktop/compound-v`. Registry: `references/channels.tsv` — 32 rows, verified 2026-09-08: core 9, platform 14, podcast 3, research 6.
+All run from `~/Desktop/compound-v`. Registry: `references/channels.tsv` — 32 rows, verified 2026-09-08: core 9, platform 14, podcast 3, research 6.
 
 ```bash
 bash scripts/yt.sh channels                       # print the 32-row registry with tier + what it's good for
@@ -35,7 +35,7 @@ Measured wall time per tier at the default limit 400: **core 31s · platform 69s
 
 ## Reachability probe
 ```bash
-cd /Users/seventyleven/Desktop/compound-v && bash scripts/yt.sh sweep "agent" 40 podcast; echo "EXIT=$?"
+cd ~/Desktop/compound-v && bash scripts/yt.sh sweep "agent" 40 podcast; echo "EXIT=$?"
 ```
 Three distinguishable outcomes (all three produced on 2026-09-08):
 

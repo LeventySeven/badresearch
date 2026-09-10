@@ -10,7 +10,7 @@ Owner-only libraries on disk. No web agent can reach these.
 
 ## Commands
 ```sh
-R=/Users/seventyleven/Desktop; T=$R/researchfms/Transcripts/TRANSCRIPTS_AI_AGENT_SYSTEMS.md
+R=~/Desktop; T=$R/researchfms/Transcripts/TRANSCRIPTS_AI_AGENT_SYSTEMS.md
 # 1. Teardowns — FLAT GLOB ONLY (see Traps). Returns matching breakdown filenames.
 grep -l "retrieval" $R/researchfms/teardowns/*.md      # -> 182 files
 grep -n "<term>" $R/researchfms/teardowns/ABRIDGE.md   # -> path:line for citation
@@ -36,7 +36,7 @@ pre-stage plus one context-owning agent (`:6886`, `:6998`). Cause: context lost 
 
 ## Reachability probe
 ```sh
-R=/Users/seventyleven/Desktop
+R=~/Desktop
 echo "teardowns   $(find $R/researchfms/teardowns -maxdepth 1 -name '*.md' | wc -l)"
 echo "transcripts $(find $R/researchfms/Transcripts -maxdepth 1 -name '*TRANSCRIPT*.md' | wc -l)"   # *TRANSCRIPT* not TRANSCRIPTS_* — see the trap below
 echo "articles    $(find $R/guidesfm/research/articles -maxdepth 1 -name '*.md' | wc -l)"
@@ -45,7 +45,7 @@ echo "x-guides    $(find $R/guidesfm/research/x-guides -maxdepth 1 -name '*.md' 
 - **WORKING** — four non-zero counts, e.g. `teardowns 407 / transcripts 41 / articles 190 / x-guides 67`
   (real output, 2026-09-08). Counts drift up most days; that is health, not error.
 - **BROKEN** — a row prints `0` *and* stderr names the path:
-  `bfs: error: /Users/seventyleven/Desktop/NOPE: No such file or directory.` Root moved/unmounted.
+  `bfs: error: ~/Desktop/NOPE: No such file or directory.` Root moved/unmounted.
   Report the lane as DOWN, never as "no sources found".
 - **GENUINELY EMPTY** — all four rows non-zero, and your topic grep returns `0`
   (verified: `grep -l "quantum tunnelling" teardowns/*.md` -> `0` against a healthy 407). Only this
