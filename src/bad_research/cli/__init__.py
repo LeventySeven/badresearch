@@ -134,6 +134,10 @@ from bad_research.cli.checks import figure_support_gate_cmd as _figure_support_c
 
 app.command("figure-support-gate")(_figure_support_cmd)
 
+from bad_research.cli.checks import absence_gate_cmd as _absence_cmd
+
+app.command("absence-gate")(_absence_cmd)
+
 from bad_research.cli.coverage_cmds import coverage_cmd as _coverage_cmd
 
 app.command("coverage")(_coverage_cmd)

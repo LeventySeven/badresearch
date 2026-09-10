@@ -190,3 +190,37 @@ def figure_support_gate_cmd(
                    if result.ok else "REFUSE | a cited figure does not appear in its source")
     if not result.ok:
         raise typer.Exit(code=1)
+
+
+def absence_gate_cmd(
+    report: Path = typer.Option(..., "--report", help="Path to the report markdown."),
+    json_out: bool = typer.Option(False, "--json", "-j"),
+) -> None:
+    """List the report's absence claims, flagging the ones that name no search scope.
+
+    An absence claim is the one sentence class no other gate can reach: `quote-drift`
+    needs a quotation, `figure-support` needs a figure, `no-source-claim` needs a claim
+    that has a source to be missing. An absence cites nothing by construction and its
+    "source" is the whole world.
+
+    This is a TRIAGE LIST, not a verdict. It cannot tell you an absence is false --
+    only finding the thing can. What it can tell you is which of your absence claims
+    are stated in a form nobody could falsify, which is the form that shipped a claim
+    a blind judge overturned in one fetch.
+
+    Exit 1 when any absence claim names no search scope.
+    """
+    from bad_research.checks.absence_claim import find_absence_claims
+
+    r = find_absence_claims(report.read_text(encoding="utf-8"))
+    if json_out:
+        typer.echo(_json.dumps(r.to_dict(), indent=2))
+    else:
+        typer.echo(f"absence-gate | {len(r.claims)} absence claim(s) | "
+                   f"{len(r.unscoped)} name no search scope")
+        for c in r.claims:
+            mark = "UNSCOPED" if not c.scoped else f"scoped [{c.scope}]"
+            typer.echo(f"  {mark:30s} L{c.line}: {c.sentence[:76]}")
+        typer.echo(f"\n  {r.caveat}")
+    if not r.ok:
+        raise typer.Exit(code=1)
