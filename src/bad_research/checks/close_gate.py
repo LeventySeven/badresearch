@@ -23,14 +23,26 @@ the record genuinely disagrees and you could not settle it -- a real answer, not
 a failure, and the honest one more often than agents behave as though. What is
 not legal is silence, or a reason field with nothing in it.
 
-**The known limit, stated rather than papered over.** "Load-bearing" is a
-substring test on the subject, so an answer that paraphrases the subject --
-"H100 hourly rate" where the claim said "H100 on-demand" -- files a real
-disagreement as cosmetic and the gate goes quiet. Fuzzy subject matching would
-close that hole and open a worse one, blocking closes over pairs that are not
-about the same thing at all; a check that cries wolf gets switched off. So the
-gate is a floor, not a proof: it catches the disagreement you already named
-consistently, and it never certifies that none was missed.
+**How "load-bearing" is decided, and what a cold run measured.** This used to be a
+whole-string substring test on the subject, documented as having an edge case where
+an answer paraphrases -- "H100 hourly rate" where the claim said "H100 on-demand".
+Driven cold, the edge case turned out to be the normal case: a subject reads
+"reranker nDCG@10 gain" and no sentence anyone writes contains that string, so a
+dated 11%-versus--51% disagreement on one metric was filed **cosmetic** and the gate
+allowed a one-sided answer. A gate that essentially never fires is not a floor, it is
+a no-op that reports a number.
+
+So the subject is matched on its **content terms**, and the report says which rung
+answered -- `exact` when the whole subject appears, `terms` when enough of its
+distinctive words do. The wolf-crying risk that argued against fuzzy matching is
+smaller than it looks here, because both sides of a contradiction are already paired
+on the SAME subject before this runs; the only question left is whether the answer
+discusses it.
+
+**And a near-miss is reported, never dropped silently.** A contradiction whose
+subject partly matches is listed in `near_miss` with its score. That is the whole
+point: the failure this module must not have is going quiet, and a cosmetic pile
+nobody can inspect is exactly how it goes quiet.
 
 **A disposition is not a licence to drop a side.** Even a ranked contradiction
 must reach the reader carrying both values, both sources, and both capture dates
@@ -100,6 +112,9 @@ class CloseReport:
     blockers: tuple[Blocker, ...]
     load_bearing: tuple[str, ...]
     cosmetic: tuple[str, ...]
+    # Subjects that partly matched and were NOT counted load-bearing. Surfaced so a
+    # quiet gate can be told apart from a clean one.
+    near_miss: tuple[tuple[str, str, float], ...] = ()
 
     @property
     def can_close(self) -> bool:
@@ -111,11 +126,50 @@ class CloseReport:
             "blockers": [b.to_dict() for b in self.blockers],
             "load_bearing": list(self.load_bearing),
             "cosmetic": list(self.cosmetic),
+            "near_miss": [
+                {"id": cid, "subject": subj, "score": round(sc, 2)}
+                for cid, subj, sc in self.near_miss
+            ],
         }
 
 
 def _norm(text: str) -> str:
     return " ".join(text.split()).casefold()
+
+
+# Words too common to distinguish one subject from another.
+_SUBJ_STOP = frozenset("""a an and at by for from in of on or per the to vs versus with rate
+cost price value number total amount score result results gain gains change delta""".split())
+
+
+def _subject_terms(subject: str) -> list[str]:
+    import re as _re
+
+    out, seen = [], set()
+    for w in _re.findall(r"[a-z0-9][a-z0-9._@+-]*", subject.casefold()):
+        if len(w) < 3 or w in _SUBJ_STOP or w in seen:
+            continue
+        seen.add(w)
+        out.append(w)
+    return out
+
+
+def subject_match(subject: str, answer: str) -> tuple[str, float]:
+    """('exact'|'terms'|'none', score) -- does `answer` discuss `subject`?"""
+    a = _norm(answer)
+    if _norm(subject) and _norm(subject) in a:
+        return "exact", 1.0
+    terms = _subject_terms(subject)
+    if not terms:
+        return "none", 0.0
+    hit = sum(1 for t in terms if t in a)
+    score = hit / len(terms)
+    # Two distinctive words, or most of a short subject. Below that it is a near-miss
+    # and gets REPORTED rather than counted -- the honest middle between a gate that
+    # never fires and one that cries wolf.
+    if hit >= 2 or (len(terms) == 1 and hit == 1):
+        return "terms", score
+    return "none", score
 
 
 def contradiction_id(c: Contradiction) -> str:
@@ -193,12 +247,16 @@ def evaluate_close(
     blockers: list[Blocker] = []
     load_bearing: list[str] = []
     cosmetic: list[str] = []
+    near_miss: list[tuple[str, str, float]] = []
 
     for c in contradictions:
         cid = contradiction_id(c)
         subject = c.left.subject
-        if _norm(subject) not in _norm(answer):
+        how, score = subject_match(subject, answer)
+        if how == "none":
             cosmetic.append(cid)
+            if score > 0:
+                near_miss.append((cid, subject, score))
             continue
         load_bearing.append(cid)
 
@@ -223,7 +281,8 @@ def evaluate_close(
         blockers += _side_blockers(cid, subject, c.left, answer)
         blockers += _side_blockers(cid, subject, c.right, answer)
 
-    return CloseReport(tuple(blockers), tuple(load_bearing), tuple(cosmetic))
+    return CloseReport(tuple(blockers), tuple(load_bearing), tuple(cosmetic),
+                       tuple(near_miss))
 
 
 __all__ = [

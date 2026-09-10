@@ -158,6 +158,19 @@ class FrontierState:
             steps=self.steps,
         )
         c.observe(domains, entities)
+        # An entity a round brought back IS a frontier item -- that is the definition the
+        # skill states ("an entity or quantity that appeared in a source and not in the
+        # question"). This line was missing, and its absence was invisible to every unit
+        # test because each half was tested alone: `observe_round` was checked against
+        # `seen_entities`, `gate_query` against a hand-built `Frontier`, and nothing drove
+        # the seam. A cold run found it in one command -- after `observe` recorded three
+        # entities, the very next query NAMING those entities was refused, because
+        # `items` had never been written and the frontier was empty forever.
+        #
+        # The failure mode is the dangerous kind: the gate still REFUSES, so it looks like
+        # a working guard rather than a broken one. A gate that refuses everything and a
+        # gate that refuses correctly are indistinguishable from the exit code alone.
+        self.items |= {e for e in entities if e}
         self.seen_domains, self.seen_entities = c.seen_domains, c.seen_entities
         self.steps = c.steps
         self.last_new_domains, self.last_new_entities = c.last_new_domains, c.last_new_entities

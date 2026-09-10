@@ -40,7 +40,9 @@ def _load_dispositions(path: Path | None) -> list[Disposition]:
     if path is None:
         return []
     raw = _json.loads(path.read_text(encoding="utf-8"))
-    rows = raw["dispositions"] if isinstance(raw, dict) else raw
+    # `{}` is a legal way to say "no dispositions yet" and used to raise KeyError,
+    # which reads as a broken command rather than an empty input. Found cold.
+    rows = raw.get("dispositions", []) if isinstance(raw, dict) else raw
     return [
         Disposition(
             contradiction_id=r["contradiction_id"],
