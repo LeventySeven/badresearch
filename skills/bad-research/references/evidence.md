@@ -214,3 +214,50 @@ caveat, or with an unflagged source that corroborates it, or it does not carry t
 *Speculation as finding* is the one that reads cleanest and is easiest to miss — a source's
 "this will likely reach X by 2027" becomes "X reached" one paraphrase later, and every check here
 passes on it.
+
+# Weight testimony against interest UP
+
+The flag table above gives eight ways to *discount* a source and no way to *promote* one, so a
+filter built from it systematically under-weights the strongest evidence class there is.
+
+**When a source says the thing that costs it something, that is worth more than a neutral source
+saying it.** The concrete shapes, all of them cheap to spot:
+
+- **A shipped default that declines the vendor's own feature.** A vector database whose docs ship
+  its index *off* by default, a search product shipping its reranker disabled, a threshold set where
+  the feature stops paying — that is the vendor telling you where their own thing stops working, in
+  the one place they cannot spin it.
+- **A team removing a feature it built and announced.** Killing your own A/B arm is a measurement
+  reported against interest.
+- **A negative result somebody paid to publish** about a tool they like.
+- **A study commissioned by opponents, with leading questions, that still returns the answer they
+  did not want.**
+- **A prompt that patches out its own tool.** A system whose own instructions tell the model to stop
+  using a capability that system ships is reporting a failure nobody made it report.
+
+The mirror is the discount you already have: a vendor's headline number about its own product is
+marketing, whatever its domain tier. **The same source can be both** — a launch post's benchmark is
+marketing and its buried scope caveat is testimony against interest. Take the second and flag the
+first, in the same citation.
+
+**Revealed preference beats stated preference.** What a team *does* under cost — what they shipped,
+what they turned off, what they quietly reverted — outranks what they say in a post about it.
+
+# Selection on the outcome you are studying
+
+The record you are searching was produced by a filter, and often the filter selected on exactly the
+thing you want to measure.
+
+- **Adoption is announced; reversion is silent.** Nobody publishes a retreat. So a corpus of "teams
+  who adopted X" is not a sample of teams who tried X.
+- **Failed replications are rarely written up**, so the literature over-represents results that
+  worked the first time.
+- **Every famous example is an outlier**, which is what made it famous and what makes it a bad
+  guide. Advice derived from blockbusters — including any list of "how the best teams do it" —
+  inherits that selection.
+- **The set of unconflicted sources can be genuinely empty**, and that emptiness is itself the
+  finding, not a gap to paper over with a conflicted one.
+
+So an **absence in a literature is weak evidence of absence in the world**, and it is precisely the
+inference an EMPTY lane otherwise licenses. Say which filter produced the record before you read a
+silence as a result.

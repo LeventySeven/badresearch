@@ -274,3 +274,27 @@ narrow the sentence to what the span actually supports.
 
 **Keep the raw 0.0–1.0 score off the page.** It belongs in the audit trail. A number in the prose
 reads as a measurement of the world, when it is a measurement of your checking.
+
+# Two bounds on every judge in this file
+
+**A model given your definition will often quietly use its own, and its confidence carries no signal
+about which one it used.** Measured across 8 datasets and 3 model families: how familiar a model is
+with a *label's definition* predicts its accuracy (r ≈ 0.4) where memorisation of the data does not,
+and a full rescue battery — supplying the aligned definition, few-shot examples, prompt optimisation,
+multi-turn self-correction — recovers only about **35%** of the gap. The sharp part: models apply
+aligned and misaligned definitions with *the same confidence*, so nothing in the output tells you
+which happened.
+
+What follows for this kit: a judge, screen or gate that turns on a **word** — "relevant", "supported",
+"high-quality", "load-bearing" — is running on the model's definition of that word, not yours, and it
+will not tell you. Prefer a criterion that is mechanically checkable (does this span contain this
+figure) over one that is nameable (is this source good). Where the word is unavoidable, define it by
+example in the prompt and treat the result as a triage order rather than a verdict.
+
+**The sampling-turnover figure above needs its condition.** That accuracy from verifier-ranked
+sampling turns over near 400 samples, and majority vote near 50, is a property of *the selector* —
+a verifier-ranked argmax degrades because ranking error accumulates faster than candidate quality
+improves. It is not a general ceiling on test-time compute: on agentic long-horizon work the plateau
+is reported as very far out and sometimes not observed at all within practical budgets, and for
+stronger models it is pushed further or disappears. So do not carry the turnover number into an
+agentic loop. It bounds a ranked-sampling selector, and only that.

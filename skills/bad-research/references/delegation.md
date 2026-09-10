@@ -91,7 +91,18 @@ model turn or a denied action spends budget only on productive iterations.
 ## Where the reducer is, and what it returns
 
 Ablation over model combinations put roughly **three quarters of the lift in synthesis and one quarter
-in diversity**. The reducer is where the value sits, and it should return a **typed structure** —
+in diversity** — measured by **OpenRouter, announcing its own Fusion product**, on Perplexity's DRACO
+benchmark: 100 deep-research tasks across 10 domains. Carry the seller's own scope limit, which is the
+half a reader needs and the half a launch thread buries: *"we have only evaluated one deep research
+benchmark so far, which did not include long-horizon tasks."* One vendor, one benchmark, no
+long-horizon coverage. The 3/4–1/4 split is the shape to reason from, not a constant to plan against.
+
+(This paragraph carried no attribution at all until a sweep traced it, along with the rubric-contamination
+finding below and its twin in `checks.md`, to that single unnamed launch thread — three paragraphs, two
+files, one seller. That is precisely what *count distinct actors, not distinct URLs* exists to stop, and
+it had happened inside the document that states the rule.)
+
+The reducer is where the value sits, and it should return a **typed structure** —
 consensus points, contradictions, partial coverage, unique insights, blind spots — which the writer
 then works from. A contradiction that is reduced into prose is a contradiction that got averaged away.
 

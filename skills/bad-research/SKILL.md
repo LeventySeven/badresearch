@@ -55,11 +55,52 @@ so in those words, because an unreported failed search is indistinguishable from
 Two adjacent jobs this section does not cover: `references/breadth.md` ("find all X" — recall, not
 precision) and `references/noise.md` (telling real from plausible, before you read it).
 
+**And past a floor, more evidence buys confidence rather than accuracy.** Eight horse handicappers
+given 5, 10, 20 and 40 variables: *"average accuracy of predictions remained the same regardless of
+how much information the handicappers had available"* — while confidence rose steadily with every
+extra variable. The sharp part is that at five items they were **well calibrated**, and it was the
+extra evidence that made them overconfident. Replicated with clinical psychologists; medical students
+taught to collect thoroughly scored *below* average on diagnostic accuracy. So a round that adds
+sources and moves no claim has not made the answer better — it has made you surer of it, which is
+the one thing you must not read as progress.
+
 Stop when nothing new arrived **and nothing you promised is still open** — both halves, since a round
 can add three entities and close no cell while both counters read as progress. With a floor and a
 patience: a run answered on **fewer than ~5 distinct retrievals** was answered from what you had, and
 one quiet round is noise where **two** consecutive is the signal. A cell nothing can fill is abandoned
 *with a reason*. (`bad frontier-observe --promise/--close/--abandon`.)
+
+## Name the rivals, then delete the evidence that cannot separate them
+
+Every rule above adds. All five frontier items add, and searching *against* your position still
+operates on the one hypothesis you already hold. None of them can answer the question that decides
+whether any of your evidence counts: **what else would have produced exactly this?**
+
+**MUST name at least two rival explanations before you commit to one, and MUST carry them into the
+answer.** Not into your reasoning — into the output. A real finding and a conspiracy theory have the
+same abductive shape and leave the same retrieval trail: both retrieve confirming spans, both explain
+away the rest. The list of rivals is the only thing on the page that tells them apart.
+
+Then use them to *cut*, which is why this costs less than it sounds:
+
+- **Evidence every rival predicts equally well has no diagnostic value.** Delete it. *"If an item of
+  evidence seems consistent with all the hypotheses, it may have no diagnostic value at all. It is a
+  common experience to discover that most available evidence really is not very helpful."*
+- **Rank by what survives, not by what accumulates:** *"The most probable hypothesis is usually the
+  one with the least evidence against it, not the one with the most evidence for it."*
+- And the reason this cannot be fixed by trying harder: *"In the absence of a complete set of
+  alternative hypotheses, it is not possible to evaluate the 'diagnosticity' of evidence."* A run
+  that never names an alternative has no way to compute whether its evidence counts. (Heuer,
+  *Psychology of Intelligence Analysis*, CIA — verified in the primary.) Keep real mass on **"something
+  I have not thought of yet"**, because insufficient skepticism does not feel like insufficient
+  skepticism from the inside; it feels like doing research.
+- **Draw the rivals from disjoint evidence.** Hypotheses generated from one pool are anchored the
+  same way even when generated in separate calls.
+
+**This is not the disagreement quota this skill refuses.** A quota sends you *retrieving* until you
+find a disagreement, and manufactures one. This asks you to *name*, from evidence already in hand,
+what else would explain it — and then to throw evidence away. One adds rounds; this one deletes
+evidence and adds a paragraph.
 
 ## Contradictions are the second half of the job
 
@@ -92,6 +133,12 @@ Three honest answers, and the first two are common:
 - **One wide expansion** — a good query, read the results, write. Most questions.
 - **Frontier-chained** — the answer requires a fact you can only ask for after learning another one.
 
+**And check you are answering the question rather than the one that survived compression.** The
+question you were handed is already the fourth form of the need: what the asker wants, what they
+think they want, what they think this system can do, and what they finally typed. Ask what they will
+DO with the answer. A question that has quietly narrowed to fit an imagined tool is the most common
+way a run is precise, well-cited, and about the wrong thing.
+
 Getting this right is worth more than anything you do inside the loop. Say which you chose in one line
 at the top of the answer, so it can be corrected.
 
@@ -120,6 +167,7 @@ traps, and what counts as evidence there. Do not read them all up front.
 | Delta vs pinned ref | `references/lanes/delta-vs-pinned-ref.md` | "what changed since X" — and *unchanged* is a real finding |
 | Live instrument | `references/lanes/live-instrument.md` | a number you must measure yourself |
 | People | `references/lanes/people-track-record.md` | whose account to weight, ranked by incentive not prominence |
+| Evidence synthesis | `references/lanes/evidence-synthesis.md` | the professions that do this for a living — systematic review, intelligence analysis, information science. **The other nine lanes all route to where AI people publish** |
 | Community | `references/lanes/community.md` | reception, adoption, what breaks in practice — here the *thread* is primary and the article about it is derivative |
 
 **MUST report a lane that returned nothing, and which kind of nothing it was.** Five, not interchangeable:
@@ -132,11 +180,12 @@ traps, and what counts as evidence there. Do not read them all up front.
 | **EXHAUSTED** | you ran out of budget, quota or rate limit mid-run | nothing; name the quota and what went unasked |
 | **IRRELEVANT-BY-DESIGN** | the fetch succeeded and the prose is real, accurate and quotable — about something else | nothing; and every check you have will pass on it |
 
-The fifth returns *content* and defeats every check here: an anti-bot system answers a detected crawler
-with prose that is real, accurate and quotable, and simply not about the site you fetched it from — so
-the span is genuine, the quote verbatim, and the support verdict passes. Check the page is about its
-source. There is a sixth shape that is not a lane state at all: the lane was healthy and you never
-sampled where the thing would be. **A lane you did not drive is not a lane that came back empty.**
+The fifth defeats every check here, because it returns real, quotable prose about something else —
+so check the page is about its source. Two shapes are not lane states at all: **a lane you did not
+drive is not a lane that came back empty**, and **the record itself was filtered by the outcome you
+are studying**. Adoption gets announced and reversion does not; a failed replication is rarely
+written up. So an absence in a literature is weak evidence of absence in the world, and it is the
+one inference this table's EMPTY row otherwise licenses.
 
 **Before concluding absence, widen — then say what you could have detected.** One literal phrase
 returning zero is not evidence. `references/absence.md` carries the rest: what an EMPTY must state to
@@ -274,7 +323,10 @@ come back wearing the words *thorough* and *rigorous*.
   orchestrator, and the frontier-chained tier is sequential by definition. Fan out reading, when
   results combine by union. Never as a MUST.
 - **A mandatory multi-draft ensemble and a mandatory synthesizer.** That is fanning out judgment,
-  twice, as an obligation — and it doubles cost for a gain nobody measured.
+  twice, as an obligation, at double the cost — for a gain measured **once, by the seller of the
+  product, on one benchmark whose authors say it excluded long-horizon tasks**. This used to read
+  "a gain nobody measured", which was false and which `references/delegation.md` contradicted three
+  files away. The true version is the stronger refusal.
 - **Word floors** — *"argumentative: 5,000–10,000 words"*. Blind-judged, a one-fact answer from
   this skill spent ~700 of ~1,180 extra words addressed to the harness rather than the person, and
   lost on proportion to a 436-word reply. Length is not thoroughness, and a floor makes padding

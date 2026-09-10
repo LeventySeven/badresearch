@@ -30,17 +30,22 @@ from bad_research.cli import app
 
 SKILL = Path(__file__).resolve().parents[2] / "skills" / "bad-research" / "SKILL.md"
 
-MAX_LINES = 300          # Anthropic's own guidance: keep SKILL.md under 500 lines.
-                         # This started at 250 and moved ONCE, when the skill absorbed
-                         # its larger predecessor and gained the one thing that
-                         # predecessor beat it on blind-judged: an adversarial pass over
-                         # a finished draft, plus the refusals that stop the rest of that
-                         # system coming back. The cap is not a line budget — it is a
-                         # guard against the specific thing the 411-line predecessor was:
-                         # a dispatch table for a mechanism that never fired. That is why
-                         # `test_the_skill_is_not_a_chain` below matters more than this
-                         # number, and why raising this again needs a named capability,
-                         # not a paragraph that would not fit.
+MAX_LINES = 360          # Anthropic's own guidance: keep SKILL.md under 500 lines.
+                         # Moved twice, each time for a NAMED capability rather than for
+                         # prose that would not fit:
+                         #   250 -> 300  the adversarial pass over a finished draft, which
+                         #               is the one thing a 4,592-line predecessor beat
+                         #               this skill on, blind-judged.
+                         #   300 -> 360  diagnosticity (name the rivals, delete evidence
+                         #               that cannot separate them) — 4 independent
+                         #               primaries, 2 from outside the AI industry, and a
+                         #               zero verified 7 ways in the skill; plus the
+                         #               confidence/accuracy decoupling that is the
+                         #               counterweight to "reach is the largest lever".
+                         # The cap is not a line budget. It guards against the specific
+                         # thing the 411-line predecessor was: a dispatch table for a
+                         # mechanism that never fired. `test_the_skill_is_not_a_chain`
+                         # is the real guard; this number is the coarse one.
 MAX_DESCRIPTION = 500    # well inside the documented 1,536-char per-skill cap, because
                          # the binding constraint here is the SHARED listing budget.
 
