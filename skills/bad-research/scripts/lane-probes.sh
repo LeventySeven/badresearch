@@ -76,11 +76,22 @@ if [ "${1:-0}" != 200 ] || [ "${2:-0}" -lt 500 ]; then say terms-and-pricing BLO
 elif [ "${3:-0}" -gt 0 ]; then say terms-and-pricing WORKING "code=$1 chars=$2 datemarks=$3"
 else say terms-and-pricing EMPTY "code=$1 chars=$2 but no dateline — weaker citation"; fi
 
-# 5. web-live — silver's own error: prefix is the classifier; never infer from byte count alone.
-o=$(timeout 90 silver read https://example.com/ 2>&1 | head -3)
+# 5. web-live — silver's own error prefix is the classifier; never infer from byte count alone.
+# Retried once on a non-WORKING first result, because a cold or respawned browser session can fail
+# transiently and MISSING is the strongest claim on the table ("the lane is DOWN"). A run reported
+# web-live MISSING in a session where every fetch succeeded; that was never reproduced, so this
+# removes the failure mode rather than asserting the bug. A dedicated session keeps the probe off
+# whatever state `default` is in.
+o=$(timeout 90 silver read https://example.com/ --session lane-probe 2>&1 | head -3)
+case "$o" in *"Example Domain"*) : ;; *)
+  sleep 2
+  o=$(timeout 90 silver read https://example.com/ --session lane-probe 2>&1 | head -3) ;;
+esac
+silver close --session lane-probe >/dev/null 2>&1 || true
 case "$o" in
-  *"CAPTCHA"*|*"denied by policy"*|*"HTTP error status"*) say web-live BLOCKED "${o%%$'\n'*}" ;;
   *"Example Domain"*)                                     say web-live WORKING "example.com rendered" ;;
+  *"CAPTCHA"*|*"denied by policy"*|*"HTTP error status"*) say web-live BLOCKED "${o%%$'\n'*}" ;;
+  *"could not"*|*"timed out"*|*"ECONN"*|*"respawn"*)      say web-live EXHAUSTED "transient after 1 retry: ${o%%$'\n'*}" ;;
   error:*)                                                say web-live MISSING "${o%%$'\n'*}" ;;
   *)                                                      say web-live UNCLASSIFIED "${o%%$'\n'*}" ;;
 esac

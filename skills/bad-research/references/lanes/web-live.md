@@ -113,3 +113,36 @@ Two smaller findings from the same run, both worth having:
 `web-live | files listed N | candidates selected N | cut line <what>` — emitted even at 0.
 Real line from this run:
 `web-live | files listed 11 (4 curl probes, 5 silver reads, 2 WebFetch) | candidates selected 1 | cut line: 3 hosts BLOCKED (iherb 403, ozon 307+policy-deny, ddg-direct 129-char interstitial), 2 search endpoints CAPTCHA/junk-ranked, 1 login-walled (x.com), 1 WebFetch dropped verbatim -> only simonwillison.net/2025/Jun/16 survived as quotable`
+
+## What silver is worth, measured — and what it is not
+
+Run 2026-09-10 on this machine. All four are the point; the fourth is the one people expect and it
+is false.
+
+| Case | Raw fetch | `silver` | What it means |
+|---|---|---|---|
+| Client-rendered page (`perplexity.ai/hub/...`) | `curl` → **9 words** | browser session → the content | **9 words is an app shell that looks exactly like a real thin page.** This is the failure mode: not an error, a plausible EMPTY. |
+| Server-rendered article | `curl` → 205,658 bytes of HTML | `silver read` → 26,471 bytes of clean markdown | Not "more" — *quotable*. And prefixed `⟦page-content untrusted⟧`, so the untrusted-data rule is enforced by the tool rather than remembered. |
+| Publisher 403 (`dl.acm.org`) | `curl` → `403`, 5,482-byte error body | `silver read` → *"the server REFUSED the request (401/403) rather than saying the page is missing — this is the wrong TIER, not necessarily the wrong URL"* | The tool classifies BLOCKED vs MISSING and names the escalation. A 5KB error body counted as bytes is how a refusal gets filed as content. |
+| The same 403, escalated to a session | — | `{"status":403,"captcha_detected":true}` + snapshot showing *"Performing security verification"*, *"Cloudflare security challenge"* | **Silver did NOT get through.** It detected the wall and refused: *"human action is required — this agent does not solve CAPTCHAs."* |
+
+**So the value is classification, not bypass.** A hard Cloudflare wall stays walled. What you gain is
+that the snapshot *is* the interstitial — quotable, dated, and exactly what the BLOCKED row of the
+kinds-of-nothing table tells you to produce instead of a conclusion.
+
+**Session hygiene, because a browser is a resource other people can see.** Use `--session <name>`,
+one per agent, so parallel readers never collide (`--namespace` isolates whole agent groups). Silver
+is read-only unless you pass `--enable-actions`. **Close what you opened** — `silver close --session
+<name>` — and check `silver session list` for strays. An agent that leaves sessions alive leaves
+visible browsers on someone's machine.
+
+**One escalation ladder, cheapest first:**
+
+1. `WebFetch` — fine for a server-rendered page. Returns a *model summary*: never a quotation.
+2. `silver read <url> --session s1` — rendered visible text as markdown. This is the default rung.
+3. `silver open <url> --session s1` then `silver snapshot -i --session s1` — when `read` comes back
+   thin, refused, or when the page needs a real session. Check the returned `url`/`title`/`status`.
+4. `silver cookies list --url <origin>` — confirm the user's session is actually present *before*
+   concluding a gated page is empty.
+5. Still walled → that is a BLOCKED, and you now have the interstitial to quote. Stop; do not
+   conclude.

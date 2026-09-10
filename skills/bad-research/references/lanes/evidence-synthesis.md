@@ -79,3 +79,21 @@ is free but is hosted and taught commercially; PRESS sits inside a professional-
 ecosystem. The methods are decades-tested and used by WHO, NICE and Cochrane reviews, which is real
 corroboration — but "an established profession endorses it" is a different warrant from "it was
 measured", and the two must not be blurred just because the field is older than machine learning.
+
+## Reaching these sources: expect walls, and classify them
+
+This lane's sources sit behind academic publishers, and a sweep of it hit **403 on PRESS, on the BMJ
+GRADE paper, and on the Sage copy of Silberzahn** — plus one mirror that was a **hijacked academic
+domain serving gambling SEO at HTTP 200 under the correct filename**, which is the
+IRRELEVANT-BY-DESIGN row of the kinds-of-nothing table arriving in the wild. A 200 is not a fetch.
+
+So drive this lane through `silver` and let it classify (`references/lanes/web-live.md` has the
+ladder). Measured on `dl.acm.org`: a raw fetch gives a bare 403, `silver read` says *"the server
+REFUSED the request … this is the wrong TIER, not necessarily the wrong URL"*, and a browser session
+returns `captcha_detected: true` with the Cloudflare interstitial rendered. **Silver does not get
+through a hard wall.** What it gives you is the difference between *"this paper does not support the
+claim"* and *"I could not read this paper"* — which in a methods lane is the whole answer.
+
+Where a publisher wall holds, the open routes are usually: the handbook's own free web edition, an
+author's copy, the free CIA/agency PDF, or the guideline body's own site. Say which one you read,
+because they are not always the same text.
