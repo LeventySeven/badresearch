@@ -18,7 +18,7 @@ and a `[local]` neural extra are enhancements, never requirements. Originally a
 fork of [hyperresearch](https://github.com/jordan-gibbs/hyperresearch); the
 research skill itself was rebuilt from scratch in 2026-09.
 
-**What it actually is now.** One skill (`skills/research/SKILL.md`, 250 lines of
+**What it actually is now.** One skill (`skills/bad-research/SKILL.md`, 250 lines of
 qualities and refusals — not steps), eight lane recipes read on demand, two
 agents, and nine `bad` subcommands that exit non-zero when a rule is broken.
 

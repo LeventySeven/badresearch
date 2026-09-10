@@ -161,3 +161,56 @@ path with claim-level grounding where the cited text is the supporting quote, an
 fragment that resolves to a highlighted sentence. An earlier round of that same teardown concluded the
 product had no claim-level grounding — true only of the path it probed. **Enumerate a system's
 transports before concluding it does not bind claims to evidence.**
+
+# Which artifact counts: a narration is not the record
+
+**When the question names a period, the primary is the filing for THAT period.** An earnings-call
+transcript narrates numbers that have already been rounded — *"revenue grew about 27%"* — where
+the filing carries the tabular line items. A transcript is a source about the record; the filing
+is the record. Where both exist and they disagree in precision, the filing wins and the transcript
+becomes evidence about how the company described it.
+
+And the period must match: **a Q1 2025 10-Q does not satisfy a question about Q3 2024.** Different
+period, different tables. This is the shape of the miss — topically right and numerically wrong —
+and numerical-precision misses of exactly this kind are the largest avoidable category of factual
+error, because everything about the citation looks correct.
+
+The same holds outside finance: a press release dated to the change, a changelog entry, a filing
+history, a commit — the dated artifact beats the article describing it.
+
+# Read the figure, never eyeball it
+
+A chart, or a PDF with no text layer, is not an EMPTY lane. **Resolve the image and transcribe the
+plotted numbers verbatim as the quoted span.** If you cannot read a value off the image, that value
+does not ship — you have a picture of evidence, not evidence.
+
+**Never state a number you did not read off the saved artifact.** A number inferred from where a
+bar appears to end is a fabrication with a citation attached, which is the worst shape available:
+the span exists, the source is real, and the figure is invented. `figure-support-gate` checks
+whether a cited figure appears in the note cited; it cannot check whether you read it or guessed it.
+
+# Source-quality flags: flag, never suppress
+
+A source can be reachable, real, on a good domain, and still not carry the weight a sentence puts
+on it. Name the defect next to the citation rather than dropping the source — dropping it loses
+the evidence that the claim is circulating, which is often itself the finding.
+
+| Flag | What it means |
+|---|---|
+| **aggregator** | restates another source; the upstream primary is what you want |
+| **false authority** | an institution's name attached to something it did not measure |
+| **nameless source** | "experts say", "according to reports" — no actor you can count |
+| **vague qualifier** | "significantly", "most", "up to" with no denominator |
+| **unconfirmed** | reported once, never independently reproduced |
+| **marketing spin** | the seller describing its own product's performance |
+| **speculation as finding** | a future-tense prediction restated as something that happened |
+| **cherry-picked** | one favourable slice of a result whose other slices are absent |
+
+Two things this table is for. **Domain tier does not clear a flag** — a vendor's "X is the best"
+listicle on a high-tier domain is still marketing spin, and a filter that scores by domain will
+pass it. And **a flagged source may not be cited bare as established fact**: it travels with its
+caveat, or with an unflagged source that corroborates it, or it does not carry the sentence.
+
+*Speculation as finding* is the one that reads cleanest and is easiest to miss — a source's
+"this will likely reach X by 2027" becomes "X reached" one paraphrase later, and every check here
+passes on it.

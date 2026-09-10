@@ -222,3 +222,55 @@ judge model. He named his own overfitting out loud — adding literal words he k
 team names the taxonomy: data drift, **judge drift** (hill-climbing one judge means overfitting to it),
 and small-eval-set drift (the prompt starts to mirror those examples). Their mitigation is
 human-annotated goldens kept specifically to detect judge drift.
+
+# Three shipped checks this file used to describe instead of naming
+
+Each of these executes. Naming the command instead of restating its rule is not a stylistic
+preference here — this file's own argument is that prose is worth roughly 7% on a post-trained
+model while a non-zero exit is worth what it says.
+
+**`bad verify-citations --report r.md --sources n.json`** — the only pass that asks whether a
+cited span **supports** its sentence, rather than whether the span exists. That gap is real and
+this file already documents it in the other direction: `uncited-gate` measures citation
+*presence*; `quote-drift-gate` only reaches text already inside quotation marks;
+`figure-support-gate` covers numerals and self-reports the prose half as `unchecked`. Nothing else
+here runs an entailment check.
+
+It escalates cheapest-first, which is what makes per-sentence checking affordable at all: a
+zero-cost byte-identity re-find, then entailment, then a re-fetch only for a claim that comes back
+contradicted *and* is load-bearing.
+
+**Which sentences earn the check:**
+
+| | |
+|---|---|
+| **MUST** | the load-bearing facts, and anything that moves since your cutoff — numbers, dates, prices, versions, quotas, "current", "latest" |
+| **SHOULD** | other statements a source could settle |
+| **EXEMPT** | common knowledge, and your own synthesis (a conclusion is not a citation target) |
+
+Do not let a `needs_host_judgment` result ride on its 0.5 default. That silently hedges a
+paraphrase nothing actually judged, and a default is not a verdict.
+
+**`bad grounding-surface --report r.md --note-bodies n.json`** — the per-claim ledger: verdict,
+score and confidence band for every cited sentence, ordered worst-first. It is the audit surface,
+not a gate; it tells a reader which claims to inspect. Pass `--note-bodies`/`--sources` when there
+is no vault behind the run, which is the normal case here — without it the ledger binds nothing
+and prints "No cited claims found", an empty that reads exactly like a clean bill.
+
+**`bad grounding-recall`** — the mutation harness. This file says *"break it on purpose and watch
+it go red"*; this is the command that does it, over the keyless guards, and reports their measured
+catch-rate. A guard whose catch-rate you have never measured is a guard with an unknown
+false-negative rate, which is not the same as a low one.
+
+**`bad absence-gate --report r.md`** — every absence claim in the draft, flagged where it names no
+search scope. Built from a measured loss; `references/absence.md` carries the sentence and the
+comparison.
+
+# Hedging is a check output, not a writing style
+
+When a claim survives on thin support, calibrate the prose to what the check returned: one source
+→ *"one source reports…"*; a low support score, or a span you had to stretch → *"preliminary"*, or
+narrow the sentence to what the span actually supports.
+
+**Keep the raw 0.0–1.0 score off the page.** It belongs in the audit trail. A number in the prose
+reads as a measurement of the world, when it is a measurement of your checking.

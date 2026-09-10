@@ -109,3 +109,20 @@ Once a panel had web search, models began **surfacing the benchmark's own rubric
 had to exclude those domains and re-run everything before publishing. Any eval of a research skill run
 with the web lane open can retrieve its own answer key. Exclude the domains hosting your fixtures, and
 say that you did.
+
+# Two things a brief must carry
+
+**MUST: the question goes to every reader VERBATIM.** Not your paraphrase, not the sub-question as
+you have come to think of it three rounds in. Where readers are covering one population, the
+population definition is identical across every brief, word for word — otherwise the union you
+compute at the end is over sets that were never the same set, and the coverage number it produces
+is meaningless.
+
+This composes with the rule above rather than contradicting it: give the **question** verbatim,
+withhold the **thesis**. A reader told what you are building returns opinions instead of facts.
+
+**MUST: chase the primary, do not stop at the commentary.** A reader that returns the article
+about the paper has returned a source about a source. Follow the citation chain to the thing being
+cited — three to eight primaries per reader is the working floor on a real question. The concrete
+form: **an encyclopedia page is a source hub, never a citation.** Read it to find what to read,
+then cite what it pointed at.

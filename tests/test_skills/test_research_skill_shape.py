@@ -1,4 +1,4 @@
-"""Shape guards for `skills/research/SKILL.md` — the rebuilt research skill.
+"""Shape guards for `skills/bad-research/SKILL.md` — the rebuilt research skill.
 
 Three of these encode findings that cost real money to learn, so they are checks
 rather than conventions:
@@ -28,10 +28,19 @@ import pytest
 
 from bad_research.cli import app
 
-SKILL = Path(__file__).resolve().parents[2] / "skills" / "research" / "SKILL.md"
+SKILL = Path(__file__).resolve().parents[2] / "skills" / "bad-research" / "SKILL.md"
 
-MAX_LINES = 250          # Anthropic's own guidance: keep SKILL.md under 500 lines;
-                         # this skill holds itself to half that on purpose.
+MAX_LINES = 300          # Anthropic's own guidance: keep SKILL.md under 500 lines.
+                         # This started at 250 and moved ONCE, when the skill absorbed
+                         # its larger predecessor and gained the one thing that
+                         # predecessor beat it on blind-judged: an adversarial pass over
+                         # a finished draft, plus the refusals that stop the rest of that
+                         # system coming back. The cap is not a line budget — it is a
+                         # guard against the specific thing the 411-line predecessor was:
+                         # a dispatch table for a mechanism that never fired. That is why
+                         # `test_the_skill_is_not_a_chain` below matters more than this
+                         # number, and why raising this again needs a named capability,
+                         # not a paragraph that would not fit.
 MAX_DESCRIPTION = 500    # well inside the documented 1,536-char per-skill cap, because
                          # the binding constraint here is the SHARED listing budget.
 
@@ -168,3 +177,48 @@ def test_the_command_check_still_catches_a_name_that_does_not_resolve():
     rc = subprocess.run([str(bad), "definitely-not-a-command", "--help"],
                         capture_output=True).returncode
     assert rc != 0, "fixture is wrong: that command should not exist"
+
+
+def test_the_skill_is_not_a_chain():
+    """No step numbers, no Skill() dispatch — the refusal, in executable form.
+
+    The predecessor was a 19-stage chain: an entry file that sequenced 21 step skills by
+    number, each invoked with `Skill(skill: "bad-research-N-...")`. Its stated purpose was
+    to reload each procedure fresh so a long run could not silently degrade — a property
+    the on-demand `references/` layout already has, in a fifth of the lines.
+
+    This is a test rather than a sentence because the failure mode is gradual: one
+    numbered step is a clarification, three are a pipeline, and by then the skill has
+    stopped being a judgment about the question and become a form to complete.
+    """
+    body = SKILL.read_text(encoding="utf-8")
+    # The refusals section quotes the predecessor's shape in order to refuse it, so
+    # exempt the section that does the refusing.
+    head, _, _ = body.partition("## What this skill refuses")
+    for pattern, what in (
+        (r"Skill\(skill:", "a Skill() dispatch call"),
+        (r"^\s*\|?\s*(?:Step\s+)?\d+(?:\.\d+)?\s*\|\s*`?bad-research-", "a numbered step table row"),
+        (r"\bstep \d+(?:\.\d+)? →", "a step arrow"),
+    ):
+        m = re.search(pattern, head, re.M)
+        assert not m, f"SKILL.md has {what}: {m.group(0)!r} — the chain is coming back"
+
+
+def test_the_five_refusals_are_stated_with_reasons():
+    """A rule dropped silently comes back. These five were MUSTs in the predecessor.
+
+    Each is refused by name because each is refutable-sounding-but-wrong in a way that
+    reads as rigour: a quota on disagreements manufactures them, a reader forced to
+    conclude returns opinions, mandatory parallelism amplifies error 17.2x, a mandatory
+    ensemble fans out judgment, and a word floor makes padding mandatory.
+    """
+    body = SKILL.read_text(encoding="utf-8")
+    _, sep, refusals = body.partition("## What this skill refuses")
+    assert sep, "SKILL.md must carry a `## What this skill refuses` section"
+    # Normalise the wrap: these are prose paragraphs, so a phrase the section genuinely
+    # carries can sit across a line break. The assertion is about the idea being named,
+    # never about where the wrap fell — a first version failed on "never\n  concludes"
+    # and would have been "fixed" by editing the skill to satisfy the test.
+    refusals = " ".join(refusals.partition("## The answer")[0].split())
+    for needle in ("quota", "never concludes", "17.2", "ensemble", "Word floors"):
+        assert needle in refusals, f"the refusals section no longer names {needle!r}"

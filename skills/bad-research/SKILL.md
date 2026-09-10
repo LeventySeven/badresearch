@@ -1,5 +1,5 @@
 ---
-name: research
+name: bad-research
 description: Answer a question that needs real sources — comparisons, "what actually happened", "is this claim true", literature, a product's real behaviour, what changed since a date. Use when being wrong is expensive, when the answer must carry citations someone could check, or when the honest answer might be "nobody knows". Reaches lanes a web search cannot: the local corpus, a package's own source, a curated talk roster, a vendor's terms as of a date.
 ---
 
@@ -43,6 +43,14 @@ you generate yourself:
 
 **A query names a frontier item AND is one sentence saying what evidence you want.** The measured
 default is keyword soup — grep-trained models emit regex-shaped piles into retrievers wanting language.
+
+**MUST search AGAINST your emerging position, not only for it.** For each load-bearing claim, run
+the contrarian queries — *criticism of X*, *limitations of X*, *why X doesn't work* — and go look
+for an **independent rerun** of any result you are leaning on. Counter-evidence found before a
+draft exists costs nothing to act on; the same finding after drafting becomes a patch against a
+structure already committed, and that is the whole reason this is a retrieval rule rather than a
+review one. **A failed adversarial search is a reportable finding that RAISES confidence** — say
+so in those words, because an unreported failed search is indistinguishable from one never run.
 
 Two adjacent jobs this section does not cover: `references/breadth.md` ("find all X" — recall, not
 precision) and `references/noise.md` (telling real from plausible, before you read it).
@@ -112,6 +120,7 @@ traps, and what counts as evidence there. Do not read them all up front.
 | Delta vs pinned ref | `references/lanes/delta-vs-pinned-ref.md` | "what changed since X" — and *unchanged* is a real finding |
 | Live instrument | `references/lanes/live-instrument.md` | a number you must measure yourself |
 | People | `references/lanes/people-track-record.md` | whose account to weight, ranked by incentive not prominence |
+| Community | `references/lanes/community.md` | reception, adoption, what breaks in practice — here the *thread* is primary and the article about it is derivative |
 
 **MUST report a lane that returned nothing, and which kind of nothing it was.** Five, not interchangeable:
 
@@ -135,13 +144,12 @@ count, the four query-construction rules from people who search professionally, 
 above in full.
 
 **Do not build an index over any of this** — no embeddings, no findings cache, no summary of summaries.
-A production findings-cache measured zero hits in 133 attempts and the corpora grow most days. Know the
-rule's condition so you can tell when it lapses: a memory layer measured **zero capability gain and
-pure cost** while the material fits in context, earning its keep only once evidence sits outside the
-window. It does not forbid two things — recording **dispositions** (rejected, and why, in the reason's
-own terms) over a target you re-scan; and capping how much of a file you read, where the cheap half of
-an index's benefit actually lives. Grep buys recall and pays in precision: about one file read in three
-was wasted, and a 50-line window cut that to one in five.
+A production findings-cache measured zero hits in 133 attempts, and these corpora grow most days, so a
+stored summary is stale by construction. The rule carries a condition: a memory layer measured **zero
+capability gain and pure cost** while the material fits in context, earning its keep only once evidence
+sits *outside* the window. `references/corpus-scale.md` is what to do past that point — a read log with
+honest empties, dispositions over a pool you re-scan, capped reads. Addressable and re-derivable, never
+searchable in place of the source.
 
 ---
 
@@ -217,6 +225,7 @@ bad close-gate --claims c.json --answer draft.md --dispositions d.json   # a dis
 bad quote-drift-gate    --report r.md --note-bodies n.json  # a quotation still says what you quoted
 bad figure-support-gate --report r.md --note-bodies n.json  # a cited figure IS in the note cited
 bad no-source-claim-gate --report r.md --notes n.json       # "no source was found" is checked
+bad absence-gate --report r.md                             # an absence claim that says where you looked
 bad uncited-gate ; bad recitation-gate ; bash scripts/lane-probes.sh
 ```
 
@@ -232,8 +241,49 @@ whether it still answers confidently; to claim accumulated findings helped, re-r
 **A check never run and a check that passed must never look the same in your report.**
 
 `references/checks.md`: what each gate asserts and what it does not, why the judge ceiling is a
-property of the *unit* rather than of judging, and the two things nothing here measures — recall, and
-the trajectory.
+property of the *unit* rather than of judging, `verify-citations` / `grounding-surface` /
+`grounding-recall`, and the two things nothing here measures — recall, and the trajectory.
+
+## Before it ships: one adversarial pass
+
+**`references/critique.md`.** A draft gets read by something that did not write it, in fresh
+context, through lenses picked not to overlap — and the findings come back to you to patch
+surgically, never to regenerate. This is the phase a five-times-larger predecessor beat this skill
+on, blind-judged: its pass caught an over-claim that shipped here and a judge overturned in one
+fetch. The file carries the owner, the order, the fetch-don't-hedge rule, and the stop at three.
+
+`references/corpus-scale.md`: what to do once the evidence stops fitting in the window — the
+condition the no-index rule above names and then leaves open. Addressable and re-derivable, never
+searchable-in-place-of-the-source.
+
+## What this skill refuses
+
+Five rules from the larger predecessor this skill absorbed. Each was a MUST there. Each is refused
+here, with the reason — because a rule dropped silently comes back, and these are the ones that
+come back wearing the words *thorough* and *rigorous*.
+
+- **A quota on disagreements** — *"at least one dialectical locus"*. A run required to produce a
+  contradiction will produce one. This skill says the opposite above: do not manufacture them; if
+  you are hunting a disagreement to justify another round, stop.
+- **A delegated reader that must commit to a position.** `agents/research-reader.md` never
+  concludes, by design and with a measurement behind it: readers told what is being built return
+  opinions instead of facts. A reader returns findings, spans and what it saw; the judgment stays
+  with the one who can see all of it.
+- **Mandatory parallelism whenever there is more than one worker.** Independent parallel agents
+  that never communicate amplify one agent's error **17.2×** against 4.4× through a validating
+  orchestrator, and the frontier-chained tier is sequential by definition. Fan out reading, when
+  results combine by union. Never as a MUST.
+- **A mandatory multi-draft ensemble and a mandatory synthesizer.** That is fanning out judgment,
+  twice, as an obligation — and it doubles cost for a gain nobody measured.
+- **Word floors** — *"argumentative: 5,000–10,000 words"*. Blind-judged, a one-fact answer from
+  this skill spent ~700 of ~1,180 extra words addressed to the harness rather than the person, and
+  lost on proportion to a 436-word reply. Length is not thoroughness, and a floor makes padding
+  mandatory.
+
+**And no step numbers.** The predecessor was a 19-stage chain whose stated purpose was to reload
+each procedure fresh so a long run could not silently degrade. Reading a lane file at the moment
+you choose that lane already does that, in a fifth of the lines. A numbered sequence is what turns
+a judgment about this question into a form to complete.
 
 ## The answer
 

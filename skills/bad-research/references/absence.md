@@ -73,3 +73,40 @@ that selected zero. The cut line is the part that matters: it says what you deci
 why, which is the only thing that distinguishes a narrow search from an absent one. `bad lane-local`
 prints it for the corpus lane; `scripts/lane-probes.sh` makes every lane state its own reachability so
 that none of them can return silence.
+
+# A figure is not an empty lane
+
+A chart, or a PDF with no text layer, comes back with no matchable text — and every string search
+you run on it returns nothing. That is not EMPTY. The lane is healthy, the artifact is there, and
+the number you want is in it.
+
+**Resolve the image and read the values off it** (`references/evidence.md`, *Read the figure*).
+Filing it as EMPTY is the worst available outcome, because EMPTY is the one state that licenses
+"not in corpus" — so a picture of the answer gets reported as the answer's absence.
+
+# Before you write an absence claim, run the gate
+
+```bash
+bad absence-gate --report <draft>.md
+```
+
+It lists every absence claim in the draft and flags the ones that name no **search scope**. That
+distinction is the whole rule, and it is worth stating twice: **the qualifier must bound where you
+LOOKED, not what you were looking FOR.**
+
+Measured, on this skill's own output. This shipped and a blind judge overturned it in one fetch:
+
+> No source measures the false-negative rate of a source-quality filter directly. … Nobody
+> publishes "we rejected N documents a human judged relevant."
+
+A comparison run got the *same fact* right, and the only difference was scope:
+
+> … and no published work **in this corpus** has sampled and read at comparable scale what a
+> production **pretraining** quality classifier threw away.
+
+Note what does not rescue the first one: its subject was already extremely narrow — a
+*direction-split false-negative rate of a source-quality filter* — and it was still false of the
+field. **Narrowing the subject is what makes a false absence claim sound careful.**
+
+The gate is a triage list, not a verdict. It cannot tell you an absence is false; only finding the
+thing can. It tells you which of your absence claims are stated in a form nobody could falsify.
