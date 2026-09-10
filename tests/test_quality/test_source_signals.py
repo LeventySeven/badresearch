@@ -16,12 +16,12 @@ from bad_research.quality.source_signals import (
 MARKER = "<!-- source-quality-signals -->"
 
 # parents[2] is the repo root: tests/test_quality/<file> -> tests -> repo root.
-_SKILLS_DIR = pathlib.Path(__file__).resolve().parents[2] / "src/bad_research/skills"
-_SKILL_FILES = (
-    "bad-research-2-width-sweep.md",
-    "bad-research-5-depth-investigation.md",
-    "bad-research-12-critics.md",
-)
+# The flag taxonomy used to be embedded in three chain step skills. The chain is gone
+# and the taxonomy moved into the merged skill's evidence reference -- so this points at
+# where it lives now. The capability under test is unchanged: the shipped constant and
+# the prose a researcher reads must not drift apart.
+_SKILLS_DIR = pathlib.Path(__file__).resolve().parents[2] / "skills/bad-research"
+_SKILL_FILES = ("references/evidence.md",)
 
 
 def _read(name: str) -> str:
@@ -57,4 +57,4 @@ def test_marker_appears_exactly_once_per_skill_md():
         count = _read(name).count(MARKER)
         assert count == 1, f"{name} should embed the marker exactly once, got {count}"
         total += count
-    assert total == 3
+    assert total == len(_SKILL_FILES)

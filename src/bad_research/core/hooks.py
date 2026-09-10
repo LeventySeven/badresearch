@@ -3500,24 +3500,16 @@ def install_hooks(vault_root: Path, hpr_path: str = "bad") -> list[str]:
     for installer in (
         lambda: _install_claude_hook(vault_root, hpr_path),
         lambda: _install_bad_research_skill(vault_root),
-        lambda: _install_bad_research_step_skills(vault_root),
-        lambda: _install_researcher_agent(vault_root, hpr_path),
-        lambda: _install_loci_analyst_agent(vault_root, hpr_path),
-        lambda: _install_depth_investigator_agent(vault_root, hpr_path),
-        lambda: _install_source_analyst_agent(vault_root, hpr_path),
-        lambda: _install_dialectic_critic_agent(vault_root, hpr_path),
-        lambda: _install_instruction_critic_agent(vault_root, hpr_path),
-        lambda: _install_depth_critic_agent(vault_root, hpr_path),
-        lambda: _install_width_critic_agent(vault_root, hpr_path),
-        lambda: _install_assumption_critic_agent(vault_root, hpr_path),
-        lambda: _install_light_critic_agent(vault_root, hpr_path),
-        lambda: _install_patcher_agent(vault_root, hpr_path),
-        lambda: _install_polish_auditor_agent(vault_root, hpr_path),
-        lambda: _install_readability_reformatter_agent(vault_root, hpr_path),
-        lambda: _install_corpus_critic_agent(vault_root, hpr_path),
-        lambda: _install_draft_orchestrator_agent(vault_root, hpr_path),
-        lambda: _install_synthesizer_agent(vault_root, hpr_path),
-        lambda: _install_fresh_reviewer_agent(vault_root, hpr_path),
+        # NOTE: the 20 numbered step skills are no longer installed. They were the
+        # chain the owner named as "it's first error"; the merged skill replaces them
+        # with references/ read on demand. `_prune_step_skill_dirs` still exists so an
+        # upgrade REMOVES a previously-installed chain rather than leaving it live.
+        lambda: _install_research_agents(vault_root),
+        # An UPGRADE must remove the chain, not sit beside it. Without this a machine
+        # that ever ran an older `bad install` keeps 20 invocable step skills competing
+        # for the shared listing budget, and `researchfms/.agents/skills/` proved a
+        # stale copy stays live and reachable long after the roster moved on.
+        lambda: _prune_installed_chain(vault_root),
         lambda: _prune_retired_agents(vault_root),
     ):
         result = installer()
@@ -3557,23 +3549,7 @@ def install_global_hooks(home: Path | None = None, hpr_path: str = "bad") -> lis
 
     for installer in (
         lambda: _install_bad_research_skill(home),
-        lambda: _install_researcher_agent(home, hpr_path),
-        lambda: _install_loci_analyst_agent(home, hpr_path),
-        lambda: _install_depth_investigator_agent(home, hpr_path),
-        lambda: _install_source_analyst_agent(home, hpr_path),
-        lambda: _install_dialectic_critic_agent(home, hpr_path),
-        lambda: _install_instruction_critic_agent(home, hpr_path),
-        lambda: _install_depth_critic_agent(home, hpr_path),
-        lambda: _install_width_critic_agent(home, hpr_path),
-        lambda: _install_assumption_critic_agent(home, hpr_path),
-        lambda: _install_light_critic_agent(home, hpr_path),
-        lambda: _install_patcher_agent(home, hpr_path),
-        lambda: _install_polish_auditor_agent(home, hpr_path),
-        lambda: _install_readability_reformatter_agent(home, hpr_path),
-        lambda: _install_corpus_critic_agent(home, hpr_path),
-        lambda: _install_draft_orchestrator_agent(home, hpr_path),
-        lambda: _install_synthesizer_agent(home, hpr_path),
-        lambda: _install_fresh_reviewer_agent(home, hpr_path),
+        lambda: _install_research_agents(home),
         # SPEC §12: the global install DOES write the PreToolUse hook. The hook
         # body short-circuits when no .bad-research vault is found by walking up
         # from cwd, so it stays silent in unrelated sessions.
@@ -4111,25 +4087,122 @@ def _read_skill_source(src_name: str) -> str | None:
         return None
 
 
+def _agents_source() -> Path | None:
+    """Locate the merged skill's agent definitions -- wheel first, dev checkout second."""
+    import importlib.resources
+
+    try:
+        cand = importlib.resources.files("bad_research.skills").joinpath("agents")
+        if cand.is_dir():
+            return Path(str(cand))
+    except Exception:
+        pass
+    for up in (3, 4):
+        cand = Path(__file__).resolve().parents[up] / "agents"
+        if cand.is_dir() and (cand / "research-reader.md").is_file():
+            return cand
+    return None
+
+
+def _prune_installed_chain(vault_root: Path) -> str | None:
+    """Remove a previously-installed step-skill chain under `<root>/.claude/skills`.
+
+    Wrapper because `_prune_step_skill_dirs` takes the SKILLS root and returns a list,
+    while the installer pipeline passes a vault root and collects action strings. Getting
+    that wrong is silent in both directions -- it prunes nothing and reports nothing --
+    which is how a chain survives an upgrade that claims to have replaced it.
+    """
+    pruned = _prune_step_skill_dirs(vault_root / ".claude" / "skills")
+    if not pruned:
+        return None
+    return f"Claude Code: pruned {len(pruned)} step-skill dir(s) from a previous chain install"
+
+
+def _install_research_agents(vault_root: Path) -> str | None:
+    """Install the three agents the merged skill actually spawns.
+
+    This replaces seventeen separate installers for the old chain's agents --
+    loci-analyst, depth-investigator, five critics, patcher, polish-auditor,
+    synthesizer and the rest. Those were the chain's workers; the chain is gone, and
+    leaving them installed both wastes the shared skill-listing budget and leaves a
+    roster of agent types that resolve to a pipeline nothing invokes.
+    """
+    src = _agents_source()
+    if src is None:
+        return None
+    dest_dir = vault_root / ".claude" / "agents"
+    dest_dir.mkdir(parents=True, exist_ok=True)
+    written = 0
+    for item in sorted(src.glob("research-*.md")):
+        dest = dest_dir / item.name
+        body = item.read_bytes()
+        if dest.exists() and dest.read_bytes() == body:
+            continue
+        dest.write_bytes(body)
+        written += 1
+    # Remove a previously-installed chain roster, so an UPGRADE cleans up rather than
+    # leaving both generations live and competing for the listing budget.
+    removed = 0
+    for stale in sorted(dest_dir.glob("bad-research-*.md")):
+        stale.unlink()
+        removed += 1
+    if not written and not removed:
+        return None
+    return f"Claude Code: .claude/agents/ ({written} research agent(s); {removed} chain agent(s) removed)"
+
+
+def _skill_tree_source() -> Path | None:
+    """Locate the merged research skill DIRECTORY -- wheel first, dev checkout second."""
+    import importlib.resources
+
+    try:
+        cand = importlib.resources.files("bad_research.skills").joinpath("bad-research")
+        if cand.is_dir() and cand.joinpath("SKILL.md").is_file():
+            return Path(str(cand))
+    except Exception:
+        pass
+    # Dev checkout: the single source of truth lives at <repo>/skills/bad-research/.
+    for up in (3, 4):
+        cand = Path(__file__).resolve().parents[up] / "skills" / "bad-research"
+        if (cand / "SKILL.md").is_file():
+            return cand
+    return None
+
+
 def _install_bad_research_skill(vault_root: Path) -> str | None:
-    """Install the entry skill at .claude/skills/bad-research/SKILL.md.
+    """Install the merged research skill (SKILL.md + references/ + scripts/).
 
     Claude Code derives the slash-command name from the skill DIRECTORY, so
-    `.claude/skills/bad-research/` registers `/bad-research`. The frontmatter
-    `name:` field is `bad-research` (it must match the directory). The 16 step
-    skills are installed separately by `_install_bad_research_step_skills`.
+    `.claude/skills/bad-research/` registers `/bad-research`.
+
+    **This copies a TREE, not one file, and that is the fix.** It used to write a single
+    448-line orchestrator whose entire job was to invoke 20 numbered step skills via the
+    `Skill` tool -- the defect the owner named as "it's first error", reinstated by every
+    `bad install`. The merged skill carries its detail in `references/`, read on demand,
+    which is the same compaction-resistance the chain was built for without the chain.
     """
-    content = _read_skill_source("bad-research.md")
-    if content is None:
+    import shutil
+
+    src = _skill_tree_source()
+    if src is None:
         return None
 
     skill_dir = vault_root / ".claude" / "skills" / "bad-research"
     skill_dir.mkdir(parents=True, exist_ok=True)
-    dest_path = skill_dir / "SKILL.md"
-    if dest_path.exists() and dest_path.read_text(encoding="utf-8") == content:
+    n = 0
+    for item in sorted(src.rglob("*")):
+        if item.is_dir() or "__pycache__" in item.parts:
+            continue
+        dest = skill_dir / item.relative_to(src)
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        body = item.read_bytes()
+        if dest.exists() and dest.read_bytes() == body:
+            continue
+        dest.write_bytes(body)
+        n += 1
+    if not n:
         return None
-    dest_path.write_text(content, encoding="utf-8")
-    return "Claude Code: .claude/skills/bad-research/SKILL.md (/bad-research trigger)"
+    return f"Claude Code: .claude/skills/bad-research/ ({n} file(s); /bad-research trigger)"
 
 
 _BAD_RESEARCH_STEP_SKILLS = [

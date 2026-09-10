@@ -19,12 +19,18 @@ def test_bad_install_default_is_global(tmp_path, monkeypatch):
     assert not (home / ".claude" / "skills" / "bad-research-1-decompose").exists()
 
 
-def test_bad_install_steps_only(tmp_path, monkeypatch):
+def test_bad_install_steps_only_now_prunes(tmp_path):
+    """`--steps-only` used to INSTALL 20 numbered step skills. There are none to install
+    any more, so it prunes a chain a previous version left behind -- a silent no-op here
+    would leave that chain live and invocable."""
     proj = tmp_path / "proj"
-    proj.mkdir()
+    skills = proj / ".claude" / "skills"
+    for d in ("bad-research-1-decompose", "bad-research-12-critics"):
+        (skills / d).mkdir(parents=True)
+        (skills / d / "SKILL.md").write_text("# old", encoding="utf-8")
     res = runner.invoke(app, ["install", str(proj), "--steps-only", "--json"])
     assert res.exit_code == 0, res.output
-    assert (proj / ".claude" / "skills" / "bad-research-1-decompose" / "SKILL.md").exists()
+    assert not list(skills.glob("bad-research-*-*"))
 
 
 def test_bad_install_project(tmp_path, monkeypatch):
@@ -33,14 +39,18 @@ def test_bad_install_project(tmp_path, monkeypatch):
     res = runner.invoke(app, ["install", str(proj), "--project", "--json"])
     assert res.exit_code == 0, res.output
     assert (proj / ".claude" / "skills" / "bad-research" / "SKILL.md").exists()
-    assert (proj / ".claude" / "skills" / "bad-research-fast" / "SKILL.md").exists()
+    # Was: assert the chain's `bad-research-fast` step skill also lands. It must NOT --
+    # that is the whole change. The skill ships as a tree with its references instead.
+    assert not list((proj / ".claude" / "skills").glob("bad-research-*-*"))
+    assert (proj / ".claude" / "skills" / "bad-research" / "references" / "critique.md").exists()
 
 
 def test_bad_install_prune_steps(tmp_path):
     proj = tmp_path / "proj"
     proj.mkdir()
-    assert runner.invoke(app, ["install", str(proj), "--steps-only", "--json"]).exit_code == 0
     step = proj / ".claude" / "skills" / "bad-research-1-decompose"
+    step.mkdir(parents=True)
+    (step / "SKILL.md").write_text("# planted chain step", encoding="utf-8")
     assert step.exists()
 
     # an unrelated skill living in the same directory must survive

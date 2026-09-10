@@ -66,8 +66,22 @@ def test_skill_file_exists():
     assert SKILL.is_file(), f"expected the research skill at {SKILL}"
 
 
+def _body() -> str:
+    """The prose after the frontmatter. The cap is on the BODY, per this test's name.
+
+    It used to count the whole file, which meant folding the `description` into a valid
+    YAML block scalar — a correctness fix, since the description contains an unquoted
+    `: ` and failed strict parsing — read as +4 lines of bloat. Metadata is not detail
+    that could "move into references/", so counting it measured the wrong thing. The
+    NUMBER did not move; what it measures was corrected.
+    """
+    text = SKILL.read_text(encoding="utf-8")
+    parts = text.split("---\n", 2)
+    return parts[2] if len(parts) == 3 else text
+
+
 def test_body_stays_within_the_compaction_head():
-    n = len(SKILL.read_text(encoding="utf-8").splitlines())
+    n = len(_body().splitlines())
     assert n <= MAX_LINES, (
         f"SKILL.md is {n} lines (cap {MAX_LINES}). Past this it stops being a skill and "
         "starts being the dispatch table it replaced — move detail into references/."

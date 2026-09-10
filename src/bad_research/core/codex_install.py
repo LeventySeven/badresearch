@@ -93,16 +93,24 @@ def _agent_filename(rendered: str, const_name: str) -> str:
 
 
 def build_agent_files(hpr_path: str = "bad") -> dict[str, str]:
-    """Return ``{codex_filename: translated_agent_body}`` for all 17 agents.
+    """Return ``{codex_filename: translated_agent_body}`` for the merged skill's agents.
 
-    Frontmatter is KEPT on agent files (it carries the model / tool-lock hints
-    the orchestrator must honor on Codex), but the body is tool-vocab translated.
+    Frontmatter is KEPT on agent files (it carries the model / tool-lock hints the
+    orchestrator must honor on Codex), but the body is tool-vocab translated.
+
+    This returned seventeen chain agents -- loci-analyst, depth-investigator, five
+    critics, patcher, synthesizer and the rest. The chain is gone, so shipping its
+    workers to Codex would leave a roster of agent types resolving to a pipeline nothing
+    invokes, while spending the shared listing budget to do it.
     """
+    from bad_research.core import hooks
+
     out: dict[str, str] = {}
-    for const_name, strategy in _AGENT_RENDER:
-        rendered = _render_agent(const_name, strategy, hpr_path)
-        filename = _agent_filename(rendered, const_name)
-        out[filename] = translate_tool_vocabulary(rendered)
+    src = hooks._agents_source()
+    if src is None:
+        return out
+    for item in sorted(src.glob("research-*.md")):
+        out[item.name] = translate_tool_vocabulary(item.read_text(encoding="utf-8"))
     return out
 
 
@@ -149,10 +157,17 @@ def write_codex_skill(home: Path, hpr_path: str = "bad") -> list[str]:
     agents.mkdir(parents=True, exist_ok=True)
     actions: list[str] = []
 
-    # SKILL.md = Codex frontmatter + Codex preamble + translated router body.
-    entry_src = hooks._read_skill_source("bad-research.md")
-    if entry_src is None:
-        raise RuntimeError("bad-research.md entry skill source missing")
+    # SKILL.md = Codex frontmatter + Codex preamble + translated body of the MERGED skill.
+    #
+    # This used to render the 448-line chain orchestrator and then write one
+    # `references/<step>.md` per entry in `hooks._BAD_RESEARCH_STEP_SKILLS` -- the same
+    # defect the Claude Code installer had, on a second surface. The chain is the thing
+    # the owner named as "it's first error"; shipping it to Codex made the fix on one
+    # surface cosmetic.
+    tree = hooks._skill_tree_source()
+    if tree is None:
+        raise RuntimeError("merged bad-research skill tree not found (wheel or repo)")
+    entry_src = (tree / "SKILL.md").read_text(encoding="utf-8")
     entry = to_codex_skill_frontmatter(entry_src)
     parts = entry.split("---\n", 2)  # ["", frontmatter, body]
     fm, body = parts[1], parts[2]
@@ -160,26 +175,31 @@ def write_codex_skill(home: Path, hpr_path: str = "bad") -> list[str]:
     skill_md = f"---\n{fm}---\n\n{preamble}\n\n{translate_tool_vocabulary(body)}"
     _write(root / "SKILL.md", skill_md, actions, "Codex: skills/bad-research/SKILL.md")
 
-    # Step procedures -> references/<rest>.md (frontmatter stripped, vocab translated).
-    for skill_name in hooks._BAD_RESEARCH_STEP_SKILLS:
-        src = hooks._read_skill_source(f"{skill_name}.md")
-        if src is None:
+    # The merged skill's own references/ and scripts/, carried across verbatim except for
+    # tool-vocabulary translation. These are read on demand by the skill itself, which is
+    # the property the numbered chain existed to provide.
+    for item in sorted(tree.rglob("*")):
+        if item.is_dir() or "__pycache__" in item.parts or item.name == "SKILL.md":
             continue
-        rel = skillref_path(skill_name)  # references/<rest>.md
-        content = translate_tool_vocabulary(strip_frontmatter(src))
-        _write(root / rel, content, actions, f"Codex: {rel}")
+        rel = item.relative_to(tree)
+        if item.suffix == ".md":
+            content = translate_tool_vocabulary(item.read_text(encoding="utf-8"))
+            _write(root / rel, content, actions, f"Codex: {rel}")
+        else:
+            # Idempotent like `_write`: an unchanged file reports no action. Without this
+            # the script copy re-announced itself on every run and the install stopped
+            # being re-runnable, which is the property `bad install` documents.
+            dest = root / rel
+            body = item.read_bytes()
+            if dest.exists() and dest.read_bytes() == body:
+                continue
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            dest.write_bytes(body)
+            actions.append(f"Codex: {rel}")
 
     # Subagent prompts -> references/agents/<name>.md (frontmatter KEPT).
     for filename, content in build_agent_files(hpr_path).items():
         _write(agents / filename, content, actions, f"Codex: references/agents/{filename}")
-
-    # Static dispatch table.
-    _write(
-        refs / "dispatch-table.md",
-        read_codex_asset("dispatch-table.md"),
-        actions,
-        "Codex: references/dispatch-table.md",
-    )
 
     return actions
 

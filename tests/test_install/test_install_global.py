@@ -14,13 +14,15 @@ def test_global_install_drops_entry_skill(tmp_path):
 
 
 def test_global_install_drops_agents(tmp_path):
+    """Was: assert the chain's fresh-reviewer and synthesizer land. They must not — the
+    chain is gone, and its workers would resolve to a pipeline nothing invokes."""
     home = tmp_path / "home"
     home.mkdir()
     install_global_hooks(home, hpr_path="bad")
     agents = home / ".claude" / "agents"
-    assert (agents / "bad-research-fresh-reviewer.md").exists()
-    # the kept critics, renamed
-    assert (agents / "bad-research-synthesizer.md").exists()
+    assert sorted(p.name for p in agents.glob("*.md")) == [
+        "research-adjudicator.md", "research-critic.md", "research-reader.md"
+    ]
 
 
 def test_global_install_skips_step_skills(tmp_path):
@@ -42,10 +44,16 @@ def test_global_install_writes_pretooluse_hook(tmp_path):
     assert any("bad-research" in c for c in cmds)
 
 
-def test_global_install_fresh_reviewer_is_read_locked(tmp_path):
+def test_global_install_read_only_judge_is_tool_locked(tmp_path):
+    """The tool-lock still matters; it moved to the agent that still exists.
+
+    A judge holding Grep/Glob can walk the output directory and reconstruct the author's
+    reasoning, and a judge that has seen the reasoning inherits the blind spot that
+    produced the error. Was asserted on the chain's fresh-reviewer.
+    """
     home = tmp_path / "home"
     home.mkdir()
     install_global_hooks(home, hpr_path="bad")
-    body = (home / ".claude" / "agents" / "bad-research-fresh-reviewer.md").read_text()
+    body = (home / ".claude" / "agents" / "research-adjudicator.md").read_text()
     assert "tools: Read" in body
-    assert "name: bad-research-fresh-reviewer" in body
+    assert "name: research-adjudicator" in body

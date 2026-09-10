@@ -5,48 +5,17 @@ from bad_research.core.hooks import (
 )
 
 
-def test_project_install_drops_all_step_skills(tmp_path):
-    root = tmp_path / "proj"
-    (root / ".bad-research").mkdir(parents=True)  # vault marker
-    install_hooks(root, hpr_path="bad")
-    skills = root / ".claude" / "skills"
-    assert (skills / "bad-research-1-decompose" / "SKILL.md").exists()
-    assert (skills / "bad-research-fast" / "SKILL.md").exists()
-    assert (skills / "bad-research" / "SKILL.md").exists()  # entry skill too
-
-
-def test_project_install_includes_new_step_skills(tmp_path):
-    root = tmp_path / "proj"
-    (root / ".bad-research").mkdir(parents=True)
-    install_hooks(root, hpr_path="bad")
-    skills = root / ".claude" / "skills"
-    for name in (
-        "bad-research-0.5-clarify",
-        "bad-research-query-router",
-        "bad-research-11.5-citation-verifier",
-        "bad-research-fresh-review",
-    ):
-        assert (skills / name / "SKILL.md").exists(), name
-
-
-def test_project_install_writes_fresh_reviewer_agent(tmp_path):
-    root = tmp_path / "proj"
-    (root / ".bad-research").mkdir(parents=True)
-    install_hooks(root, hpr_path="bad")
-    assert (root / ".claude" / "agents" / "bad-research-fresh-reviewer.md").exists()
-
-
-# --- issue #38: removing the per-project step-skill copies -------------------
-# These are safety tests before they are feature tests: the pruner deletes
-# directories under a user's .claude/skills/, so what it must NOT delete
-# matters more than what it must.
-
-
 def test_prune_project_step_skills_removes_roster_dirs(tmp_path):
     root = tmp_path / "proj"
     (root / ".bad-research").mkdir(parents=True)
     install_hooks(root, hpr_path="bad")
     skills = root / ".claude" / "skills"
+    # Plant the chain by hand. `install_hooks` no longer creates these -- that is the
+    # point of the change -- but prune must still remove what an OLDER install left, so
+    # the capability under test is unchanged and only its fixture moved.
+    for name in _BAD_RESEARCH_STEP_SKILLS:
+        (skills / name).mkdir(parents=True, exist_ok=True)
+        (skills / name / "SKILL.md").write_text("# planted", encoding="utf-8")
     assert (skills / "bad-research-1-decompose").is_dir()
 
     result = _prune_project_step_skills(root)
@@ -228,3 +197,78 @@ def test_install_prunes_a_stale_step_dir_holding_a_subdirectory(tmp_path):
     _install_bad_research_step_skills(root)  # an unlink() loop raises here
 
     assert not (skills / retired).exists()
+
+
+# ── the chain must not come back through the installer ────────────────────────────
+#
+# These replace three tests that asserted the OPPOSITE — that `bad install` writes the
+# 20 numbered step skills and the chain's agents. That was the shipped behaviour and it
+# is the defect the owner named as "it's first error": the revamped skill lived only at
+# the repo root, the installer could not reach it, and every install reinstated the
+# chain. The machine looked clean only because someone had moved the files by hand.
+
+
+def test_install_ships_the_merged_skill_not_the_chain(tmp_path):
+    install_hooks(tmp_path, hpr_path="bad")
+    skill = tmp_path / ".claude" / "skills" / "bad-research" / "SKILL.md"
+    assert skill.is_file()
+    body = skill.read_text(encoding="utf-8")
+    assert 'Skill(skill:' not in body, "the installer is writing a chain orchestrator again"
+    assert "bad-research-1-decompose" not in body
+
+
+def test_install_ships_the_skills_references_and_scripts(tmp_path):
+    """A single SKILL.md is not the skill — its detail is read on demand from here."""
+    install_hooks(tmp_path, hpr_path="bad")
+    root = tmp_path / ".claude" / "skills" / "bad-research"
+    assert (root / "references" / "critique.md").is_file()
+    assert (root / "references" / "lanes" / "web-live.md").is_file()
+    assert (root / "scripts" / "lane-probes.sh").is_file()
+
+
+def test_install_writes_exactly_the_three_research_agents(tmp_path):
+    install_hooks(tmp_path, hpr_path="bad")
+    agents = sorted(p.name for p in (tmp_path / ".claude" / "agents").glob("*.md"))
+    assert agents == ["research-adjudicator.md", "research-critic.md", "research-reader.md"], agents
+
+
+def test_installing_over_a_previous_chain_removes_it(tmp_path):
+    """An upgrade must REPLACE the chain, not sit beside it."""
+    skills = tmp_path / ".claude" / "skills"
+    for d in ("bad-research-1-decompose", "bad-research-12-critics"):
+        (skills / d).mkdir(parents=True)
+        (skills / d / "SKILL.md").write_text("# old chain step", encoding="utf-8")
+    (tmp_path / ".claude" / "agents").mkdir(parents=True)
+    (tmp_path / ".claude" / "agents" / "bad-research-patcher.md").write_text("x", encoding="utf-8")
+
+    install_hooks(tmp_path, hpr_path="bad")
+
+    assert not list(skills.glob("bad-research-*-*")), "step-skill dirs survived the upgrade"
+    assert not list((tmp_path / ".claude" / "agents").glob("bad-research-*.md")), \
+        "chain agents survived the upgrade"
+
+
+def test_the_GLOBAL_install_ships_the_same_thing_as_the_project_install(tmp_path, monkeypatch):
+    """The global path is a separate function and it was missed by the first fix.
+
+    `install_hooks` (project) and `install_global_hooks` (user-wide) each carry their own
+    installer list. Repointing only the project one looked complete — the suite went
+    green — and then a real `bad install` with no flags put all seventeen chain agents
+    back on the owner's profile. Two lists, one behaviour, and only one of them tested.
+    """
+    from bad_research.core.hooks import install_global_hooks
+
+    home = tmp_path / "home"
+    (home / ".claude" / "agents").mkdir(parents=True)
+    # a chain left by an older version must not survive the upgrade
+    (home / ".claude" / "agents" / "bad-research-synthesizer.md").write_text("x", encoding="utf-8")
+
+    install_global_hooks(home, hpr_path="bad")
+
+    skill = home / ".claude" / "skills" / "bad-research" / "SKILL.md"
+    assert skill.is_file()
+    assert "Skill(skill:" not in skill.read_text(encoding="utf-8")
+    assert (home / ".claude" / "skills" / "bad-research" / "references" / "critique.md").is_file()
+
+    agents = sorted(p.name for p in (home / ".claude" / "agents").glob("*.md"))
+    assert agents == ["research-adjudicator.md", "research-critic.md", "research-reader.md"], agents

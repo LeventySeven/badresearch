@@ -47,8 +47,8 @@ def install(
 ) -> None:
     from bad_research.core.agent_docs import _resolve_executable
     from bad_research.core.hooks import (
-        _install_bad_research_step_skills,
         _prune_project_step_skills,
+        _prune_step_skill_dirs,
         install_global_hooks,
         install_hooks,
     )
@@ -70,10 +70,16 @@ def install(
             else "No bad-research step skills to prune."
         )
     elif steps_only:
+        # The chain is gone. `--steps-only` used to install 20 numbered step skills; the
+        # merged skill has no steps, so this now PRUNES any chain a previous version left
+        # behind rather than silently no-opping and leaving it invocable.
         root = Path(path).resolve()
-        result = _install_bad_research_step_skills(root)
-        actions = [result] if result else []
-        msg = "Step skills installed (lazy)."
+        pruned = _prune_step_skill_dirs(root / '.claude' / 'skills')
+        actions = [f"pruned {d}" for d in pruned]
+        msg = (
+            "No step skills exist any more — the chain was replaced by one skill with "
+            "references/. Pruned any previously-installed chain."
+        )
     elif project:
         root = Path(path).resolve()
         actions = install_hooks(root, hpr_path=hpr)

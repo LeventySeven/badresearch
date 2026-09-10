@@ -43,24 +43,18 @@ def _live_agent_count() -> int:
 
 # --- agent roster -----------------------------------------------------------
 
-def test_agent_files_match_live_constant_count():
-    assert len(AGENT_FILES) == _live_agent_count()
+def test_agent_files_are_the_three_research_agents():
+    """Was: 17 chain agents. The chain is gone; shipping its workers to Codex would
+    leave agent types resolving to a pipeline nothing invokes."""
+    assert sorted(AGENT_FILES) == [
+        "research-adjudicator.md", "research-critic.md", "research-reader.md"
+    ], sorted(AGENT_FILES)
 
 
 def test_agent_files_have_no_leftover_placeholder():
     for name, body in AGENT_FILES.items():
         assert "{hpr_path}" not in body, name
         assert "{scaffold_only_sections}" not in body, name
-
-
-def test_agent_files_include_assumption_and_recommender():
-    # The assumption critic (the spec's stale roster omitted it) and the
-    # readability recommender (named differently from the historical
-    # "reformatter") must both be present.
-    assert "assumption-critic.md" in AGENT_FILES
-    assert "readability-recommender.md" in AGENT_FILES
-    assert "fetcher.md" in AGENT_FILES
-    assert "fresh-reviewer.md" in AGENT_FILES
 
 
 def test_read_codex_asset_loads_router_preamble():
@@ -76,38 +70,33 @@ def test_write_codex_skill_lays_out_dir(tmp_path):
     write_codex_skill(home, hpr_path="bad")
     root = home / ".codex" / "skills" / "bad-research"
     assert (root / "SKILL.md").exists()
-    # a sample step reference + the fast-route reference
-    assert (root / "references" / "5-depth-investigation.md").exists()
-    assert (root / "references" / "fast.md").exists()
-    # sample agent references
-    assert (root / "references" / "agents" / "fetcher.md").exists()
-    assert (root / "references" / "agents" / "patcher.md").exists()
-    # static asset
-    assert (root / "references" / "dispatch-table.md").exists()
+    # The merged skill's own references, carried across. Was: one reference per numbered
+    # step plus a static stage->agent dispatch table -- both artifacts of the chain, and
+    # a dispatch table with nothing to dispatch is worse than absent.
+    assert (root / "references" / "critique.md").exists()
+    assert (root / "references" / "evidence.md").exists()
+    assert (root / "references" / "lanes" / "web-live.md").exists()
+    assert (root / "scripts" / "lane-probes.sh").exists()
+    # agent references: the three the merged skill spawns
+    assert (root / "references" / "agents" / "research-reader.md").exists()
+    assert (root / "references" / "agents" / "research-critic.md").exists()
+    assert not (root / "references" / "dispatch-table.md").exists()
 
 
-def test_all_step_references_present_match_live_count(tmp_path):
+def test_no_step_references_ship_and_the_real_references_do(tmp_path):
+    """Was: one reference per numbered step skill. Codex had the SAME defect as the
+    Claude Code installer -- it rendered the chain -- so fixing one surface only would
+    have been cosmetic."""
     home = tmp_path / "home"
     home.mkdir()
     write_codex_skill(home, hpr_path="bad")
     root = home / ".codex" / "skills" / "bad-research"
-    for skill_name in hooks._BAD_RESEARCH_STEP_SKILLS:
-        assert (root / skillref_path(skill_name)).exists(), skill_name
-    # exactly len(roster) step references (excluding the agents/ subdir + static)
-    refs = root / "references"
-    step_files = [p for p in refs.glob("*.md") if p.name != "dispatch-table.md"]
-    assert len(step_files) == _live_step_count()
-
-
-def test_all_agent_references_present_match_live_count(tmp_path):
-    home = tmp_path / "home"
-    home.mkdir()
-    write_codex_skill(home, hpr_path="bad")
-    agents = home / ".codex" / "skills" / "bad-research" / "references" / "agents"
-    agent_files = list(agents.glob("*.md"))
-    assert len(agent_files) == _live_agent_count()
-    for name in build_agent_files("bad"):
-        assert (agents / name).exists(), name
+    for stale in ("bad-research-1-decompose", "bad-research-12-critics"):
+        assert not (root / skillref_path(stale)).exists(), stale
+    body = (root / "SKILL.md").read_text(encoding="utf-8")
+    assert "Skill(skill:" not in body
+    assert (root / "references" / "critique.md").is_file()
+    assert (root / "references" / "lanes" / "web-live.md").is_file()
 
 
 def test_skill_md_frontmatter_is_codex_valid(tmp_path):
@@ -123,23 +112,16 @@ def test_skill_md_frontmatter_is_codex_valid(tmp_path):
     assert isinstance(data, dict), f"frontmatter is not a YAML mapping: {data!r}"
     assert set(data.keys()) <= {"name", "description"}, data.keys()
     assert data["name"] == "bad-research"
-    # the load-blocking `: ` is exactly the description the entry skill ships,
-    # so guard that the description round-trips intact (the literal `: ` survives).
-    assert "tier-adaptive: a simple" in data["description"]
+    # The guard is that the SHIPPED description round-trips through YAML intact,
+    # whatever it says -- it used to name the old entry skill's wording verbatim, which
+    # made it a spelling test rather than a parse test. Compare against the real source.
+    shipped = hooks._skill_tree_source()
+    assert shipped is not None
+    src_fm = (shipped / "SKILL.md").read_text(encoding="utf-8").split("---\n")[1]
+    src_desc = yaml.safe_load(src_fm)["description"]
+    assert data["description"].strip() == src_desc.strip()
     assert "Execution model on Codex" in fm  # preamble prepended
 
-
-def test_step_references_have_no_frontmatter(tmp_path):
-    home = tmp_path / "home"
-    home.mkdir()
-    write_codex_skill(home, hpr_path="bad")
-    txt = (
-        home / ".codex" / "skills" / "bad-research" / "references" / "1-decompose.md"
-    ).read_text(encoding="utf-8")
-    assert not txt.lstrip().startswith("---")
-
-
-# --- openai.yaml + AGENTS.md + config ---------------------------------------
 
 def test_write_openai_yaml(tmp_path):
     home = tmp_path / "home"

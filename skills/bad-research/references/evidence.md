@@ -189,6 +189,7 @@ bar appears to end is a fabrication with a citation attached, which is the worst
 the span exists, the source is real, and the figure is invented. `figure-support-gate` checks
 whether a cited figure appears in the note cited; it cannot check whether you read it or guessed it.
 
+<!-- source-quality-signals -->
 # Source-quality flags: flag, never suppress
 
 A source can be reachable, real, on a good domain, and still not carry the weight a sentence puts
@@ -197,14 +198,14 @@ the evidence that the claim is circulating, which is often itself the finding.
 
 | Flag | What it means |
 |---|---|
-| **aggregator** | restates another source; the upstream primary is what you want |
-| **false authority** | an institution's name attached to something it did not measure |
-| **nameless source** | "experts say", "according to reports" — no actor you can count |
-| **vague qualifier** | "significantly", "most", "up to" with no denominator |
-| **unconfirmed** | reported once, never independently reproduced |
-| **marketing spin** | the seller describing its own product's performance |
-| **speculation as finding** | a future-tense prediction restated as something that happened |
-| **cherry-picked** | one favourable slice of a result whose other slices are absent |
+| `aggregator` | restates another source; the upstream primary is what you want |
+| `false_authority` | an institution's name attached to something it did not measure |
+| `nameless_source` | "experts say", "according to reports" — no actor you can count |
+| `vague_qualifier` | "significantly", "most", "up to" with no denominator |
+| `unconfirmed` | reported once, never independently reproduced |
+| `marketing_spin` | the seller describing its own product's performance |
+| `speculation` (as finding) | a future-tense prediction restated as something that happened |
+| `cherry_picked` | one favourable slice of a result whose other slices are absent |
 
 Two things this table is for. **Domain tier does not clear a flag** — a vendor's "X is the best"
 listicle on a high-tier domain is still marketing spin, and a filter that scores by domain will

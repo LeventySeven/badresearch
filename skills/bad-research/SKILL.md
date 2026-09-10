@@ -1,6 +1,11 @@
 ---
 name: bad-research
-description: Answer a question that needs real sources — comparisons, "what actually happened", "is this claim true", literature, a product's real behaviour, what changed since a date. Use when being wrong is expensive, when the answer must carry citations someone could check, or when the honest answer might be "nobody knows". Reaches lanes a web search cannot: the local corpus, a package's own source, a curated talk roster, a vendor's terms as of a date.
+description: >-
+  Answer a question that needs real sources — comparisons, "what actually happened", "is this
+  claim true", literature, a product's real behaviour, what changed since a date. Use when being
+  wrong is expensive, when the answer must carry citations someone could check, or when the honest
+  answer might be "nobody knows". Reaches lanes a web search cannot: the local corpus, a package's
+  own source, a curated talk roster, a vendor's terms as of a date.
 ---
 
 # Research

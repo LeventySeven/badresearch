@@ -189,3 +189,14 @@ exclude_lines = [
 [tool.mypy]
 python_version = "3.11"
 strict = true
+
+# The merged research skill ships as package data so `bad install` writes the CURRENT
+# skill. Before this, the installer read `src/bad_research/skills/bad-research.md` -- a
+# 448-line orchestrator with 16 `Skill(skill: "bad-research-N-...")` call sites -- which
+# is the exact defect the owner named as "it's first error". The revamped skill lived
+# only at the repo root and the installer could not reach it, so every `bad install`
+# reinstated the bug the rebuild existed to remove. Single source of truth stays at the
+# repo root; this maps it into the wheel rather than duplicating it.
+[tool.hatch.build.targets.wheel.force-include]
+"skills/bad-research" = "bad_research/skills/bad-research"
+"agents" = "bad_research/skills/agents"
