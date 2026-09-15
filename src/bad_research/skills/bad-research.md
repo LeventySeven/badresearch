@@ -121,6 +121,40 @@ degraded full run; do NOT add the full-tier stages "to be thorough." `full` ALWA
 no-uncited-claim gate in step 16 is a **ship-block for ALL routes**. If
 uncertain, route up — but never silently upgrade every query to `full`.
 
+### What a `full` run actually costs, and where (measured 2026-09-15)
+
+One `full` + `structured` run, 52-entity comparison query, 263-note corpus, 7,900-word report:
+**3.14M subagent tokens, 2h20m wall-clock, 16 agents.** Read this before you dispatch, because four
+stages carry 80% of it and each has a cheaper shape that loses nothing that mattered.
+
+| Stage | Tokens | Share | The cheaper shape |
+|---|---|---|---|
+| Step 10 drafts + step 11 synthesis | 839K | 27% | B is a **brief**, not a second full report; cap A's reading list at 20–26 for `structured` (it was 50) |
+| Step 5 depth investigators (6) | 815K | 26% | cap READS as well as fetches — `source_budget` only caps fetching, and reading was the cost |
+| Step 12 critics (5) + fact verification | 762K | 24% | 4 critics, and skip the coverage critic entirely when the draft is already over its length band |
+| Step 14 patcher | 206K | 7% | leave it — it applied 23 findings including four factual corrections |
+| Steps 1, 4, 6, 8 (decompose, loci, tensions, corpus critic) | 522K | 17% | leave them — the contradiction graph is what made the loci evidence-driven rather than guessed |
+
+**The single largest avoidable line was drafting the same report twice and then merging it a third time.**
+The second full draft contributed six findings to the final text and cost 245K to write plus its share of
+the synthesizer's read. Six findings is a list, not a document.
+
+**The second largest was reading the corpus at full width twice more after the evidence digest already
+existed.** The digest is built at step 10.0b Part 2 with verbatim quoted support precisely so the drafters
+do not re-read raw bodies for claims already extracted. Both drafters read 50 raw bodies anyway.
+
+**What was worth every token, so that cost-cutting does not reach for it:** the depth investigation that
+read operative licence text rather than README badges; the assumption critic, which caught a load-bearing
+causal mechanism that the report asserted and a primary source contradicted; and the fact-verifier
+re-reading sources against the finished text, which caught three miscitations and a wrong number that no
+critic reasoning about the text had caught. Those three are the difference between a confident report and
+a correct one.
+
+**Wall-clock is dominated by a serial chain, not by fan-out width.** The long poles were draft A (23 min),
+the synthesizer (20 min), the patcher (12 min) and the slowest depth investigator (17 min) — and each of
+those blocks the next stage. Widening a parallel wave costs almost nothing in wall-clock; lengthening a
+serial agent costs all of it. Cut length in the serial stages first.
+
 ### Reasoning-effort continuum + token ceiling + wall-clock deadline
 
 The `--effort` flag is a 4-level dial — `minimal` /

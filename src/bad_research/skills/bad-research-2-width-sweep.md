@@ -171,6 +171,33 @@ negative claim, and it is indistinguishable to the reader from a real one. The
 same applies to a large `n_fetch_failed`: those pages exist, we ranked them worth
 reading, and we could not read them.
 
+### STOP RE-RUNNING A DEAD LANE (2026-09-15, measured)
+
+**If two or more search lanes report a non-`no-results` outcome on wave 1, do NOT fire a third and fourth
+funnel wave at the same providers. Switch to hand-targeted direct fetch.**
+
+A funnel wave is priced per query plan, not per useful result. On the measured run the wave-1 envelope
+reported `websearch: unavailable`, `searxng: unreachable`, `arxiv: rate-limited` — three of five lanes dead
+before any gap analysis — and the orchestrator responded by writing three more gap plans totalling 98
+further queries and firing them at the same dead providers. They returned progressively less: 24 stored,
+then 35, then 59, then 50, with 43 fetch failures across them. What actually closed the coverage holes was
+a batch of **31 hand-targeted `bad fetch` calls on known URLs** — arXiv abs pages, GitHub LICENSE files,
+Hugging Face model cards — which cost a fraction of a wave and hit on 29 of 31.
+
+The rule, concretely:
+- **Wave 1 always runs the full plan.** You cannot know the lane state before it.
+- **Read `provider_outcomes` the moment it returns.** `rate-limited`, `unreachable`, `unavailable` and
+  `timeout` all mean the lane never searched. Count them.
+- **Two or more dead → at most ONE gap wave, then stop.** After it, work the remaining holes by naming the
+  artifact and fetching it directly: `bad fetch "<url>" --tag <vault_tag> --json`. For a named model or
+  paper you almost always know the shape of the URL — `arxiv.org/abs/<id>`, the repo's `LICENSE`, the HF
+  model card. **Verify the guess by reading the fetched title back**; a wrong arXiv id returns a real page
+  for a different paper, and that is how an unrelated source gets into the corpus wearing the right name.
+- **arXiv being the dead lane is the expensive case** for any query about models or papers, because that is
+  where the candidate set publishes. Hand-fetching recovers the primaries you thought to name — which makes
+  recall bounded by the orchestrator's prior knowledge. Say so in `coverage-gaps.md`: a paper nobody thought
+  to name is not in the corpus, and that is a different limitation from a thin literature.
+
 Carry `coverage_gaps` and `n_fetch_failed` forward into
 `research/temp/orchestrator-notes.md` so steps 10-11 can put them in the report.
 

@@ -118,6 +118,32 @@ Read these inputs:
 
    Each investigator's hard cap is `locus.source_budget`, not a flat number.
 
+   **`source_budget` caps FETCHES, not READS — cap the reads too (2026-09-15, measured).** The six
+   investigators on the measured run cost 815K tokens, 26% of the whole pipeline, and only a handful of
+   that was fetching: most of them spent their budget of 4–9 new sources and then read 20–45 existing vault
+   notes in full. The most expensive (207K, a licence audit) fetched 6 and read every licence file in the
+   corpus end to end. That one was worth it — reading operative licence text rather than a README badge was
+   the single highest-value thing the run produced. The other five were not each worth 120K.
+
+   So pass a **read cap alongside the source budget**, scaled the same way:
+
+   | `source_budget` | read at most |
+   |---|---|
+   | 8–9 | 25 notes in full |
+   | 6–7 | 18 |
+   | 4–5 | 12 |
+   | 0–3 | 6 |
+
+   And pass the rule that makes the cap survivable: **triage with `bad search "<q>" --tag <tag> -k 12
+   --include-body --json` and open in full only what the triage shows is load-bearing.** An investigator
+   that opens notes blind burns its cap on abstracts. State the cap in `STOP_CONDITIONS` as a number, not
+   as "read what you need" — an uncapped instruction to read deeply is how a 120K agent becomes a 207K one.
+
+   The exception, stated so it is not cut by accident: **an investigator whose locus turns on the exact
+   wording of a primary text — a licence, a statute, a contract, a filing — has no cap.** Paraphrase is the
+   failure mode there, and the whole point of that locus is to quote rather than summarise. Mark such a
+   locus `verbatim: true` in `loci.json` and let it read.
+
    **`depth_first` — SEQUENTIAL perspectives (one locus, 2–4 angles).** When `query_shape == depth_first`, do NOT use the parallel spawn above. Instead, on the single highest-impact locus, run 2–4 investigators one at a time:
    1. Spawn perspective 1 with the spawn template above (but `analytical perspective: "<angle 1, e.g. the economic lens>"`). Wait for it to write its interim note and return its committed position.
    2. Spawn perspective 2 with the **prior perspective's committed position pasted into the prompt**: add a `PRIOR COMMITTED POSITION` block — *"The preceding perspective committed to: <quote>. Read it, then investigate this locus from <angle 2>; extend it where the evidence agrees, challenge or steelman it where it doesn't."* Each perspective reads the prior's committed position so the sequence accumulates depth rather than repeating.

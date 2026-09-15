@@ -52,6 +52,15 @@ Read `response_format` and `citation_style` from `research/prompt-decomposition.
 
 **Length discipline:** Target the MIDDLE of the range. Under-length loses on comprehensiveness; over-length dilutes good content.
 
+**Make it a stop condition, not an aspiration.** On the measured run the drafters were told 3,500–4,500
+and 3,000–4,000 and returned 7,199 and 5,036; the synthesizer was told 3,800–4,600 and returned 6,830; the
+patcher then had to spend its budget cutting instead of correcting, and still came out +450. A length
+target stated once in a long prompt is not a constraint. Put it in `STOP_CONDITIONS` as a number the agent
+must check before returning — *"halt when the file is written AND `wc -w` on it excluding the Sources
+section is between X and Y; if it is over, cut before returning"* — and say what to cut first. Every stage
+downstream of an over-length draft pays for it, and the patcher pays twice because it must cut to fund its
+own corrections.
+
 ---
 
 ## Step 10.0b — Plan from reflections, re-inject raw only at the end (distilled-reflection memory)
@@ -202,11 +211,37 @@ Based on the evidence, tensions, and query, assign each sub-orchestrator a disti
 
 Write the 2 angle assignments to `research/temp/draft-angles.md` (for the run log). Each angle: 2-3 sentences describing the analytical direction.
 
+### B IS A BRIEF, NOT A SECOND REPORT (2026-09-15, measured)
+
+**Draft B writes 800–1,400 words of adversarial findings, not a full parallel document.** A is the only
+full-length draft.
+
+The measurement that forced this: on a `full` + `structured` run, draft A cost 350K tokens, draft B 245K
+and the synthesizer 244K — **839K, 27% of the whole run's 3.14M**, to produce one 7,900-word report. B's
+actual contribution to the final text was six specific findings (a buried classical-baseline number that
+beat the deep detector off-domain, a 0.56-to-0.90 spread on one benchmark, a vendor conceding against its
+own interest, two licence-laundering catches, one latency figure). Six findings do not need 5,000 words of
+parallel prose, and paying a second full draft to carry them means paying the synthesizer a third time to
+throw most of them away.
+
+So B's output shape is: **a numbered findings list.** Each entry = the claim A is likely to make, the
+evidence that complicates it, the note ids, and one sentence on what the final report should say instead.
+No introduction, no section structure, no executive summary, no prose transitions. The synthesizer reads
+A as the draft and B as the objection list.
+
+This preserves what the steelman is FOR — someone whose job is to attack the thesis with the corpus in
+hand — and stops paying for the part that was always discarded. Expect ~100K instead of ~245K.
+
+**When B stays a full draft:** only when the two angles are `breadth` vs `depth` on a survey with no
+contested thesis, where there is no objection list to write because there is nothing to object to. On that
+shape the angles genuinely need two documents. On any `strongest-thesis` / `steelman-contrarian` pairing —
+which is every contested query — B is a brief.
+
 ---
 
 ## Step 10.2 — Curate per-angle source lists
 
-**Critical step.** Each draft sub-orchestrator does NOT decide what to read. YOU pick the 20-50 most relevant vault notes for each angle and pass them as `must_read_note_ids`. This eliminates wasted vault-survey loops in the sub-orchestrators and forces real differentiation by giving each draft a different evidence base.
+**Critical step.** Each draft sub-orchestrator does NOT decide what to read. YOU pick the most relevant vault notes for each angle and pass them as `must_read_note_ids`. This eliminates wasted vault-survey loops in the sub-orchestrators and forces real differentiation by giving each draft a different evidence base.
 
 1. **List all substantive vault notes:**
    ```bash
@@ -222,7 +257,27 @@ Write the 2 angle assignments to `research/temp/draft-angles.md` (for the run lo
 
 3. **Source overlap is fine.** Drafts can share source IDs — interim notes and key source-analyses should appear in both lists. Differentiation comes from the angle-specific extras (the 5-15 sources unique to each draft's list).
 
-4. **Cap each list at 50, minimum 20.** For `argumentative` format, lean toward 35-50. For `structured`, lean toward 25-40. For `short`, lean toward 20-30.
+4. **Cap each list. These numbers are a token budget, not a taste preference.**
+
+   | | Draft A (full draft) | Draft B (brief) |
+   |---|---|---|
+   | `argumentative` | 28–35 | 12–18 |
+   | `structured` | 20–26 | 10–15 |
+   | `short` | 14–20 | 8–12 |
+
+   **The old cap was 50 and it was the single most expensive number in the pipeline.** A 50-note list cost
+   draft A 350K tokens on a `structured` run — the largest line item of any agent in the pipeline — because
+   the drafter batch-reads every raw body on the list. The list length multiplies directly into tokens.
+
+   **Cut the list by cutting duplicates, not coverage.** On the run that produced these numbers, the 50-note
+   list carried three near-duplicate SKU-110K pages, two copies of the same arXiv abstract under different
+   ids, and a dozen notes whose entire contribution was already quoted verbatim in the evidence digest. The
+   digest exists precisely so a claim already extracted does not need its raw body re-read. Before adding a
+   note to the list, check whether the digest already carries the span you want from it — if so, leave it
+   off and let the digest carry it.
+
+   The interim notes and the source-analyses are the exception: always include all of them, they hold
+   synthesis that exists nowhere else. It is the raw fetched pages that the cap should bite on.
 
 5. **Write each list to disk** so the spawn template can reference it:
    - `research/temp/draft-a-source-list.md`

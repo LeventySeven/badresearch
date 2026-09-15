@@ -79,14 +79,38 @@ Read these inputs:
 
 ## Procedure
 
-1. **Spawn all 5 critics in parallel.** In ONE message:
-   - `bad-research-dialectic-critic` → `research/critic-findings-dialectic.json` (counter-evidence the draft missed or straw-manned)
-   - `bad-research-depth-critic` → `research/critic-findings-depth.json` (shallow spots where interim notes could fill substance)
-   - `bad-research-width-critic` → `research/critic-findings-width.json` (corpus clusters the draft ignores despite evidence)
-   - `bad-research-instruction-critic` → `research/critic-findings-instruction.json` (atomic items from the decomposition that the draft missed, under-covered, reordered, or reformatted)
+1. **Spawn the critics in parallel.** In ONE message.
+
+   **The three that always run — these are the ones that find errors:**
    - `bad-research-assumption-critic` → `research/critic-findings-assumption.json`
      (top-5 highest-stakes causal/quantitative claims decomposed into sub-assumptions;
-      limit scope to 5 claims; output verified/unverified per sub-assumption)
+      limit scope to 5 claims; output verified/unverified/contradicted per sub-assumption)
+   - `bad-research-dialectic-critic` → `research/critic-findings-dialectic.json` (counter-evidence the draft missed or straw-manned)
+   - `bad-research-instruction-critic` → `research/critic-findings-instruction.json` (atomic items from the decomposition that the draft missed, under-covered, reordered, or reformatted)
+
+   **The fourth, conditional — coverage:**
+   - `bad-research-width-critic` → `research/critic-findings-width.json` (corpus clusters the draft ignores despite evidence). **Run it only when the draft is at or under its length band.** Over the band, its findings are unusable by construction: every one of them proposes an addition, and the patcher is already cutting.
+   - `bad-research-depth-critic` → `research/critic-findings-depth.json` — **fold into the width critic's prompt rather than spawning separately.** Both ask "what should the report also say"; the difference between "a topic the corpus supports that is missing" and "a passage that is thinner than the corpus allows" is not worth a second full read of the report and the vault.
+
+   ### Why this is four and not five (2026-09-15, measured)
+
+   On a `full` + `structured` run the five critics cost 481K tokens. Tracing every finding through to the
+   patch log: **assumption, dialectic and instruction produced the findings that were applied** — a
+   contradicted causal mechanism in a load-bearing argument, a licence carve-out on the recommended model
+   that the report explicitly denied, two benchmark numbers compared across incompatible tasks, four
+   miscited sources, and four entities the prompt named that the report had dropped. **Width and depth
+   produced 22 findings of which the patcher applied six and logged five as skipped-on-length-grounds** —
+   because the draft was 40% over its band and every width/depth finding asks for more words.
+
+   The lesson is not that coverage critique is worthless. It is that **a coverage critic run against an
+   over-length draft is structurally guaranteed to be wasted**, and the pipeline knew the draft was over
+   length before it spawned them. Gate on that instead of paying for it.
+
+   Two other things that run pass the same test and should be preferred over a fifth critic: the step-11.5
+   citation verifier when the citation style lets it resolve, and — when it cannot — a host-model
+   fact-verifier over the highest-stakes numeric and licence claims. On the measured run the fact-verifier
+   cost 281K and found three miscitations and a wrong number that no critic caught, because it was the only
+   agent re-reading sources against the text rather than reasoning about the text.
 
 2. **Pass each critic** (standard 3-piece contract):
    ```
