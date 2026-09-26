@@ -127,6 +127,16 @@ direction itself is a hypothesis to be tested against the best practitioners**, 
 It also states the regression the owner perceives: the merged skill is not enough for genuinely
 multi-round research.
 
+### On the form (2026-09-26, same session, verbatim)
+
+> it may be pack of skills, like sequentiall skills or agents if needed, with references and other
+> stuff we can use in skills, you can check, but the main point is quality and what we got as a result,
+> but it might be 1 big skill, pack of skills and agents, etc etc etc
+
+Annotation (no authority): the FORM is open — one skill, a pack of skills, sequential skills, agents,
+references. The measure is the quality of the result. So a form is chosen by what a real run shows it
+fixes, not by a preference for small or for simple.
+
 ---
 
 ## What this file BINDS — read as constraints, not as suggestions

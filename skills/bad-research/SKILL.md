@@ -30,7 +30,11 @@ marked MUST, each there because skipping it produced a confidently wrong answer.
 ## The loop
 
 **Frame.** Write the question verbatim and what the asker will do with the answer — the question you
-were handed is the fourth form of the need, and the richest statement of it searches best. Start the
+were handed is the fourth form of the need, and the richest statement of it searches best. Then break it
+into facets two ways, and make each facet an open question: **every item the question names**, and
+**every part of the asker's own situation the answer has to reach** — their stack, their tools, their
+workflow, their next action. One agent's missed key points were 78.5% uncovered facets of a broad
+question; the facets nobody wrote down are the ones no round goes looking for. Start the
 **map**: `research/<slug>/MAP.md`, holding open questions, findings (one line each, with a verbatim
 span, its source and how it was reached), the frontier, connections and contradictions, dead ends, the
 sources already seen, and your hypotheses. Template and rules: `references/rounds.md`. Register the
@@ -312,7 +316,9 @@ loop with named moves, not a form — and each lane and reference is read at the
 
 ## The answer
 
-Say what you concluded and why. Lead with the claim, not the journey. Give the number with its
+Say what you concluded and why. Lead with the claim, not the journey. **Write for what the asker will
+do**: if they will act on it, end with the steps they can run — the commands, queries and settings —
+each tied to the finding it rests on. Give the number with its
 assumption, the recommendation with what would change it, and the disagreement with both sides. Put what
 you could not establish in its own section — often the most useful thing on the page.
 

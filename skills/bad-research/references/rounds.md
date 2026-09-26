@@ -14,9 +14,10 @@ thing readers receive, so it holds knowledge and nothing else — no summaries o
 # <slug> — map
 Question (verbatim): …
 What the asker will do with it: …                       ← never shown to readers
+Facets: <every item the question names> + <every part of the asker's situation the answer must reach>
 Tier: standard | deep — because …
 
-## Open questions (ranked: how much the answer depends on it × how uncertain or contested)
+## Open questions (one per facet at least; ranked: how much the answer depends on it × how uncertain or contested)
 - Q1 … [open | closed by F3,F7 | abandoned: <reason>]
 
 ## Findings  (one line each; the span is verbatim)
