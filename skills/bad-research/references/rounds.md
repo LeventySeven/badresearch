@@ -25,6 +25,12 @@ Tier: standard | deep — because …
        — reached by <query | link from F? | lane> — source: <author/publisher, date, who pays / sells>
        — grade: source <known good | no track record | known bad> / claim <confirmed | single | contradicted>
 
+## Clusters and the field's words  (what the broad round found the question is made of)
+- <cluster / school / community> — seeds: F?, F? — [chased | not yet] · its own terms: …
+
+## Residue  (findings no open question fits — kept outside the counter; one query per round)
+- F? — why it does not fit — [queried in round N: …]
+
 ## Frontier  (named in a source, not yet chased)
 - <entity | term | person | paper | number> — seen in F? — [unchased | assigned R2 | chased: F?/dead end]
 
@@ -48,7 +54,9 @@ Two other stores exist and are named, not hidden: `research/<slug>/s.json` (the 
 numbers, not knowledge) and `research/<slug>/raw/` (each reader's return, saved verbatim by you,
 because readers cannot write files). Nothing here is an index, a graph database or a cache across runs:
 it is addressable, re-derivable, and deleted or archived with the run. Individuals keep a list of open
-questions and a log; that is this file. (Teams working a name-dense leak keep entity graphs — ICIJ,
+questions and a log; that is this file — for one run. Their logs span years; the long-lived half of
+that practice is the owner's corpus on disk (`references/lanes/local-corpus.md`), never a findings memo
+kept across runs, which is refused. (Teams working a name-dense leak keep entity graphs — ICIJ,
 OCCRP. If a question is that shape, the Frontier and Connections sections are where it shows.)
 
 ## The brief — what a reader gets
@@ -60,9 +68,12 @@ A reader gets a **snapshot**, never the map itself:
   must NOT read, so boundaries can be checked for overlap before a token is spent
 - **the path of its lane file** (`references/lanes/<lane>.md` in this skill's directory) — read it first;
   it holds the paths, commands and traps of that kind of source, and without it a reader improvises
-- the verified findings, frontier items, dead ends and seen sources that touch its boundary, headed
-  *"already known — do not re-find; extend, connect or break it"*; and the unverified findings, headed
-  *"leads — re-find or refute"*
+- **the ranked open questions it is serving, and the facets of the asker's situation** (their stack,
+  tools, workflow — the richest statement of the need searches best: 32% recall against 18% from the
+  typed words alone) — but never your hypotheses, rivals or provisional answer
+- the verified findings, frontier items, connections, dead ends and seen sources that touch its
+  boundary, headed *"already known — do not re-find; extend, connect or break it"*; and the unverified
+  findings, headed *"leads — re-find or refute"*
 - its budget: a lead 5–20 tool calls, a lane up to ~50. Past it, return what you have.
 
 It never gets the hypotheses, the rivals, or what the asker will do with the answer. Readers told what
@@ -92,7 +103,7 @@ fits (residue) is the signal the structure is wrong — add the question.
   which kinds carry the truth in the question's field — pick lanes from that, not from habit. Different kinds, because seeds that all sit in one
   cluster never reach the others, and you cannot pick clusters you have not found yet.
 - **Make the first queries different from one another.** Diversity at the first move is what counts;
-  diversifying later turns measured as adding nothing.
+  diversifying later turns measured as adding nothing (one study, one model family).
 - **In every lane, one entry point that is not ordered by popularity** — newest-first instead of top,
   past the first page, reply threads, an under-cited sweep, the field's penumbra rather than its core.
   On X, the Top tab returned authors with a median 19,128 followers against 3,865 for Latest, and the
@@ -116,6 +127,9 @@ fits (residue) is the signal the structure is wrong — add the question.
 | a finding with one source | trace it to its origin; look for an independent rerun inside the original's "cited by" (`experiment OR replication OR randomized`) — failed reruns are cited by a small minority of later citers, so they will not come to you |
 | a contradiction | resolve it: the window each covers, and which one read the primary |
 | an unchased frontier item | chase it: references back, citing papers forward (sort them by their own citations to surface the pivotal ones), the author's other writing, the same thing under another name or language |
+| a load-bearing paper or source | chase it both ways with `bash scripts/cite-chain.sh back|fwd|rerun <doi>` — a standing assignment in every deep round |
+| several seed papers | `bash scripts/cite-chain.sh core <id> <id> …` — references shared across seeds, and authors who recur, mark the field's core |
+| a cluster nobody has chased yet | seed a reader there — a chain never reaches a cluster its seeds did not touch |
 | two findings from different lanes | ask what connects them — hold one facet near and push one far; most pairs connect to nothing, which costs one query |
 | the leading claim | its counterpart: criticism, failed reruns, and the record that would have to exist if it were true |
 | residue | a new open question |
@@ -127,9 +141,10 @@ and send readers to the top first.** One reader per independent group of assignm
 round; assignments that depend on each other stay with one reader, who chains them in order.
 
 **Between rounds you pool:** save each return to `raw/`, admit findings into the map (one line, span,
-source, how reached, **marked unverified**), grade sources from the facts, add the frontier items that
-bear on an open question (an item that bears on nothing is noise, and admitting it keeps the counter
-from ever going quiet), record dead ends, update the seen list, rank the open questions again, and call
+source, how reached, **marked unverified**, under the `[Q#]` or `[residue]` tag the reader gave it),
+grade sources from the facts, add the frontier items that bear on an open question, and move the rest to
+**Residue** — never discarded: an unexplained leftover is where Swanson-style links and a field's
+penumbra come from, and it gets one query per round, outside the counter. Record dead ends, update the seen list, rank the open questions again, and call
 the counter once — every promise, close and abandonment for the round on that one call, because a
 second call counts as a round:
 
@@ -161,22 +176,36 @@ fools the rule.
 So in every deep run, and in any tier whose answer is a set or an absence ("find all", "is there any
 evidence that"), run **one independent check pass** before stopping: a fresh reader, given only the
 question, that never sees the map and searches by a different method (another kind of lane, another
-vocabulary). Open its return only at the stop check. What it found that the map lacks is a blind spot —
-the run is not done; chase it. This is deliberate redundancy, the one place readers may re-find things,
+vocabulary). Open its return only at the stop check, and read the overlap **both ways**: what it found
+that the map lacks is a blind spot — the run is not done, chase it; and which of the map's verified,
+load-bearing findings it re-found tells you how sensitive it was — a check pass that re-found almost
+none of them searched a different question, and its silence certifies nothing. This is deliberate redundancy, the one place readers may re-find things,
 and it is there because independent searches that overlap are both a relevance signal and a recall
 check. The open web has no sampling frame, so it is a relative-recall check, not a guarantee — say so.
+
+## Pooled independent judgments (deep runs)
+
+After the stop, before writing: give two or three fresh-context judges the **verified** map — no
+hypotheses, no provisional answer — and the three to five claims the answer will rest on. Each returns a
+verdict and a probability for each claim, independently. Take the median; a wide spread on a claim is a
+deep-round assignment, not a paragraph to smooth over. This is judgment pooled on claims, not the
+multi-draft ensemble this skill refuses, and its support is extrapolated from forecasting: a structured
+hypothesis table did not beat a control group, while coherent, pooled independent judgments cut error by
+61%, and forecasting teams sharing facts but giving separate numbers beat independents.
 
 ## What this replaced, and why
 
 The earlier skill ran one reasoner with optional fan-out and forbade parallel depth on the strength of
 "17.2× error amplification". That figure is trace-level and not significant after controls, and the
 "39–70% loss" beside it is a planning benchmark. On the same paper's web-research benchmark, readers
-that never exchanged lost 35% to one agent (with one model family; not with another), and readers that
-exchanged their work between rounds gained a little. The shape here — parallel inside a round,
-exchange through a gated map at the boundary, judgment kept with you — is the one the stronger evidence
-points to: a shared verified board read at dispatch, with dead ends shared too, beat isolated attempts
+that never exchanged lost 35% to one agent (with one model family; not with another); readers that
+exchanged their current answers between rounds, debate-style, gained a little (about 3 points on 100
+tasks), and a central hub — this skill's own shape — gained +0.2%. So that paper does not support the
+hub. The shape here — parallel inside a round, exchange through a gated map at the boundary, judgment
+kept independent — rests on other evidence: a shared verified board read at dispatch, with dead ends shared too, beat isolated attempts
 on code and long-document tasks, and forecasting teams that shared information but each gave their own
-number, pooled, beat both independents and crowd-watchers in a randomized trial. Free, continuous
-sharing is refused: Anthropic's early research agents were "distracting each other with excessive
-updates", and on a board of their own making one move spread to over 90% of 533 active agents while
+number, pooled, beat both independents and crowd-watchers in a randomized trial. Both are from other
+task families than open research; that is the honest size of the support. Free, continuous sharing is
+refused: Anthropic's early research agents were "distracting each other with excessive updates", and in
+one incident a single move spread across an agent-made board to over 90% of 533 active agents while
 duplicate effort persisted until some of them began assigning lanes.

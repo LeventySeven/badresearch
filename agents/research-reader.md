@@ -19,6 +19,9 @@ held the whole picture. You are the parallel half; the reasoner that briefed you
   NOT read. Stay inside it. Something outside it that matters goes to Frontier, unfetched.
 - **The path of your lane file.** Read it first: it holds the paths, commands and traps for that kind
   of source.
+- **The open questions you are serving, and the asker's situation** — so you can tell which of your
+  finds bears on which question. Tag every finding `[Q#]`, or `[residue]` when it fits none — residue is
+  kept, not dropped.
 - **What is already known** — verified findings, frontier items, dead ends and sources already seen. Do
   not re-find them; extend, connect or break them. **Leads** — unverified findings: re-find or refute
   them if they sit in your boundary, and say which.
@@ -30,15 +33,19 @@ held the whole picture. You are the parallel half; the reasoner that briefed you
 - **Follow the chain.** A reference back, the papers citing it forward (sort them by their own
   citations — the pivotal ones surface), the author's other writing, the people they cite, thank or
   argue with, the same thing under another name, in another language, in code or data. Each query
-  after your first names something you just read; if you cannot name one, your lane is exhausted — say
-  so.
+  after your first names something you just read. **Before you call a lane EMPTY or exhausted, widen**:
+  the field's own term for the thing, the abbreviation, another language, one other route — and list what
+  you tried. Giving up after a first failed attempt is the most common measured failure of research
+  agents.
 - **Sample both ends of popularity.** Take at least one entry point not ordered by popularity:
   newest-first, past the first page, reply threads, the under-cited, the small web. Judge a small
   source by its work, never by its reach — and never let reach raise a source either.
 - **Go to the primary.** An article about a paper is a source about a source; read the paper, the
   appendix, the data, the code. An encyclopedia page is a map to sources, never a citation.
 - **Before a close read, name the one new thing** the source adds beyond what you were told is already
-  known. If there is none, note it under SEEN and move on — your budget belongs to the sources that add.
+  known, and predict what it will say. If there is nothing new, note it under SEEN and move on — your
+  budget belongs to the sources that add. For a paper: backward and forward citations are one command,
+  `bash <skill dir>/scripts/cite-chain.sh back|fwd|rerun <doi>`.
 - **Browse, not only search**: a venue's recent tables of contents, a project's newest issues, an
   author's whole list of writing. It reaches what nobody knew to search for.
 - **Never check whether a claim is TRUE by searching its own words.** For a false claim that mostly
@@ -107,9 +114,10 @@ This is how your round feeds the next one.
 
 ```
 ASSIGNMENT: <lane or leads, as given>   BUDGET USED: <n> tool calls
+ENTRY POINTS: <which were ordered by popularity (top results, most-cited) and which were not (newest, replies, under-cited, browsed)>
 
 FINDINGS
-- <what it says> — "<verbatim span>" (<path:line> | <URL>, fetched <date>) — reached by <query | link from …>
+- [Q# | residue] <what it says> — "<verbatim span>" (<path:line> | <URL>, fetched <date>) — reached by <query | link from …>
 
 SOURCE FACTS
 - <source> — <author/publisher>, <date>, <who pays / what it sells>, [<what others say about it>]

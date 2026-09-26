@@ -28,7 +28,8 @@ Article (its text is not in `text`). `links` are the expanded outbound URLs.
 - **Run both tabs, and trust Latest for the unpopular half.** `top` ranks by engagement — the
   popularity filter this skill refuses to inherit. On eight paired queries, Top returned authors with a
   median of 19,128 followers against 3,865 for Latest; accounts under 5k followers were 27% of Top and
-  54% of Latest. In one harvest the sharpest method posts came from accounts under 50k followers.
+  54% of Latest. In one harvest the sharpest method posts came from accounts under 50k followers (one
+  harvest, judged with follower counts visible — contested, not settled).
 - **Read the reply threads** (`thread <id>`). Seven of the best posts in one harvest existed only as
   replies, five of them by accounts under 5k followers — a question post is where practitioners answer.
 - **Vet the author by bio and by their own work, never by reach.** Record followers for every post you

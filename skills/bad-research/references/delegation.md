@@ -15,7 +15,7 @@ none of that holds for research:
 |---|---|
 | 17.2× (independent) vs 4.4× (centralized) | **trace-level** amplification; "neither the main effect of error amplification (β=0.014, p=0.658) … reaches statistical significance" once other coordination metrics are controlled |
 | −39% to −70% for every multi-agent shape | **PlanCraft** — "sequential constraint satisfaction (planning)", not multi-hop research |
-| its web-research benchmark (BrowseComp-Plus) | independent agents that never exchange **−35%** vs one agent; decentralized agents exchanging their work between rounds **+9.2%** (0.347 vs 0.318, about 3 points on 100 tasks); a central orchestrator **+0.2%**. In its own words: decentralized coordination "benefits tasks requiring parallel exploration of high-entropy search spaces" |
+| its web-research benchmark (BrowseComp-Plus) | independent agents that never exchange **−35%** vs one agent; decentralized agents exchanging their current answers between rounds, debate-style, **+9.2%** (0.347 vs 0.318, about 3 points on 100 tasks — the released code first passed a 300-character digest, later full answers); a central orchestrator **+0.2%**. In its own words: decentralized coordination "benefits tasks requiring parallel exploration of high-entropy search spaces" |
 | its out-of-sample check | the independent-agent loss held on GPT-5.2 and **not** on held-out Gemini models (+11.1%, +5.9%) |
 
 Two more figures from the same paper that this file quoted: a within-domain predictor picks the best
@@ -31,10 +31,13 @@ board of their own making one move spread to over 90% of 533 active agents while
 persisted until some began assigning lanes (METR's investigation of an OpenAI agent incident). What crosses is
 gated: one line per finding with its span and its source, the dead ends, the sources already seen —
 read by every reader at dispatch, admitted by the reasoner (`rounds.md`). The evidence is thin and
-mixed, and the honest reading is that it neither forbids fan-out nor proves it; the stronger support
-comes from outside this paper — a shared verified board with shared failures beat isolated attempts on
-code and long-document tasks (DeLM), and forecasting teams that shared information but each gave their
-own number, pooled by an algorithm, beat independents in a randomized trial (Mellers 2014).
+mixed: it neither forbids fan-out nor supports a hub — the hub arm, this skill's shape, gained +0.2%.
+The support for the shape comes from outside this paper, and each piece has a caveat: a shared verified
+board with shared failures beat isolated attempts on code and long-document tasks (DeLM — not research
+tasks); a graph written only by a navigator over blind searchers beat flat text by 5.2 points at the
+synthesis step (Argus — a vendor, RL-trained); and forecasting teams that shared information while each
+member gave their own number, pooled by an algorithm, beat independents in a randomized trial (Mellers
+2014 — forecasting, and what it supports is pooled independent judgment, not one judge).
 
 ## The union test — the discriminator, sharper than "reading, never judgment"
 

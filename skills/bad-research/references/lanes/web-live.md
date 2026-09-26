@@ -1,5 +1,10 @@
 # Lane: web-live
 
+**Papers: chain citations with one command.** `bash scripts/cite-chain.sh back|fwd|rerun <doi or W-id>`
+(OpenAlex, keyless): references backward, citing works forward sorted by their own citations, and citers
+that mention replication. `core <id> <id> …` lists references shared across seeds — a field's core. It
+prints WORKING / EMPTY / MISSING / BLOCKED, never silence.
+
 ## Reach for this when
 - The claim is dated, versioned, or priced — anything that moves after the model cutoff.
 - You need the *verbatim* span from a named URL (an essay, a changelog, a docs page), not a recollection of it.

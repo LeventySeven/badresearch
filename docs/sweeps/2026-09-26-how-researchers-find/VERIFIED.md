@@ -47,6 +47,13 @@ row not listed here is agent-read — its span is in `raw/`, unchecked by the ch
 | 37 | h-index vs accuracy r = 0.00 (experts predicting efficacy outcomes); fame vs overconfidence r = 0.33 (Tetlock) | the R3-2 reader's saved text of Atanasov & Himmelstein 2023 (`scratchpad/r3-2/atanasov2023.md`) | exact, in the reader's raw bytes — and the context was corrected: not "forecasting tournaments" |
 | 38 | X: "TODO(noam): write a paper" (jekbradbury); appendix A.6 (jkcarlsmith); "I have no idea who this person is (small account)…" (jachiam0); Lei Yang "checked the five reviews … Not a single reviewer noticed" | twitterapi.io verbatim text in the R1-A/R1-B harvests | exact |
 
+| 39 | Heuer's handicapper study: data "in increments of the 5, 10, 20 and 40 variables"; accuracy "remained the same"; "With only five items of information, the handicappers' confidence was well calibrated" | cia.gov/resources/csi/static/Pyschology-of-Intelligence-Analysis.pdf (ch. 5) | exact — an alignment reviewer called this unsourced because it was not in this ledger; it is in the primary |
+| 40 | Aslett: searching raised belief in false articles by 0.057, "a 19% increase" | nature.com/articles/s41586-023-06883-y | exact |
+| 41 | Tenopir & King Table 1: browsing 58.5% (1977) → 33.9% (2005); automated searching 23.1% (2005) | dlib.org/dlib/november08/tenopir/11tenopir.html | exact |
+| 42 | Karnofsky "explain and defend my current, incredibly premature hypothesis" / reading "most likely to change the big-picture claim"; Steinhardt "I try harder and earlier to show that my ideas can't work"; adversarial collaboration "identify results that would change their mind" | cold-takes.com/learning-by-writing; cs.stanford.edu/~jsteinhardt/…; pure.mpg.de/…/file_2102237 | exact |
+| 43 | Carlini "In a good paper this is answerable in a sentence: your goal is to find that sentence"; Nanda "at least 50% of papers are basically useless due to insufficient skepticism" | ~/Desktop/guidesfm/research/articles/how-to-win-a-best-paper-award….md:196-197; …/research-process-key-mindsets.md:36 | exact |
+| 44 | OpenAlex citation chaining (`cite-chain.sh`): the Greenhalgh & Peacock work resolves; 1,995 citers; 296 mention replication; 6 references; `core` finds shared references | api.openalex.org, run live | tested, all four modes |
+
 **Correction logged 2026-09-26:** an earlier KNOWN/FINDINGS/SKILL line attached BIN's 50/25/25 split to
 superforecasters; the source says it of "the control group". Fixed everywhere after the diff review.
 

@@ -49,13 +49,14 @@ the lane files under "Where to look" are the kinds — with disjoint boundaries,
 differ, and the path of its lane file in its brief so it reads the recipe first. In every lane, at least one entry point that
 is not ordered by popularity. The plain, obvious search runs first even when you hold a hypothesis.
 **Browse as well as search** — a venue's recent tables of contents, a conference's accepted list, a
-project's newest issues, a person's whole feed. Browsing was still scientists' largest route to what they
-read (33.9% in 2005; searching 23.1%), and it reaches what nobody knew to search for. What comes back is
+project's newest issues, a person's whole feed. Browsing was scientists' largest route to what they read
+in the latest survey (33.9% in 2005; searching 23.1%), and it reaches what nobody knew to search for. What comes back is
 the representation: the open questions, the field's own words, the clusters of work.
 
 **Pool.** Save each return; admit its findings into the map **marked unverified**, and verify — re-open
 the source, find the span — every one that closes an open question or carries a number; grade its
-sources; add only frontier items that bear on an open question; record its dead ends; rank the open
+sources; add frontier items that bear on an open question, and put the rest on the **residue** list —
+never discarded, because unexplained leftovers are where new links come from; record its dead ends; rank the open
 questions (how much the answer depends on each × how uncertain or contested it is); and call
 `bad frontier-observe` once for the round, with that round's closes and abandonments on the same call.
 Then **re-read the whole map, not just the new lines**: connections and your own contradictions show up
@@ -87,10 +88,12 @@ context, **patch** surgically, **answer**.
 - **Answer from what you have** — you know it and being wrong is cheap. Never for a sentence carrying a
   version, price, quota, limit, date or proper name: those move, and your confidence is not evidence.
 - **Quick** — you alone, frontier-chained, stopping on the counter's defaults (five retrievals, two quiet).
+  A lookup whose answer sits in one project's docs or code is quick.
 - **Standard** — the default for a real question: a broad round, then deep rounds; floor two rounds.
 - **Deep** — expensive to be wrong, contested, "find all", or a field you do not know: floor three
   rounds, one of them a **counterpart-and-origin round** (its assignments are the counterpart and
-  trace-to-origin moves on the leading claims), and all five critique lenses.
+  trace-to-origin moves on the leading claims), pooled independent judgments on the claims the answer
+  rests on, and all five critique lenses.
 - In any tier whose answer is a set or an absence ("find all", "is there any evidence that"), and in every
   deep run: an **independent check pass** before the stop (`references/rounds.md`). A "find all X" question is a recall job, not a precision one — its set, its
   coverage estimate and its singleton fraction: `references/breadth.md`.
@@ -137,12 +140,14 @@ you surer, not righter.
 
 ## Name the rivals, then delete the evidence that cannot separate them
 
-**MUST name at least two rival explanations before committing, and carry them into the answer.** Then
-use them to cut: **evidence every rival predicts equally well has no diagnostic value — delete it**;
-rank by what survives — *"the most probable hypothesis is usually the one with the least evidence
-against it, not the one with the most evidence for it"* (Heuer, CIA). Keep real mass on "something I
-have not thought of yet", and draw rivals from disjoint evidence — hypotheses generated from one pool
-are anchored the same way. This is not the disagreement quota refused below: it deletes evidence and
+**MUST name at least two rival explanations before committing, and carry them into the answer.** Use
+them to cut where you can — evidence every rival predicts equally well has no diagnostic value, and
+*"the most probable hypothesis is usually the one with the least evidence against it"* (Heuer, CIA) —
+but do not mistake the table for the win: in the one test of that full structured method with analysts,
+the control group was slightly *more* accurate, while making several independent judgments coherent and
+then pooling them cut error by 61%. So in deep runs the load-bearing claims get **pooled independent
+judgments** (`references/rounds.md`). Keep real mass on "something I have not thought of yet", and draw
+rivals from disjoint evidence — hypotheses generated from one pool are anchored the same way. This is not the disagreement quota refused below: it deletes evidence and
 adds a paragraph; a quota adds rounds and manufactures disagreements.
 
 **For a question about likelihood, size or outcome, find the base rate first** — how often things of
@@ -168,8 +173,9 @@ their mind"). A hunt with no stated target moves its goalposts toward what it al
 
 ## Where to look
 
-Reach is the largest lever, and **iteration is mostly what a loop does when reach is failing**: with only
-the retriever varied, a poor one made the agent search more and score less. And reach is not
+Reach — which sources you can get to at all — sets the ceiling, and **iteration is often what a loop does
+when reach is failing**: with only the retriever varied, a poor one made the agent search more and score
+less. And reach is not
 sufficient: given the *perfect* source set, published systems still recover about half the key facts.
 
 Each lane below is a file and a kind of source. **Read it when you assign that lane, and put its path in
@@ -189,7 +195,9 @@ the reader's brief** — it carries the commands and the traps. Not all up front
 | Community | `references/lanes/community.md` | reception and what breaks in practice — the thread is primary |
 | X (API) | `references/lanes/x-live.md` | practitioners' own words, verbatim; the Latest tab and reply threads, where the unpopular half lives |
 
-On the owner's machine, `bash ~/Desktop/compound-v/scripts/alpha.sh "<topic>"` sweeps talks, arXiv,
+For papers, `bash scripts/cite-chain.sh back|fwd|rerun|core …` chains citations both ways over OpenAlex
+— the move that found 51% of a large review's sources. On the owner's machine,
+`bash ~/Desktop/compound-v/scripts/alpha.sh "<topic>"` sweeps talks, arXiv,
 pinned exemplar repos, engineering blogs and practitioners in one command and returns pointers — breadth
 is mechanical; spend readers on reading what it lists.
 
@@ -272,14 +280,15 @@ and seen sources — and never concludes. The brief carries the question verbati
 **withholds the thesis**: readers told what you are building return opinions instead of facts.
 
 **They exchange through the map, at round boundaries, through you.** Readers that never exchange were
-the losing shape on a web-research benchmark (−35% against one agent); ungated sharing is the other
-losing shape — Anthropic's early research agents were "distracting each other with excessive updates",
-and on a board of their own making one move spread to over 90% of 533 active agents while duplicate
-effort persisted until some agents began assigning lanes. So one line per finding, with its span, its
+the losing shape on a web-research benchmark (−35% against one agent, with one model family); ungated
+sharing is the other — Anthropic's early research agents were "distracting each other with excessive
+updates", and in one incident a single move spread across an agent-made board to over 90% of 533 active
+agents while duplicate effort persisted until some began assigning lanes. So one line per finding, with its
 source identity and whether you verified it, plus the dead ends and the seen list, go to every reader at
-the next dispatch. Fan out where results combine by union; assignments that must stay mutually
-consistent go to one reader. **Verification and rivals stay isolated**: forecasting teams that shared
-information but each gave their own number, pooled, beat independents in a randomized trial.
+the next dispatch, with the ranked open questions each reader is serving. Fan out where results combine
+by union; assignments that must stay mutually consistent go to one reader. **Judgment stays
+independent**: forecasting teams that shared information while each member gave their own number,
+pooled by an algorithm, beat independents in a randomized trial — shared facts, separate verdicts.
 `references/delegation.md` has the measurements and the misreading this replaced.
 
 ## Checks, and what they are worth
