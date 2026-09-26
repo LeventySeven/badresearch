@@ -38,6 +38,10 @@ Tier: standard | deep — because …
 - <URL/path>, …
 
 ## Hypotheses and rivals                                   ← never shown to readers
+- The answer I would give now (three sentences, rewritten after each round): …
+- What would change my mind (written before the counterpart round): …
+- Base rate of the reference class, if the question is about likelihood, size or outcome: …
+- Rivals, each with the evidence that separates it: …
 ```
 
 Two other stores exist and are named, not hidden: `research/<slug>/s.json` (the stop counters —
@@ -105,7 +109,10 @@ fits (residue) is the signal the structure is wrong — add the question.
 
 | the map shows | the move |
 |---|---|
+| an open question that could flip the provisional answer | first, before anything else in the round |
 | an open question | a direct query in the field's own vocabulary (learn it from overviews and the index terms of the first good documents) |
+| a field you have not mapped yet | browse it: a venue's recent tables of contents, a conference's accepted list, a project's newest issues, a person's whole feed |
+| a question about likelihood, size or outcome | the base rate of its reference class, before the specifics |
 | a finding with one source | trace it to its origin; look for an independent rerun inside the original's "cited by" (`experiment OR replication OR randomized`) — failed reruns are cited by a small minority of later citers, so they will not come to you |
 | a contradiction | resolve it: the window each covers, and which one read the primary |
 | an unchased frontier item | chase it: references back, citing papers forward (sort them by their own citations to surface the pivotal ones), the author's other writing, the same thing under another name or language |

@@ -216,6 +216,17 @@ caveat, or with an unflagged source that corroborates it, or it does not carry t
 "this will likely reach X by 2027" becomes "X reached" one paraphrase later, and every check here
 passes on it.
 
+# Before you read closely — three cheap filters
+
+- **The one new thing, in a sentence.** Before a close read, say what this source adds that the map does
+  not already hold. "In a good paper this is answerable in a sentence: your goal is to find that
+  sentence" (Carlini). If there is none, skim it and move on.
+- **Predict first.** Write the result you expect before you read it, and note the gap; a surprise is a
+  frontier item, and a source that only confirms you adds confidence, not accuracy.
+- **The boring explanation.** After reading, ask whether it tested the dull alternative that would
+  produce the same observation. It is the most common reason one interpretability lead dismisses a
+  paper, and he estimates "at least 50% of papers are basically useless due to insufficient skepticism".
+
 # Judging a source you do not know — leave it, and grade it apart from its claim
 
 The flags above describe a source you have read. Most of the junk is cheaper to catch before that.

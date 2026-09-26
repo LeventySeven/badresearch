@@ -48,13 +48,24 @@ open questions with `--promise` on the first `bad frontier-observe`, so the coun
 the lane files under "Where to look" are the kinds — with disjoint boundaries, first queries chosen to
 differ, and the path of its lane file in its brief so it reads the recipe first. In every lane, at least one entry point that
 is not ordered by popularity. The plain, obvious search runs first even when you hold a hypothesis.
-What comes back is the representation: the open questions, the field's own words, the clusters of work.
+**Browse as well as search** — a venue's recent tables of contents, a conference's accepted list, a
+project's newest issues, a person's whole feed. Browsing was still scientists' largest route to what they
+read (33.9% in 2005; searching 23.1%), and it reaches what nobody knew to search for. What comes back is
+the representation: the open questions, the field's own words, the clusters of work.
 
 **Pool.** Save each return; admit its findings into the map **marked unverified**, and verify — re-open
 the source, find the span — every one that closes an open question or carries a number; grade its
 sources; add only frontier items that bear on an open question; record its dead ends; rank the open
 questions (how much the answer depends on each × how uncertain or contested it is); and call
 `bad frontier-observe` once for the round, with that round's closes and abandonments on the same call.
+Then **re-read the whole map, not just the new lines**: connections and your own contradictions show up
+when a log is re-read — Schulman fills "a missing piece in a puzzle" on his weekly journal review.
+
+**After the broad round, write the answer you would give now** — three sentences, under your hypotheses,
+never shown to readers. The deep rounds exist to break it: rank open questions by which could flip it,
+and go there first. Karnofsky writes down his "incredibly premature hypothesis" and reads what is "most
+likely to change the big-picture claim"; Steinhardt tries "harder and earlier to show that my ideas
+can't work". A hypothesis you wrote is a target; one you only hold is an anchor.
 
 **Deep rounds — every assignment is a named move drawn from the map.** An open question gets a direct
 query in the field's vocabulary; a one-source finding gets traced to its origin and checked for an
@@ -133,6 +144,13 @@ against it, not the one with the most evidence for it"* (Heuer, CIA). Keep real 
 have not thought of yet", and draw rivals from disjoint evidence — hypotheses generated from one pool
 are anchored the same way. This is not the disagreement quota refused below: it deletes evidence and
 adds a paragraph; a quota adds rounds and manufactures disagreements.
+
+**For a question about likelihood, size or outcome, find the base rate first** — how often things of
+this kind happen, before the specifics of this one. In a randomized trial of forecaster training, using
+comparison classes was the one principle associated with better accuracy; "hunt for the right
+information" was not. **Before the counterpart round, write down what finding would change your mind**
+— the forecasters' rule, and the adversarial-collaboration protocol's ("identify results that would change
+their mind"). A hunt with no stated target moves its goalposts toward what it already believes.
 
 ## Contradictions are the second half of the job
 
@@ -221,6 +239,8 @@ not an index: it is per-run, addressable and re-derivable. Past the window: `ref
   chaining are not independent corroboration, and repetition is not corroboration: trace to the origin.
 - **Grade the source apart from the claim**, and for a source you do not know, leave it and read about it
   first — fact-checkers beat historians exactly that way (`references/evidence.md`).
+- **Before reading closely: the one new thing, in a sentence** — if there is none, skim and move on.
+  Predict its result first and note the gap; after reading, ask whether it tested the boring explanation.
 - **A number needs its protocol, and a correlation needs a control.**
 - **Captions are substance, never quotation** — a *manual* track rendered "Claude Code" as "Cloud Code".
   A retrieval tool's digest is its words, not the page's.
