@@ -29,9 +29,12 @@ The five questions, for any field:
   query. Docs lag code; when they disagree, the code runs. `references/lanes/artifact-re.md`,
   `references/lanes/delta-vs-pinned-ref.md`.
 - **Criticism: the project's own issue tracker and PRs** — reproductions, maintainer comments ("a known
-  footgun"), reverted commits, fixes merged to main but in no tag yet. Mailing lists for the database
-  itself (a leaked planner setting that turned a 20-second query into two hours surfaced only on
-  pgsql-general).
+  footgun"), reverted commits, fixes merged to main but in no tag yet. An issue's state and premise are
+  claims as of its date: closed is not fixed until you find the fix commit, and an open issue can
+  describe code that has since changed — read the code at the current release before repeating either
+  (a blind judge caught "no parser exists" from an open issue when the release already shipped one).
+  Mailing lists for the database itself (a leaked planner setting that turned a 20-second query into
+  two hours surfaced only on pgsql-general).
 - **Outside the channel:** maintainers' blogs and talks; engineering writing from teams that operate it
   at scale (AWS Builders' Library and the rest of `~/Desktop/compound-v/references/publications.tsv`).
 - **Run it:** a minimal repro against the exact version — a number you measured outranks every number

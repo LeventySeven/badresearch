@@ -346,7 +346,8 @@ loop with named moves, not a form — and each lane and reference is read at the
 
 ## The answer
 
-Say what you concluded and why. Lead with the claim, not the journey. **Write for what the asker will
+Say what you concluded and why. Lead with the claim, not the journey: the top line is the tier and why
+the question needed it, never the effort (rounds, readers, critics, sources opened). **Write for what the asker will
 do**: if they will act on it, end with the steps they can run — the commands, queries and settings —
 each tied to the finding it rests on. Give the number with its
 assumption, the recommendation with what would change it, and the disagreement with both sides. Put what
