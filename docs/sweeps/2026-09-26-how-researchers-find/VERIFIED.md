@@ -36,6 +36,13 @@ row not listed here is agent-read — its span is in `raw/`, unchecked by the ch
 | 28 | Furnas et al.: "In every case two people favored the same term with probability <0.[20]" | Wayback of dl.acm.org/doi/pdf/10.1145/32206.32212 | PARTIAL — the OCR cut after "<0."; the figure 0.20 is the reader's |
 | 29 | BIN: noise ~50%, bias ~25%, information ~25%; Mellers 2014: teams "could share information, including their forecasts (but there was no systematic display…)"; Chang 2016: only C (comparison classes) associated with better performance | faculty.wharton.upenn.edu/…/mnsc.2020.3882.pdf; sydneyscott.nfshost.com/…/Psychological_Strategies_for_Winning_a_G.pdf; journal.sjdm.org/16/16511/jdm16511.pdf | exact |
 
+| 30 | METR: "Of the 533 agents active on the message board … over 90% quickly joined in the attack"; a coordinator: "too many duplicate efforts" | metr.org/blog/2026-08-26-openai-hugging-face-incident-investigation/ | exact |
+| 31 | Anthropic: early agents "distracting each other with excessive updates"; BIN: superforecasters "owe their success more to superior skills at tamping down measurement error" | ~/Desktop/guidesfm/research/articles/how-we-built-our-multi-agent-research-system.md:43; faculty.wharton.upenn.edu/…/mnsc.2020.3882.pdf | exact |
+| 32 | FM 2-22.3 (Admiralty grading): an "F" rating "does not necessarily mean that the source cannot be trusted, but that there is no reporting history" | the R3-1 reader's saved fetch of irp.fas.org/doddir/army/fm2-22-3.pdf via r.jina.ai (`scratchpad/r3/fm_jina.txt`) | exact, in the reader's raw bytes (not re-fetched) |
+
+**Correction logged 2026-09-26:** an earlier KNOWN/FINDINGS/SKILL line attached BIN's 50/25/25 split to
+superforecasters; the source says it of "the control group". Fixed everywhere after the diff review.
+
 Not verified by the chair, and used anyway only with that label: every other row. The largest unverified
 clusters are the forecasting correlations beyond row 29, the paper-mill and GRIM figures, the LBD
 analogy percentages, the Hausner/IQWiG sensitivities, and all caption-derived transcript material

@@ -1,7 +1,7 @@
 # Delegation — the fan-out contract
 
-Read this when a question is big enough that one reader cannot cover it. The rule in SKILL.md is one
-line; this is what it costs, when it inverts, and what a brief must carry.
+Read this when you fan out. `references/rounds.md` defines the brief and the rounds; this file is the
+evidence behind them — what fan-out costs, when it inverts, and why a brief carries what it carries.
 
 ## The number that decides the shape — and how it was misread here
 
@@ -25,8 +25,10 @@ multi-agent, **3.7×** — and named the mechanism as *sampling*: more parallel 
 the chance one hits leaked material.
 
 **So the shape is: depth from sequential rounds, breadth from parallel readers inside a round, and an
-exchange at every boundary.** Readers that never exchange are the losing shape; free, continuous
-sharing is the other one (it herded over 90% of 533 active agents onto one workstream). What crosses is
+exchange at every boundary.** Readers that never exchange are the losing shape; ungated sharing is
+the other one — Anthropic's early agents were "distracting each other with excessive updates", and on a
+board of their own making one move spread to over 90% of 533 active agents while duplicate effort
+persisted until some began assigning lanes (METR's investigation of an OpenAI agent incident). What crosses is
 gated: one line per finding with its span and its source, the dead ends, the sources already seen —
 read by every reader at dispatch, admitted by the reasoner (`rounds.md`). The evidence is thin and
 mixed, and the honest reading is that it neither forbids fan-out nor proves it; the stronger support

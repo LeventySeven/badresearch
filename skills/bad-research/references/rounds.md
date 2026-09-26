@@ -20,8 +20,9 @@ Tier: standard | deep — because …
 - Q1 … [open | closed by F3,F7 | abandoned: <reason>]
 
 ## Findings  (one line each; the span is verbatim)
-- F1 [Q1] <claim> — "<span>" — <URL + fetch date | path:line> — reached by <query | link from F? | lane>
-       — source: <author/publisher, date, who pays / what they sell> — grade: <see evidence.md>
+- F1 [Q1] [verified | unverified] <claim> — "<span>" — <URL + fetch date | path:line>
+       — reached by <query | link from F? | lane> — source: <author/publisher, date, who pays / sells>
+       — grade: source <known good | no track record | known bad> / claim <confirmed | single | contradicted>
 
 ## Frontier  (named in a source, not yet chased)
 - <entity | term | person | paper | number> — seen in F? — [unchased | assigned R2 | chased: F?/dead end]
@@ -52,8 +53,11 @@ A reader gets a **snapshot**, never the map itself:
 - the question, **verbatim**
 - its assignment: a lane (broad round) or one to three leads (deep round), with a boundary — what it
   must NOT read, so boundaries can be checked for overlap before a token is spent
-- the findings, frontier items, dead ends and seen sources that touch its boundary, headed *"already
-  known — do not re-find; extend, connect or break it"*
+- **the path of its lane file** (`references/lanes/<lane>.md` in this skill's directory) — read it first;
+  it holds the paths, commands and traps of that kind of source, and without it a reader improvises
+- the verified findings, frontier items, dead ends and seen sources that touch its boundary, headed
+  *"already known — do not re-find; extend, connect or break it"*; and the unverified findings, headed
+  *"leads — re-find or refute"*
 - its budget: a lead 5–20 tool calls, a lane up to ~50. Past it, return what you have.
 
 It never gets the hypotheses, the rivals, or what the asker will do with the answer. Readers told what
@@ -64,7 +68,11 @@ not as your position.
 **What comes back** (`agents/research-reader.md` enforces it): findings with verbatim spans, the
 source, and how each was reached; the reachability state of every source tried; source facts for
 grading (who wrote it, when, who pays or what they sell — and, when assigned, what others say about the
-source); frontier items as exact strings; dead ends; seen sources. No grade, no conclusion. You grade.
+source); frontier items as exact strings; dead ends; seen sources; and the questions its reading opened
+that it could not close — the slot that turns a fan-out into the next round instead of flattening it.
+No grade, no conclusion. You grade.
+
+This file is the definition of the brief; `references/delegation.md` explains why each part is there.
 
 ## The broad round — find the structure
 
@@ -72,16 +80,18 @@ Its job is the representation, not the answer: which open questions exist, what 
 which clusters of work there are. Everything later is filling that in, and a finding no open question
 fits (residue) is the signal the structure is wrong — add the question.
 
-- **3–6 readers in parallel, each on a lane of a different KIND** — papers; practitioners' own writing
-  (essays, threads, talks); code, data and registries; community threads and replies; the local corpus;
-  another field or language. Different kinds, because seeds that all sit in one cluster never reach the
-  others, and you cannot pick clusters you have not found yet.
+- **3–6 readers in parallel, each on a lane of a different KIND** — the lane files are the kinds: the
+  local corpus, the live web (papers and primaries), practitioner video, the artifact itself (package,
+  code, responses), terms and pricing, what changed since a date, a live measurement, people, the
+  evidence-synthesis professions, community threads. Different kinds, because seeds that all sit in one
+  cluster never reach the others, and you cannot pick clusters you have not found yet.
 - **Make the first queries different from one another.** Diversity at the first move is what counts;
   diversifying later turns measured as adding nothing.
 - **In every lane, one entry point that is not ordered by popularity** — newest-first instead of top,
   past the first page, reply threads, an under-cited sweep, the field's penumbra rather than its core.
-  On X, the Top tab returned authors with a median 19,128 followers; Latest, 3,865; the sharpest methods
-  in one harvest came from under 50k-follower accounts and from replies.
+  On X, the Top tab returned authors with a median 19,128 followers against 3,865 for Latest, and the
+  sharpest methods in one harvest came from under-50k-follower accounts and from replies (one harvest,
+  judged with follower counts visible — contested).
 - **The plain, obvious search first**, even with a hypothesis in hand. Expert assumptions are what make
   expert searches slow.
 - **Widen when an unfamiliar field overloads you**; be more selective when good sources are plentiful.
@@ -108,20 +118,25 @@ and send readers to the top first.** One reader per independent group of assignm
 round; assignments that depend on each other stay with one reader, who chains them in order.
 
 **Between rounds you pool:** save each return to `raw/`, admit findings into the map (one line, span,
-source, how reached), grade sources from the facts, add frontier items, record dead ends, update the
-seen list, rank the open questions again, and call the counter once:
+source, how reached, **marked unverified**), grade sources from the facts, add the frontier items that
+bear on an open question (an item that bears on nothing is noise, and admitting it keeps the counter
+from ever going quiet), record dead ends, update the seen list, rank the open questions again, and call
+the counter once — every promise, close and abandonment for the round on that one call, because a
+second call counts as a round:
 
 ```bash
 bad frontier-observe --state research/<slug>/s.json --floor <2|3> --patience 1 \
   --domains <new source domains this round> --entities <new frontier items admitted> \
-  [--promise Q1,Q2 | --close Q3 | --abandon "Q4=reason"]
+  --promise Q5 --close Q3 --abandon "Q4=no primary exists"      # the first call also --promise's Q1…Qn
 ```
 
-**Admission.** Before a finding carries weight in the answer, re-open its source and find the span —
-a fetch and a grep. A span you cannot find demotes the finding to a lead. Every finding keeps its source
-identity, because when several readers report "the same" fact from sources that all rest on one origin,
-that is repetition, not corroboration — the Iraq WMD commission's fix was exactly "distinguish
-corroboration from repetition".
+**Verification.** A finding is verified when you re-open its source and find the span — a fetch and a
+grep. Verify at pool time every finding that closes an open question or carries a number, and verify
+every finding the answer leans on before you write. Unverified findings go to readers as leads, never as
+"already known", so a wrong one can still be caught. A span you cannot find demotes the finding to a
+lead. Every finding keeps its source identity, because when several readers report "the same" fact
+from sources that all rest on one origin, that is repetition, not corroboration — the Iraq WMD
+commission's fix was exactly "distinguish corroboration from repetition".
 
 ## The stop
 
@@ -134,7 +149,7 @@ of the time in systematic-review screening, and lawyers who searched iteratively
 of the relevant documents when they had 20%. A good search runs dry early; running dry is exactly what
 fools the rule.
 
-So in the deep tier, and on any question whose answer is a set or an absence ("find all", "is there any
+So in every deep run, and in any tier whose answer is a set or an absence ("find all", "is there any
 evidence that"), run **one independent check pass** before stopping: a fresh reader, given only the
 question, that never sees the map and searches by a different method (another kind of lane, another
 vocabulary). Open its return only at the stop check. What it found that the map lacks is a blind spot —
@@ -153,4 +168,6 @@ exchange through a gated map at the boundary, judgment kept with you — is the 
 points to: a shared verified board read at dispatch, with dead ends shared too, beat isolated attempts
 on code and long-document tasks, and forecasting teams that shared information but each gave their own
 number, pooled, beat both independents and crowd-watchers in a randomized trial. Free, continuous
-sharing is refused: it herded over 90% of 533 active agents onto one workstream.
+sharing is refused: Anthropic's early research agents were "distracting each other with excessive
+updates", and on a board of their own making one move spread to over 90% of 533 active agents while
+duplicate effort persisted until some of them began assigning lanes.

@@ -233,7 +233,9 @@ checks, so the funder is its own axis, invisible to a methods check.
 the source's reliability apart from the information's credibility; measured analysts collapse the two
 onto one scale anyway. Keep them apart in the map: *source* — known good / no track record / known bad;
 *claim* — independently confirmed / single source / contradicted. **No track record is not a negative**
-— the doctrine says so explicitly — and for a small or new source it is the usual case. Then judge the
+— the doctrine says so explicitly (Admiralty grade F: "does not necessarily mean that the source cannot
+be trusted, but that there is no reporting history") — and for a small or new source it is the usual
+case. Then judge the
 work on its own terms: re-run it, check its numbers (a reported mean that is impossible for its n is a
 mechanical flag), check what its bibliography rests on.
 

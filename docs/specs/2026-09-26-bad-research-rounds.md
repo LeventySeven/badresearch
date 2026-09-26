@@ -92,9 +92,11 @@ Each maps to a task and a verification line in the plan. Owner words are quoted 
    their knowledge to each other as interconnections, so they don't find the same information twice"*).
    Not continuous free sharing (it herded >90% of 533 agents onto one workstream) and not isolation
    (−35%). This is a gated board read at dispatch — DeLM's shape — not a relay that rewrites findings.
-   **Admission**: before a finding carries weight in the answer, the chair re-opens its source and finds
-   the span (a fetch + grep, or `bad quote-drift-gate` at the end); a span it cannot find demotes the
-   finding to a lead. Every finding keeps its source identity, so repetition is never counted as
+   **Admission** (rev 3, after the diff review found SKILL.md and rounds.md disagreeing): a finding
+   enters the map marked unverified; the chair verifies — re-opens the source, finds the span — every
+   finding that closes an open question or carries a number at pool time, and every finding the answer
+   leans on before writing. Readers receive verified findings as "already known" and unverified ones as
+   leads to re-find or refute; a span that cannot be found demotes the finding to a lead. Every finding keeps its source identity, so repetition is never counted as
    corroboration (Robb-Silberman). [G4, C9]
 9. **The reader agent works a lane or a lead**: holds WebSearch; follows chains inside its boundary;
    returns findings (verbatim span, source, **how reached**, reachability state READ/BLOCKED/EMPTY/MISSING/

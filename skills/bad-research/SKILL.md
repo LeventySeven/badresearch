@@ -13,7 +13,7 @@ description: >-
 A searcher looks one thing up. A researcher finds one thing, and what he found tells him what to look
 for next — so his second question is one he could not have asked first. That compounding is measured:
 at an equal number of questions, asking them one at a time from what had just been read reached 99.83
-unique sources against 39.56 for the same questions asked up front. In a large review, the planned
+unique sources against 39.56 for the same number of questions asked all at once. In a large review, the planned
 database search found 30% of what mattered; following references of references found 51%.
 
 So research here runs in **rounds**. A broad round finds the shape of the question; each later round is
@@ -21,8 +21,9 @@ built from what the earlier ones found; several readers work in parallel inside 
 what they found through one written map, so nobody finds the same thing twice. You hold the map and all
 the judgment.
 
-**What follows is what a good run does, not a form to complete.** What you may not skip are the
-refusals — marked MUST, each there because skipping it produced a confidently wrong answer.
+**What follows is what a good run does, not a form to complete.** The rounds are coordination points,
+not a cognitive order — inside a round the moves mix freely. What you may not skip are the refusals —
+marked MUST, each there because skipping it produced a confidently wrong answer.
 
 ---
 
@@ -32,30 +33,36 @@ refusals — marked MUST, each there because skipping it produced a confidently 
 were handed is the fourth form of the need, and the richest statement of it searches best. Start the
 **map**: `research/<slug>/MAP.md`, holding open questions, findings (one line each, with a verbatim
 span, its source and how it was reached), the frontier, connections and contradictions, dead ends, the
-sources already seen, and your hypotheses. Template and rules: `references/rounds.md`.
+sources already seen, and your hypotheses. Template and rules: `references/rounds.md`. Register the
+open questions with `--promise` on the first `bad frontier-observe`, so the counter knows what is owed.
 
-**Broad round — find the structure, not the answer.** Three to six readers in parallel
-(`agents/research-reader.md`), each on a lane of a different *kind* of source — papers, practitioners'
-own writing, code and data, community threads, the local corpus, another field or language — with
-disjoint boundaries and first queries chosen to differ. In every lane, at least one entry point that
+**Broad round — find the structure, not the answer.** Three to six readers in parallel (the
+`research-reader` agent, `agents/research-reader.md`), each on a lane of a different *kind* of source —
+the lane files under "Where to look" are the kinds — with disjoint boundaries, first queries chosen to
+differ, and the path of its lane file in its brief so it reads the recipe first. In every lane, at least one entry point that
 is not ordered by popularity. The plain, obvious search runs first even when you hold a hypothesis.
 What comes back is the representation: the open questions, the field's own words, the clusters of work.
 
-**Pool.** Save each return, admit its findings into the map, grade its sources, add its frontier items,
-record its dead ends, rank the open questions (how much the answer depends on each × how uncertain or
-contested it is), and call `bad frontier-observe` once for the round.
+**Pool.** Save each return; admit its findings into the map **marked unverified**, and verify — re-open
+the source, find the span — every one that closes an open question or carries a number; grade its
+sources; add only frontier items that bear on an open question; record its dead ends; rank the open
+questions (how much the answer depends on each × how uncertain or contested it is); and call
+`bad frontier-observe` once for the round, with that round's closes and abandonments on the same call.
 
 **Deep rounds — every assignment is a named move drawn from the map.** An open question gets a direct
 query in the field's vocabulary; a one-source finding gets traced to its origin and checked for an
 independent rerun; a contradiction gets resolved; an unchased frontier item gets chased — citations back
 and forward, the author's other writing, the same thing under another name; two findings from different
 lanes get the question of what connects them; the leading claim gets its counterpart; a finding that
-fits no open question becomes a new one. Readers receive a snapshot of the map as *already known — do
-not re-find it* — never your hypotheses or rivals. The move table and the brief: `references/rounds.md`.
+fits no open question becomes a new one. Readers receive a snapshot of the map — verified findings as
+*already known, do not re-find*, unverified ones as leads to re-find or refute — never your hypotheses
+or rivals. The move table and the brief: `references/rounds.md`.
 
 **Stop** when the counter says so: past the tier's floor, one round that brought nothing new, and every
 open question closed or abandoned with a reason — then one last search in different words or a
-different lane. **Write** from the map. **Critique** in fresh context, **patch** surgically, **answer**.
+different lane. Past six rounds, stop anyway and report what is still open: that is a budget, not a
+finding. **Write** from the map, verifying every finding the answer leans on. **Critique** in fresh
+context, **patch** surgically, **answer**.
 
 ## Choose the tier, and say it in one line at the top of the answer
 
@@ -64,8 +71,10 @@ different lane. **Write** from the map. **Critique** in fresh context, **patch**
 - **Quick** — you alone, frontier-chained, stopping on the counter's defaults (five retrievals, two quiet).
 - **Standard** — the default for a real question: a broad round, then deep rounds; floor two rounds.
 - **Deep** — expensive to be wrong, contested, "find all", or a field you do not know: floor three
-  rounds, one of them a counterpart-and-origin round, an independent check pass before the stop, and
-  the full critique. A "find all X" question is a recall job, not a precision one — its set, its
+  rounds, one of them a **counterpart-and-origin round** (its assignments are the counterpart and
+  trace-to-origin moves on the leading claims), and all five critique lenses.
+- In any tier whose answer is a set or an absence ("find all", "is there any evidence that"), and in every
+  deep run: an **independent check pass** before the stop (`references/rounds.md`). A "find all X" question is a recall job, not a precision one — its set, its
   coverage estimate and its singleton fraction: `references/breadth.md`.
 
 A well-defined target — a known item, a yes/no — makes the broad round narrow: the obvious search plus
@@ -103,10 +112,10 @@ confidence and is reportable.** And never decide whether a claim is true by sear
 that returns the ecosystem that coined it (`references/evidence.md`).
 
 **Past a floor, more evidence buys confidence rather than accuracy.** Handicappers given 5, 10, 20 and
-40 variables were no more accurate at 40 and steadily more confident — well calibrated at five. The best
-forecasters on record owe about half their edge to cutting noise, a quarter to cutting bias, and only a
-quarter to more information. A round that adds sources and moves no claim has made you surer, not
-righter.
+40 variables were no more accurate at 40 and steadily more confident — well calibrated at five. And the
+best forecasters on record "owe their success more to superior skills at tamping down measurement error,
+than to unusually incisive readings of the news". A round that adds sources and moves no claim has made
+you surer, not righter.
 
 ## Name the rivals, then delete the evidence that cannot separate them
 
@@ -138,7 +147,8 @@ Reach is the largest lever, and **iteration is mostly what a loop does when reac
 the retriever varied, a poor one made the agent search more and score less. And reach is not
 sufficient: given the *perfect* source set, published systems still recover about half the key facts.
 
-Each lane below is a file. **Read it when you assign that lane** — it carries the commands and the traps.
+Each lane below is a file and a kind of source. **Read it when you assign that lane, and put its path in
+the reader's brief** — it carries the commands and the traps. Not all up front.
 
 | Lane | Read | For |
 |---|---|---|
@@ -170,7 +180,7 @@ it over-learning: `references/noise.md`.
 | **BLOCKED** | a bot-wall, paywall, 402/403, consent interstitial | nothing; quote the interstitial |
 | **MISSING** | the root or URL does not resolve | nothing; the lane is DOWN |
 | **EXHAUSTED** | budget, quota or rate limit ran out mid-run | nothing; name what went unasked |
-| **IRRELEVANT-BY-DESIGN** | the fetch succeeded, the prose is real and quotable — about something else | nothing; and every check will pass on it |
+| **IRRELEVANT-BY-DESIGN** | the fetch succeeded, the prose is real and quotable — about something else | nothing; check the page is about its source, because every other check will pass on it |
 
 A lane you did not drive is not a lane that came back empty, and a record filtered by the outcome you
 study (adoption is announced, reversion is not) makes an absence weak evidence of absence. **A raw fetch
@@ -190,7 +200,8 @@ not an index: it is per-run, addressable and re-derivable. Past the window: `ref
 - A **span you can point at, no wider than the claim** — `path:line`, a URL plus its fetch date, a
   `file:line` inside a package you installed.
 - **Bind the citation when you write the sentence**, from the retrieval you just did: draft-then-attach
-  produced phantom references at up to 21%; binding at retrieval measured zero over 75 papers.
+  produced phantom references at up to 21%; binding at retrieval measured zero over 75 papers. Never
+  reconstruct grounding for a paragraph already written.
 - **A citation claims the span SUPPORTS the sentence** — supports, contradicts, or your sentence goes
   beyond it. Say where you extrapolated, or cut it.
 - **Verify a retrieved object by its properties, not its name** — date, unit, scale (50% → 90%).
@@ -202,6 +213,9 @@ not an index: it is per-run, addressable and re-derivable. Past the window: `ref
 - **Captions are substance, never quotation** — a *manual* track rendered "Claude Code" as "Cloud Code".
   A retrieval tool's digest is its words, not the page's.
 - **Mechanical sweeps produce candidates, never verdicts** — 110/58/52/29/20 hits collapsed to 31/0/0/0/0.
+
+`references/evidence.md`: span-width and quote caps, a subject-controlled source pool, an earlier agent's
+query trail passing as a source, the denominator of silence, and judging a source you do not know.
 
 ## What must never happen
 
@@ -226,12 +240,15 @@ and seen sources — and never concludes. The brief carries the question verbati
 **withholds the thesis**: readers told what you are building return opinions instead of facts.
 
 **They exchange through the map, at round boundaries, through you.** Readers that never exchange were
-the losing shape on a web-research benchmark (−35% against one agent); free, continuous sharing herded
-over 90% of 533 active agents onto one workstream. So one line per finding, with its span and source
-identity, plus the dead ends and the seen list, go to every reader at the next dispatch — and you admit a
-finding only after finding its span in the source. **Verification and rivals stay isolated**: forecasting
-teams that shared information but each gave their own number, pooled, beat independents in a randomized
-trial. `references/delegation.md` has the measurements, the budgets and the misreading this replaced.
+the losing shape on a web-research benchmark (−35% against one agent); ungated sharing is the other
+losing shape — Anthropic's early research agents were "distracting each other with excessive updates",
+and on a board of their own making one move spread to over 90% of 533 active agents while duplicate
+effort persisted until some agents began assigning lanes. So one line per finding, with its span, its
+source identity and whether you verified it, plus the dead ends and the seen list, go to every reader at
+the next dispatch. Fan out where results combine by union; assignments that must stay mutually
+consistent go to one reader. **Verification and rivals stay isolated**: forecasting teams that shared
+information but each gave their own number, pooled, beat independents in a randomized trial.
+`references/delegation.md` has the measurements and the misreading this replaced.
 
 ## Checks, and what they are worth
 
@@ -242,7 +259,7 @@ worth roughly 7% on a post-trained model while a non-zero exit is worth what it 
 which bad || echo "not on PATH — try .venv/bin/bad, or skip the CLI checks and say so"
 bad lane-local "<query>" --json          # a lane that reports its own zeros
 bad frontier-gate --state s.json --query "<q>"     # refuses a query naming no frontier item
-bad frontier-observe --state s.json --floor 2 --patience 1 --domains … --entities … --promise/--close/--abandon
+bad frontier-observe --state s.json --floor 2 --patience 1 --domains … --entities … --promise … --close … --abandon "Q=why"  # --floor/--patience: standard/deep only
 bad close-gate --claims c.json --answer draft.md --dispositions d.json   # a disagreement blocks close
 bad quote-drift-gate    --report r.md --note-bodies n.json  # a quotation still says what you quoted
 bad figure-support-gate --report r.md --note-bodies n.json  # a cited figure IS in the note cited
@@ -253,8 +270,11 @@ bash scripts/lane-probes.sh    # relative to THIS skill's dir — cd there, or g
 ```
 
 `frontier-observe` is called once per round in standard and deep (`--floor 2` or `3`, `--patience 1`);
-quick keeps its defaults (five retrievals, two quiet). **Exit 2 is not a refusal — the command never
-ran** (a missing option; 127 is a missing script). `references/checks.md` has the file shapes.
+quick keeps its defaults (five retrievals, two quiet). The gates exit 0 clean and 1 blocked; **exit 2 is
+not a refusal — the command never ran** (a missing option; 127 is a missing script).
+`references/checks.md`: what each gate asserts and does not, the file shapes, `verify-citations`,
+`grounding-surface` and `grounding-recall`, and the two things nothing here measures — recall and the
+trajectory.
 
 **A check that can only pass is not a check.** Break it on purpose and watch it go red, then try to beat
 it: a draft whose every sentence was false but carried a marker came back clean from `uncited-gate`. **And
@@ -278,7 +298,7 @@ name, because a rule dropped silently comes back wearing the words *thorough* an
   contradiction will produce one. Hunting the counterpart is a move; a quota is a manufacturing order.
 - **A delegated reader that must commit to a position.** `agents/research-reader.md` never concludes:
   readers told what is being built return opinions instead of facts. Judgment stays with you.
-- **Parallel readers that never exchange — and free, continuous sharing.** The predecessor made
+- **Parallel readers that never exchange — and free, continuous, ungated sharing.** The predecessor made
   parallelism mandatory; its successor then forbade parallel depth on a misread "17.2×" (trace-level, not
   significant after controls). Both are refused. Readers run in parallel inside a round and exchange
   through the map at its boundary, gated by you.

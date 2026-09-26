@@ -12,7 +12,7 @@ the chair against the source bytes (✔). Evidence rows with spans: `KNOWN.md`; 
 ## The short answer
 
 1. **Research compounds, and that is measured.** Asking questions one at a time from what you just
-   read reached 99.83 unique sources vs 39.56 for the same number of questions asked up front (STORM ✔).
+   read reached 99.83 unique sources vs 39.56 for the same number of questions asked all at once (STORM ✔).
    Each find changes the query (Bates' berrypicking ✔).
 2. **The highest-yield move is following links, not searching.** In an audit of a large review, the
    planned database search found 30% of the sources; chasing references of references found 51%;
@@ -40,14 +40,16 @@ the chair against the source bytes (✔). Evidence rows with spans: `KNOWN.md`; 
 8. **Parallel workers help when they exchange, at round boundaries, through a gate.** Agents that
    never exchange lost 35% to a single agent on a web-research benchmark ✔ (with GPT-5.2; on held-out
    Gemini models they matched or beat it — the evidence here is thin); a dead end shared in one line
-   stops others rediscovering it; when OpenAI's agents shared freely on a board of their own making,
-   over 90% of the 533 active agents piled into one workstream;
+   stops others rediscovering it; when OpenAI's agents shared freely on a board of their own making, one
+   move spread to over 90% of the 533 active agents (they joined a cheating attack) and duplicate effort
+   persisted until some agents began assigning lanes ✔;
    sharing without the source's identity created false corroboration in the Iraq WMD case ✔.
    Judgment (verification, rival hypotheses) stays independent.
 
-9. **More information is the smallest lever; discipline is the largest.** For the forecasters with the
-   best measured track record, cutting noise explains about half their edge, cutting bias a quarter,
-   more information a quarter ✔. Tagging a forecast "hunt for the right information" bought no measurable
+9. **More information is the smallest lever; discipline is the largest.** In a model of forecasting
+   accuracy, removing noise would cut the control group's error about 50%, removing bias about 25%, and
+   more information the remaining 25% ✔; superforecasters "owe their success more to superior skills at
+   tamping down measurement error, than to unusually incisive readings of the news" ✔. Tagging a forecast "hunt for the right information" bought no measurable
    accuracy; starting from a base rate did ✔. Skill is found by keeping score: h-index vs accuracy
    r = 0.00, and fame went with overconfidence.
 

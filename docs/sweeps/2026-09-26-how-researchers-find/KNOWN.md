@@ -275,7 +275,7 @@ over breadth. If you do depth well, you get breadth for free."
 **K17. Scored expertise — what forecasters with a measured track record do (R3-2).** Skill is found by
 keeping score, not by fame: h-index vs accuracy r = 0.00; fame correlated with OVERCONFIDENCE r = .33
 (Atanasov & Himmelstein 2023). Information is the smallest lever: "Eliminating noise would reduce the
-Brier score … by roughly 50%; eliminating bias, by roughly 25%; and increasing information would deliver
+Brier score of the control group by roughly 50%; eliminating bias, by roughly 25%; and increasing information would deliver
 the remaining 25%" ✔ (Satopää et al., BIN). The CHAMPS KNOW training RCT: of ten principles only
 comparison classes (base rates) were associated with better performance ✔; "hunt for the right
 information" bought nothing measurable (Chang et al. 2016). Frequent SMALL updates beat rare large ones
