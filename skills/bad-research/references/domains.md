@@ -23,9 +23,10 @@ The five questions, for any field:
 ## Software, infrastructure, databases
 
 - **Truth first: the source at a pinned version**, then its changelog, then its docs. In a blind test
-  on a Postgres-pooler question, every fact both judges found decisive came from reading the pooler's
-  code at a release tag — and the vendor's own docs said the opposite of the code ("same as PgBouncer").
-  Docs lag code; when they disagree, the code runs. `references/lanes/artifact-re.md`,
+  on a Postgres-pooler question, the facts both answers rested on came from reading the pooler's code at a
+  release tag, and the vendor's own docs said the opposite of the code ("same as PgBouncer"); what then
+  decided between the answers was coverage of the asker's own client libraries and a runnable inventory
+  query. Docs lag code; when they disagree, the code runs. `references/lanes/artifact-re.md`,
   `references/lanes/delta-vs-pinned-ref.md`.
 - **Criticism: the project's own issue tracker and PRs** — reproductions, maintainer comments ("a known
   footgun"), reverted commits, fixes merged to main but in no tag yet. Mailing lists for the database
@@ -33,8 +34,9 @@ The five questions, for any field:
   pgsql-general).
 - **Outside the channel:** maintainers' blogs and talks; engineering writing from teams that operate it
   at scale (AWS Builders' Library and the rest of `~/Desktop/compound-v/references/publications.tsv`).
-- **Run it:** a minimal repro against the exact version, or the library's own test suite — a skipped
-  test with a reason is a finding (a pooler's suite marked its LISTEN tests "No LISTEN/NOTIFY").
+- **Run it:** a minimal repro against the exact version — a number you measured outranks every number
+  you read. Read a project's own tests for what it claims to support, but check whether a skipped test is
+  skipped in every mode before treating it as evidence about one.
 - **Popularity trap:** tutorials and accepted answers. On Stack Overflow, 58.4% of obsolete answers were
   already obsolete when posted and only 20.5% are ever updated — read the comments and the non-accepted
   answers, and date everything.

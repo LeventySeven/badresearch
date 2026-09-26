@@ -63,19 +63,19 @@ Then **re-read the whole map, not just the new lines**: connections and your own
 when a log is re-read — Schulman fills "a missing piece in a puzzle" on his weekly journal review.
 
 **After the broad round, write the answer you would give now** — three sentences, under your hypotheses,
-never shown to readers. The deep rounds exist to break it: rank open questions by which could flip it,
-and go there first. Karnofsky writes down his "incredibly premature hypothesis" and reads what is "most
-likely to change the big-picture claim"; Steinhardt tries "harder and earlier to show that my ideas
-can't work". A hypothesis you wrote is a target; one you only hold is an anchor.
+never shown to readers — and rank open questions by which could flip it. The deep rounds exist to break
+it: Karnofsky reads what is "most likely to change the big-picture claim"; Steinhardt tries "harder and
+earlier to show that my ideas can't work". A hypothesis you wrote is a target; one you only hold is an anchor.
 
 **Deep rounds — every assignment is a named move drawn from the map.** An open question gets a direct
 query in the field's vocabulary; a one-source finding gets traced to its origin and checked for an
 independent rerun; a contradiction gets resolved; an unchased frontier item gets chased — citations back
 and forward, the author's other writing, the same thing under another name; two findings from different
-lanes get the question of what connects them; the leading claim gets its counterpart; a finding that
-fits no open question becomes a new one. Readers receive a snapshot of the map — verified findings as
-*already known, do not re-find*, unverified ones as leads to re-find or refute — never your hypotheses
-or rivals. The move table and the brief: `references/rounds.md`.
+lanes get the question of what connects them; the leading claim gets its counterpart; residue gets one
+query a round, and an item that turns out to bear on the answer is promoted to an open question. Readers
+receive the ranked open questions and a snapshot of the map — verified findings as *already known, do not
+re-find*, unverified ones as leads to re-find or refute — never your hypotheses, rivals or the asker's
+plans. The move table and the brief: `references/rounds.md`.
 
 **Stop** when the counter says so: past the tier's floor, one round that brought nothing new, and every
 open question closed or abandoned with a reason — then one last search in different words or a
@@ -142,18 +142,16 @@ you surer, not righter.
 
 **MUST name at least two rival explanations before committing, and carry them into the answer.** Use
 them to cut where you can — evidence every rival predicts equally well has no diagnostic value, and
-*"the most probable hypothesis is usually the one with the least evidence against it"* (Heuer, CIA) —
-but do not mistake the table for the win: in the one test of that full structured method with analysts,
-the control group was slightly *more* accurate, while making several independent judgments coherent and
-then pooling them cut error by 61%. So in deep runs the load-bearing claims get **pooled independent
-judgments** (`references/rounds.md`). Keep real mass on "something I have not thought of yet", and draw
-rivals from disjoint evidence — hypotheses generated from one pool are anchored the same way. This is not the disagreement quota refused below: it deletes evidence and
+*"the most probable hypothesis is usually the one with the least evidence against it"* (Heuer, CIA) — but
+the full structured table did not beat a control group when tested; in deep runs, add pooled independent
+judgments on the load-bearing claims (`references/rounds.md`). Keep real mass on "something I have not
+thought of yet", and draw rivals from disjoint evidence — hypotheses from one pool are anchored alike. This is not the disagreement quota refused below: it deletes evidence and
 adds a paragraph; a quota adds rounds and manufactures disagreements.
 
 **For a question about likelihood, size or outcome, find the base rate first** — how often things of
 this kind happen, before the specifics of this one. In a randomized trial of forecaster training, using
 comparison classes was the one principle associated with better accuracy; "hunt for the right
-information" was not. **Before the counterpart round, write down what finding would change your mind**
+information" was not. **Before you search against the leading claim, write down what would change your mind**
 — the forecasters' rule, and the adversarial-collaboration protocol's ("identify results that would change
 their mind"). A hunt with no stated target moves its goalposts toward what it already believes.
 
@@ -195,11 +193,9 @@ the reader's brief** — it carries the commands and the traps. Not all up front
 | Community | `references/lanes/community.md` | reception and what breaks in practice — the thread is primary |
 | X (API) | `references/lanes/x-live.md` | practitioners' own words, verbatim; the Latest tab and reply threads, where the unpopular half lives |
 
-For papers, `bash scripts/cite-chain.sh back|fwd|rerun|core …` chains citations both ways over OpenAlex
-— the move that found 51% of a large review's sources. On the owner's machine,
-`bash ~/Desktop/compound-v/scripts/alpha.sh "<topic>"` sweeps talks, arXiv,
-pinned exemplar repos, engineering blogs and practitioners in one command and returns pointers — breadth
-is mechanical; spend readers on reading what it lists.
+Two commands do breadth mechanically: `scripts/cite-chain.sh` (from this skill's directory) chains a
+paper's citations both ways over OpenAlex, and on the owner's machine `~/Desktop/compound-v/scripts/alpha.sh
+"<topic>"` sweeps talks, arXiv, exemplar repos, blogs and practitioners — spend readers on reading.
 
 **Sample both ends of popularity.** Search engines rank by audience, citation indexes by citations, feeds
 by engagement — measuring the same thing twice and quality never; higher-ranked review pages were
@@ -279,17 +275,13 @@ boundary, and returns findings with spans, how each was reached, source facts, f
 and seen sources — and never concludes. The brief carries the question verbatim and a boundary, and
 **withholds the thesis**: readers told what you are building return opinions instead of facts.
 
-**They exchange through the map, at round boundaries, through you.** Readers that never exchange were
-the losing shape on a web-research benchmark (−35% against one agent, with one model family); ungated
-sharing is the other — Anthropic's early research agents were "distracting each other with excessive
-updates", and in one incident a single move spread across an agent-made board to over 90% of 533 active
-agents while duplicate effort persisted until some began assigning lanes. So one line per finding, with its
-source identity and whether you verified it, plus the dead ends and the seen list, go to every reader at
-the next dispatch, with the ranked open questions each reader is serving. Fan out where results combine
-by union; assignments that must stay mutually consistent go to one reader. **Judgment stays
-independent**: forecasting teams that shared information while each member gave their own number,
-pooled by an algorithm, beat independents in a randomized trial — shared facts, separate verdicts.
-`references/delegation.md` has the measurements and the misreading this replaced.
+**They exchange through the map, at round boundaries, through you** — never not at all (readers that
+never exchanged lost to a single agent) and never continuously (ungated sharing spread one move across
+nearly every agent in one incident). One line per finding, with its span, its source identity and whether
+you verified it, plus the dead ends, the seen list and the open questions each reader serves, go to every
+reader at the next dispatch. Fan out where results combine by union; assignments that must stay mutually
+consistent go to one reader. **Shared facts, separate verdicts** — the measurements, their caveats and
+the misreading this replaced are in `references/delegation.md`.
 
 ## Checks, and what they are worth
 
@@ -344,7 +336,8 @@ name, because a rule dropped silently comes back wearing the words *thorough* an
   significant after controls). Both are refused. Readers run in parallel inside a round and exchange
   through the map at its boundary, gated by you.
 - **A mandatory multi-draft ensemble and a mandatory synthesizer** — judgment fanned out twice at double
-  the cost, for a gain measured once, by the seller, on one benchmark without long-horizon tasks.
+  the cost, for a gain measured once, by the seller, on one benchmark without long-horizon tasks. (The
+  deep tier's pooled judgments are not this: a few verdicts on named claims, advisory, and you decide.)
 - **Word floors** — *"argumentative: 5,000–10,000 words"*. Length is not thoroughness, and a floor makes
   padding mandatory.
 

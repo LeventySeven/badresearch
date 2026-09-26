@@ -1,6 +1,6 @@
 # Lane: web-live
 
-**Papers: chain citations with one command.** `bash scripts/cite-chain.sh back|fwd|rerun <doi or W-id>`
+**Papers: chain citations with one command.** `<skill dir>/scripts/cite-chain.sh back|fwd|rerun <doi or W-id>`
 (OpenAlex, keyless): references backward, citing works forward sorted by their own citations, and citers
 that mention replication. `core <id> <id> …` lists references shared across seeds — a field's core. It
 prints WORKING / EMPTY / MISSING / BLOCKED, never silence.

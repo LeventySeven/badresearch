@@ -142,11 +142,14 @@ if [ ! -x "$XH" ] || [ ! -r "$CV/research/.twitterapi_key" ]; then
   say x-live MISSING "no harvester or key under $CV/research/ — lane root does not resolve"
 else
   o=$(timeout 60 bash "$XH" top 'from:simonw -filter:retweets' 1 2>&1 | head -1)
+  # Classify on the SHAPE of the first line, never on a word inside it: a post or bio can contain
+  # "error", and matching that would file a healthy lane BLOCKED.
   case "$o" in
-    *'"_error"'*|*error*|*Error*) say x-live BLOCKED "${o:0:120}" ;;
-    '{"id"'*)                    say x-live WORKING "api returned verbatim posts" ;;
-    '')                          say x-live EMPTY "api answered, 0 rows for a known-active handle" ;;
-    *)                           say x-live UNCLASSIFIED "${o:0:120}" ;;
+    '{"_error"'*|curl:*|*"Could not resolve host"*|*"Couldn't connect"*|*"timed out"*)
+                        say x-live BLOCKED "${o:0:120}" ;;
+    '{"id"'*)           say x-live WORKING "api returned verbatim posts" ;;
+    '')                 say x-live EMPTY "api answered, 0 rows for a known-active handle" ;;
+    *)                  say x-live UNCLASSIFIED "${o:0:120}" ;;
   esac
 fi
 

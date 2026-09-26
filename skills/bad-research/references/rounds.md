@@ -68,9 +68,11 @@ A reader gets a **snapshot**, never the map itself:
   must NOT read, so boundaries can be checked for overlap before a token is spent
 - **the path of its lane file** (`references/lanes/<lane>.md` in this skill's directory) — read it first;
   it holds the paths, commands and traps of that kind of source, and without it a reader improvises
-- **the ranked open questions it is serving, and the facets of the asker's situation** (their stack,
-  tools, workflow — the richest statement of the need searches best: 32% recall against 18% from the
-  typed words alone) — but never your hypotheses, rivals or provisional answer
+- **the ranked open questions it is serving**, phrased as questions — they already carry the facets of
+  the asker's situation (their stack, tools, workflow), and the fullest statement of the need searches
+  best: searches built from the asker's own problem statement reached 32% recall against 18% from the
+  written question alone. Never your hypotheses, rivals, provisional answer, or what the asker plans to
+  do with the answer — readers told the goal return opinions instead of facts
 - the verified findings, frontier items, connections, dead ends and seen sources that touch its
   boundary, headed *"already known — do not re-find; extend, connect or break it"*; and the unverified
   findings, headed *"leads — re-find or refute"*
@@ -94,7 +96,8 @@ This file is the definition of the brief; `references/delegation.md` explains wh
 
 Its job is the representation, not the answer: which open questions exist, what the field calls things,
 which clusters of work there are. Everything later is filling that in, and a finding no open question
-fits (residue) is the signal the structure is wrong — add the question.
+fits (residue) goes on the Residue list: one query a round, and an item that turns out to bear on the
+answer is promoted to an open question (`--promise`) — that is how the structure changes.
 
 - **3–6 readers in parallel, each on a lane of a different KIND** — the lane files are the kinds: the
   local corpus, the live web (papers and primaries), practitioner video, the artifact itself (package,
@@ -127,12 +130,12 @@ fits (residue) is the signal the structure is wrong — add the question.
 | a finding with one source | trace it to its origin; look for an independent rerun inside the original's "cited by" (`experiment OR replication OR randomized`) — failed reruns are cited by a small minority of later citers, so they will not come to you |
 | a contradiction | resolve it: the window each covers, and which one read the primary |
 | an unchased frontier item | chase it: references back, citing papers forward (sort them by their own citations to surface the pivotal ones), the author's other writing, the same thing under another name or language |
-| a load-bearing paper or source | chase it both ways with `bash scripts/cite-chain.sh back|fwd|rerun <doi>` — a standing assignment in every deep round |
-| several seed papers | `bash scripts/cite-chain.sh core <id> <id> …` — references shared across seeds, and authors who recur, mark the field's core |
+| a load-bearing paper or source | chase it both ways with `<skill dir>/scripts/cite-chain.sh back|fwd|rerun <doi>` — a standing assignment in every deep round |
+| several seed papers | `<skill dir>/scripts/cite-chain.sh core <id> <id> …` — references shared across seeds, and authors who recur, mark the field's core |
 | a cluster nobody has chased yet | seed a reader there — a chain never reaches a cluster its seeds did not touch |
 | two findings from different lanes | ask what connects them — hold one facet near and push one far; most pairs connect to nothing, which costs one query |
 | the leading claim | its counterpart: criticism, failed reruns, and the record that would have to exist if it were true |
-| residue | a new open question |
+| residue | one query a round, exempt from the frontier gate (log it `residue:` in the map); promote the item to an open question only if the query shows it bears on the answer |
 | a BLOCKED or MISSING lane | another route (`silver`, an archive, a mirror) — never a verdict |
 | a dead end | never retried the same way |
 
@@ -183,15 +186,21 @@ none of them searched a different question, and its silence certifies nothing. T
 and it is there because independent searches that overlap are both a relevance signal and a recall
 check. The open web has no sampling frame, so it is a relative-recall check, not a guarantee — say so.
 
-## Pooled independent judgments (deep runs)
+## Pooled independent judgments (deep runs) — advisory; you decide
 
-After the stop, before writing: give two or three fresh-context judges the **verified** map — no
-hypotheses, no provisional answer — and the three to five claims the answer will rest on. Each returns a
-verdict and a probability for each claim, independently. Take the median; a wide spread on a claim is a
-deep-round assignment, not a paragraph to smooth over. This is judgment pooled on claims, not the
-multi-draft ensemble this skill refuses, and its support is extrapolated from forecasting: a structured
-hypothesis table did not beat a control group, while coherent, pooled independent judgments cut error by
-61%, and forecasting teams sharing facts but giving separate numbers beat independents.
+After the stop, before writing: spawn two or three fresh `general-purpose` judges. Each gets the question,
+the **verified** findings and the rivals (no hypotheses, no provisional answer), and the three to five
+claims the answer will rest on. Each returns, independently, a probability for each claim — and where
+claims are rivals, probabilities that sum to one (making judgments coherent before pooling is half of
+what the evidence measured). Take the median per claim. The median informs; the call is yours, and a
+disagreement between your call and the median is stated in the answer. A wide spread on a claim reopens
+one deep round on it: call `bad frontier-observe` for that round like any other (the floor is already
+met; one quiet round stops again).
+
+Why: in the one test of the full structured-hypothesis method with 50 analysts, the control group was
+slightly *more* accurate, while making several judgments coherent and then pooling them cut error by 61%;
+forecasting teams that shared facts but gave separate numbers beat independents. Both are from
+forecasting-style tasks — extrapolated here, and said so.
 
 ## What this replaced, and why
 

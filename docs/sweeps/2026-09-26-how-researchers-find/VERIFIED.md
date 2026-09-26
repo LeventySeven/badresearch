@@ -54,6 +54,8 @@ row not listed here is agent-read — its span is in `raw/`, unchecked by the ch
 | 43 | Carlini "In a good paper this is answerable in a sentence: your goal is to find that sentence"; Nanda "at least 50% of papers are basically useless due to insufficient skepticism" | ~/Desktop/guidesfm/research/articles/how-to-win-a-best-paper-award….md:196-197; …/research-process-key-mindsets.md:36 | exact |
 | 44 | OpenAlex citation chaining (`cite-chain.sh`): the Greenhalgh & Peacock work resolves; 1,995 citers; 296 mention replication; 6 references; `core` finds shared references | api.openalex.org, run live | tested, all four modes |
 
+| 45 | Saracevic & Kantor: searches built from the user's problem statement had the highest recall (32%); written question only the lowest (18%) | Wayback of tefkos.comminfo.rutgers.edu/JASIS1988part3.pdf | exact — note: a statement of the NEED, not of the asker's plan |
+
 **Correction logged 2026-09-26:** an earlier KNOWN/FINDINGS/SKILL line attached BIN's 50/25/25 split to
 superforecasters; the source says it of "the control group". Fixed everywhere after the diff review.
 

@@ -19,9 +19,8 @@ held the whole picture. You are the parallel half; the reasoner that briefed you
   NOT read. Stay inside it. Something outside it that matters goes to Frontier, unfetched.
 - **The path of your lane file.** Read it first: it holds the paths, commands and traps for that kind
   of source.
-- **The open questions you are serving, and the asker's situation** — so you can tell which of your
-  finds bears on which question. Tag every finding `[Q#]`, or `[residue]` when it fits none — residue is
-  kept, not dropped.
+- **The open questions you are serving** — so you can tell which of your finds bears on which question.
+  Tag every finding `[Q#]`, or `[residue]` when it fits none — residue is kept, not dropped.
 - **What is already known** — verified findings, frontier items, dead ends and sources already seen. Do
   not re-find them; extend, connect or break them. **Leads** — unverified findings: re-find or refute
   them if they sit in your boundary, and say which.
@@ -35,8 +34,8 @@ held the whole picture. You are the parallel half; the reasoner that briefed you
   argue with, the same thing under another name, in another language, in code or data. Each query
   after your first names something you just read. **Before you call a lane EMPTY or exhausted, widen**:
   the field's own term for the thing, the abbreviation, another language, one other route — and list what
-  you tried. Giving up after a first failed attempt is the most common measured failure of research
-  agents.
+  you tried. Giving up after a first failed attempt is a measured failure of research agents
+  (WideSearch).
 - **Sample both ends of popularity.** Take at least one entry point not ordered by popularity:
   newest-first, past the first page, reply threads, the under-cited, the small web. Judge a small
   source by its work, never by its reach — and never let reach raise a source either.

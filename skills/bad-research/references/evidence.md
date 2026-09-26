@@ -224,8 +224,8 @@ passes on it.
 - **Predict first.** Write the result you expect before you read it, and note the gap; a surprise is a
   frontier item, and a source that only confirms you adds confidence, not accuracy.
 - **The boring explanation.** After reading, ask whether it tested the dull alternative that would
-  produce the same observation. It is the most common reason one interpretability lead dismisses a
-  paper, and he estimates "at least 50% of papers are basically useless due to insufficient skepticism".
+  produce the same observation. It is "one of the most common reasons" one interpretability lead
+  dismisses a paper, and he estimates "at least 50% of papers are basically useless due to insufficient skepticism".
 
 # Judging a source you do not know — leave it, and grade it apart from its claim
 
