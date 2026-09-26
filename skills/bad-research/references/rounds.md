@@ -84,7 +84,8 @@ fits (residue) is the signal the structure is wrong — add the question.
 - **3–6 readers in parallel, each on a lane of a different KIND** — the lane files are the kinds: the
   local corpus, the live web (papers and primaries), practitioner video, the artifact itself (package,
   code, responses), terms and pricing, what changed since a date, a live measurement, people, the
-  evidence-synthesis professions, community threads. Different kinds, because seeds that all sit in one
+  evidence-synthesis professions, community threads, X through the API. `references/domains.md` says
+  which kinds carry the truth in the question's field — pick lanes from that, not from habit. Different kinds, because seeds that all sit in one
   cluster never reach the others, and you cannot pick clusters you have not found yet.
 - **Make the first queries different from one another.** Diversity at the first move is what counts;
   diversifying later turns measured as adding nothing.

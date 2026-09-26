@@ -135,6 +135,21 @@ elif [ "$gh_o" != simonw ]; then say people-track-record BLOCKED "gh=$gh_o"
 elif [ "$roster" -eq 0 ]; then say people-track-record EMPTY "roster present, 0 data rows"
 else say people-track-record WORKING "roster=$roster gh=$gh_o"; fi
 
+# 9. x-live — the API harvester. No script or no key is MISSING; an API error is BLOCKED.
+# The key is never read here: the script reads it itself, from a file beside it.
+XH="$CV/research/xh.sh"
+if [ ! -x "$XH" ] || [ ! -r "$CV/research/.twitterapi_key" ]; then
+  say x-live MISSING "no harvester or key under $CV/research/ — lane root does not resolve"
+else
+  o=$(timeout 60 bash "$XH" top 'from:simonw -filter:retweets' 1 2>&1 | head -1)
+  case "$o" in
+    *'"_error"'*|*error*|*Error*) say x-live BLOCKED "${o:0:120}" ;;
+    '{"id"'*)                    say x-live WORKING "api returned verbatim posts" ;;
+    '')                          say x-live EMPTY "api answered, 0 rows for a known-active handle" ;;
+    *)                           say x-live UNCLASSIFIED "${o:0:120}" ;;
+  esac
+fi
+
 echo
 [ $fail -eq 0 ] && echo "PASS | every lane named its state; none returned silence" \
                 || echo "FAIL | a lane returned something its own taxonomy cannot classify"

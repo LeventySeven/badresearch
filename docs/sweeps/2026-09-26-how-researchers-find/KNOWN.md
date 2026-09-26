@@ -273,8 +273,9 @@ twitter anyway" (works for insiders; F5 shows it can be bought). Counter to C2: 
 over breadth. If you do depth well, you get breadth for free."
 
 **K17. Scored expertise — what forecasters with a measured track record do (R3-2).** Skill is found by
-keeping score, not by fame: h-index vs accuracy r = 0.00; fame correlated with OVERCONFIDENCE r = .33
-(Atanasov & Himmelstein 2023). Information is the smallest lever: "Eliminating noise would reduce the
+keeping score, not by fame: among experts predicting trial outcomes, h-index vs accuracy r = 0.00 ✔;
+in Tetlock's expert study, fame correlated with OVERCONFIDENCE r = .33 ✔ (both via the Atanasov &
+Himmelstein 2023 review). Information is the smallest lever: "Eliminating noise would reduce the
 Brier score of the control group by roughly 50%; eliminating bias, by roughly 25%; and increasing information would deliver
 the remaining 25%" ✔ (Satopää et al., BIN). The CHAMPS KNOW training RCT: of ten principles only
 comparison classes (base rates) were associated with better performance ✔; "hunt for the right

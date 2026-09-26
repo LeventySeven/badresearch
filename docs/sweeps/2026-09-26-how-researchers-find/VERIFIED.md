@@ -40,6 +40,13 @@ row not listed here is agent-read — its span is in `raw/`, unchecked by the ch
 | 31 | Anthropic: early agents "distracting each other with excessive updates"; BIN: superforecasters "owe their success more to superior skills at tamping down measurement error" | ~/Desktop/guidesfm/research/articles/how-we-built-our-multi-agent-research-system.md:43; faculty.wharton.upenn.edu/…/mnsc.2020.3882.pdf | exact |
 | 32 | FM 2-22.3 (Admiralty grading): an "F" rating "does not necessarily mean that the source cannot be trusted, but that there is no reporting history" | the R3-1 reader's saved fetch of irp.fas.org/doddir/army/fm2-22-3.pdf via r.jina.ai (`scratchpad/r3/fm_jina.txt`) | exact, in the reader's raw bytes (not re-fetched) |
 
+| 33 | Stack Overflow: 58.4% of obsolete answers obsolete when posted; 20.5% ever updated | arxiv.org/pdf/1903.12282 | exact |
+| 34 | Weissburg et al.: tweeted papers' "median citation counts 2-3 times higher than those of the control group"; curator bio "dm for promo" | export.arxiv.org/abs/2401.13782; twitterapi.io profile of the curator | exact |
+| 35 | IQWiG objective vs conceptual search: sensitivity 97% vs 75% | PubMed 27256930 (efetch) | exact |
+| 36 | Published vs grey literature: effects larger "by 15%" | PubMed 11072941 (efetch) | exact |
+| 37 | h-index vs accuracy r = 0.00 (experts predicting efficacy outcomes); fame vs overconfidence r = 0.33 (Tetlock) | the R3-2 reader's saved text of Atanasov & Himmelstein 2023 (`scratchpad/r3-2/atanasov2023.md`) | exact, in the reader's raw bytes — and the context was corrected: not "forecasting tournaments" |
+| 38 | X: "TODO(noam): write a paper" (jekbradbury); appendix A.6 (jkcarlsmith); "I have no idea who this person is (small account)…" (jachiam0); Lei Yang "checked the five reviews … Not a single reviewer noticed" | twitterapi.io verbatim text in the R1-A/R1-B harvests | exact |
+
 **Correction logged 2026-09-26:** an earlier KNOWN/FINDINGS/SKILL line attached BIN's 50/25/25 split to
 superforecasters; the source says it of "the control group". Fixed everywhere after the diff review.
 

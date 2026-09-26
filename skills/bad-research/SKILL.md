@@ -34,7 +34,10 @@ were handed is the fourth form of the need, and the richest statement of it sear
 into facets two ways, and make each facet an open question: **every item the question names**, and
 **every part of the asker's own situation the answer has to reach** — their stack, their tools, their
 workflow, their next action. One agent's missed key points were 78.5% uncovered facets of a broad
-question; the facets nobody wrote down are the ones no round goes looking for. Start the
+question; the facets nobody wrote down are the ones no round goes looking for. **For every domain the
+facets touch — software, AI research, design, science, markets, law, people — read
+`references/domains.md`**: where that field writes its truth first, where it keeps its criticism, who
+writes outside the formal channel, and what you can run yourself. Start the
 **map**: `research/<slug>/MAP.md`, holding open questions, findings (one line each, with a verbatim
 span, its source and how it was reached), the frontier, connections and contradictions, dead ends, the
 sources already seen, and your hypotheses. Template and rules: `references/rounds.md`. Register the
@@ -166,6 +169,11 @@ the reader's brief** — it carries the commands and the traps. Not all up front
 | People | `references/lanes/people-track-record.md` | whose account to weight, ranked by incentive not prominence |
 | Evidence synthesis | `references/lanes/evidence-synthesis.md` | the professions that do this for a living — systematic review, intelligence, information science |
 | Community | `references/lanes/community.md` | reception and what breaks in practice — the thread is primary |
+| X (API) | `references/lanes/x-live.md` | practitioners' own words, verbatim; the Latest tab and reply threads, where the unpopular half lives |
+
+On the owner's machine, `bash ~/Desktop/compound-v/scripts/alpha.sh "<topic>"` sweeps talks, arXiv,
+pinned exemplar repos, engineering blogs and practitioners in one command and returns pointers — breadth
+is mechanical; spend readers on reading what it lists.
 
 **Sample both ends of popularity.** Search engines rank by audience, citation indexes by citations, feeds
 by engagement — measuring the same thing twice and quality never; higher-ranked review pages were

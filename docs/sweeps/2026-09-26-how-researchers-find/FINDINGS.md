@@ -50,8 +50,9 @@ the chair against the source bytes (✔). Evidence rows with spans: `KNOWN.md`; 
    accuracy, removing noise would cut the control group's error about 50%, removing bias about 25%, and
    more information the remaining 25% ✔; superforecasters "owe their success more to superior skills at
    tamping down measurement error, than to unusually incisive readings of the news" ✔. Tagging a forecast "hunt for the right information" bought no measurable
-   accuracy; starting from a base rate did ✔. Skill is found by keeping score: h-index vs accuracy
-   r = 0.00, and fame went with overconfidence.
+   accuracy; starting from a base rate did ✔. Skill is found by keeping score: among experts predicting
+   trial outcomes, h-index vs accuracy was r = 0.00 ✔, and in Tetlock's expert study fame went with
+   overconfidence (r = 0.33) ✔.
 
 ## Your direction, tested
 
