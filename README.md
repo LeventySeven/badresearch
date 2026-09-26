@@ -18,24 +18,30 @@ and a `[local]` neural extra are enhancements, never requirements. Originally a
 fork of [hyperresearch](https://github.com/jordan-gibbs/hyperresearch); the
 research skill itself was rebuilt from scratch in 2026-09.
 
-**What it actually is now.** One skill (`skills/bad-research/SKILL.md`, 250 lines of
-qualities and refusals — not steps), eight lane recipes read on demand, two
-agents, and nine `bad` subcommands that exit non-zero when a rule is broken.
+**What it actually is now.** One skill (`skills/bad-research/SKILL.md`) that runs research in
+**rounds**: a broad round of parallel readers finds the shape of the question, and each later round is
+built from what the earlier ones found. The readers exchange what they found through one per-run map
+(`research/<slug>/MAP.md`: open questions, one-line findings with verbatim spans, the frontier, dead
+ends, sources already seen), so nothing is found twice; the reasoner holds the map and all judgment.
+Ten lane recipes read on demand, three agents (a reader that works a lane or a lead, a critic, an
+adjudicator), and the `bad` subcommands that exit non-zero when a rule is broken.
 
 The one mechanism is the **frontier**: every query after the first must NAME
 something a previous read produced, and a query that names nothing is a re-phrase
 and is refused by `bad frontier-gate`. The stop signal is computed in code before
-the next prompt is built — from what arrived *and* what the answer still owes —
+the next round is built — from what arrived *and* what the answer still owes —
 because a model that wants to keep searching is not a witness to its own
 diminishing returns. An open disagreement between sources blocks the finish, and
 ranking one side does not license dropping the other.
 
-Why those and not something else: of seven open-source research engines read in
+Why those and not something else: of eleven open-source research engines read in
 source, exactly one generates its next question from evidence it retrieved and did
 not use; none of them has contradiction handling in code; and a draft whose every
 sentence is false but carries a resolving citation passes a presence-based gate
-clean. The design notes and the measurements are in
-[`docs/sweeps/`](docs/sweeps/) and in the skill's own `references/`.
+clean. How the best researchers, investigators and forecasters actually find and filter information —
+the evidence the rounds are built on — is in
+[`docs/sweeps/2026-09-26-how-researchers-find/FINDINGS.md`](docs/sweeps/2026-09-26-how-researchers-find/FINDINGS.md);
+the other design notes and measurements are in [`docs/sweeps/`](docs/sweeps/) and the skill's `references/`.
 
 ## Install
 
@@ -53,8 +59,8 @@ bad install
 bad doctor
 ```
 
-`bad install` writes the entry skill to `~/.claude/skills/bad-research/`; the per-step
-skills install lazily on first use. For a project-local install instead of global, run
+`bad install` writes the skill to `~/.claude/skills/bad-research/` and its agents to
+`~/.claude/agents/`. For a project-local install instead of global, run
 `bad install --project` inside the project. `bad doctor` shows what's wired (host model,
 keyless search/browse, the optional external CLIs it can drive, the `[local]` neural stack).
 
@@ -70,40 +76,25 @@ After `bad install`, open Claude Code in any project and either:
   comparing vector databases"*, *"literature review on GLP-1 drugs"*) and Claude loads the
   skill automatically.
 
-It scales to the question: a simple lookup gets a fast cited answer in minutes; a broad or
-contested one runs the full adversarially-reviewed pipeline (~1.5–2.5 h). The final report
-and every fetched source land in a vault under `./research/` that compounds across sessions.
+It scales to the question, and says which tier it chose in the first line of the answer:
 
-### Pick the depth (it auto-scales, or force it)
+- **Answer from what you have** — stable knowledge, cheap to be wrong. Never for a version, price,
+  quota, date or proper name.
+- **Quick** — one reasoner chaining queries from what it read; minutes.
+- **Standard** (the default for a real question) — a broad round of 3–6 parallel readers on different
+  kinds of source, then deep rounds built from the map until a round brings nothing new and every open
+  question is closed.
+- **Deep** — expensive to be wrong, contested, "find all", or an unfamiliar field: at least three rounds,
+  a round spent on counter-evidence and origins, an independent check pass that never sees the map, and
+  a multi-lens critique before the answer.
 
-By default the skill **auto-routes** — a simple, bounded question takes the **fast** route
-(a quick cited answer, minutes); a broad or contested one takes the **full**
-adversarially-reviewed pipeline (~1.5–2.5 h). You can steer it:
+Ask for a tier in plain words ("quick answer", "go deep on this"). The run's map and each reader's raw
+return land under `./research/<slug>/`, so a long run is auditable after the fact.
 
-- **Want a thorough report without the multi-hour wait?** The **fast** route is the sweet
-  spot — its breadth branch fans out K parallel researchers over a wide multi-source browse,
-  then writes a sectioned, fully-cited answer in minutes. Force it with `bad route --apply
-  --fast` if the auto-router picked `full` and you want the quicker take. If you're just
-  trying Bad Research out, start here.
-- **Dial the effort** with `--effort minimal|low|medium|high` to nudge the route and per-step
-  fan-out (`minimal`/`low` bias toward fast; `medium`/`high` toward full).
-- **Dial the throughput** with `bad funnel-gather --concurrency N` (1–16, default 8) — how many
-  provider searches run at once during the search fan-out. Raise it on a fast, tolerant network;
-  lower it if searches start coming back empty.
-
-There is deliberately **no unbounded / "use everything" mode**, and two measured limits are why.
-The search backend is keyless and scraped, so it has no rate-limit contract: past a handful of
-concurrent requests it soft-blocks, and a soft-block returns an empty result list that is
-indistinguishable from "this topic has no sources" — an uncapped fan-out reports its own traffic
-as a research gap. And reading past roughly 80 sources measurably *degrades* synthesis rather
-than improving it, so the read ceiling is a report-quality bound, not a cost-saving one. The
-knobs above give you the throughput control without either failure mode.
-
-On an interactive run the skill announces the chosen route and its rough ETA before it
-commits to a long job (and for `full` it shows the editable plan first), so you're never
-surprised by a 2-hour job you didn't want. The route is decided from the step-1
-decomposition and shown by that up-front in-skill route announcement — so you see which
-route a query takes before any long work starts.
+**Why there is no unbounded mode.** Two measured limits: a keyless, scraped search backend soft-blocks
+past a handful of concurrent requests and returns an empty list indistinguishable from "no sources", so
+an uncapped fan-out reports its own traffic as a research gap; and past a floor, more sources buy
+confidence rather than accuracy. The rounds stop on a computed signal instead (`bad frontier-observe`).
 
 > Want the latest unreleased build? Install from source: `pipx install git+https://github.com/LeventySeven/badresearch.git`
 
@@ -122,7 +113,7 @@ bad install
 ```
 
 `bad install` is idempotent — re-run it any time after upgrading the CLI to pull the newest
-entry skill + agents (the per-step skills refresh lazily on the next `/bad-research` run).
+skill + agents.
 Confirm with `bad --version`.
 
 ## What it does

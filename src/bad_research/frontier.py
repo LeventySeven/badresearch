@@ -22,6 +22,13 @@ MIN_NEW_DOMAINS = 2   # MIN_SOURCES_PER_SUBQ / RESERVE_FOR_SYNTHESIS land with t
 # enforce is worse than an unstated one -- the reader believes the counter holds it.
 MIN_RETRIEVALS = 5
 QUIET_PATIENCE = 2
+# Those two are the per-RETRIEVAL defaults, right for one reasoner chaining queries. A run
+# that works in ROUNDS -- several readers per round, pooled by the reasoner -- observes once
+# per round, and there the same numbers are wrong in both directions: a floor of 5 rounds is
+# far past what a real question needs, and a whole round of readers is already many searches,
+# so one quiet round is the saturation signal (Wohlin ends a snowballing loop on the first
+# round that finds nothing new). The run sets its own floor and patience at the first
+# observe; they persist, so the rule cannot drift between calls.
 
 
 @dataclass
@@ -162,6 +169,24 @@ class FrontierState:
     open_cells: set[str] = field(default_factory=set)
     closed_cells: set[str] = field(default_factory=set)
     abandoned: dict[str, str] = field(default_factory=dict)
+    min_steps: int = MIN_RETRIEVALS
+    patience: int = QUIET_PATIENCE
+
+    def set_rule(self, floor: int | None = None, patience: int | None = None) -> None:
+        """Fix the run's floor and patience. Both must be at least 1.
+
+        Refuses zero or less: a floor of 0 or a patience of 0 is a stop that fires before
+        anything has been read -- the check that can only pass, which this module exists to
+        prevent.
+        """
+        if floor is not None:
+            if floor < 1:
+                raise ValueError("--floor must be at least 1")
+            self.min_steps = floor
+        if patience is not None:
+            if patience < 1:
+                raise ValueError("--patience must be at least 1")
+            self.patience = patience
 
     def close_cell(self, cell: str) -> None:
         """Mark a promised cell filled. Refuses one that was never promised.
@@ -247,11 +272,12 @@ class FrontierState:
         # two commands and got STOP after two retrievals and ONE quiet round. A rule
         # stated in the skill and absent from the code it names is worse than an
         # unstated one: the reader believes the counter enforces it.
-        if self.steps < MIN_RETRIEVALS:
+        if self.steps < self.min_steps:
             return False
         # `quiet_streak` is computed once per round in `observe_round`, so asking twice
-        # cannot advance it. One quiet round is noise; two consecutive is the signal.
-        return self.quiet_streak >= QUIET_PATIENCE and not self.open_cells
+        # cannot advance it. Per retrieval, one quiet step is noise and two consecutive is
+        # the signal; per ROUND (see `set_rule`), one quiet round already is.
+        return self.quiet_streak >= self.patience and not self.open_cells
 
     @property
     def frontier(self) -> Frontier:
@@ -289,6 +315,8 @@ class FrontierState:
                     "last_new_domains": self.last_new_domains,
                     "last_new_entities": self.last_new_entities,
                     "quiet_streak": self.quiet_streak,
+                    "min_steps": self.min_steps,
+                    "patience": self.patience,
                 },
                 indent=2,
             ),
@@ -313,6 +341,8 @@ class FrontierState:
             last_new_domains=int(d.get("last_new_domains", 0)),
             last_new_entities=int(d.get("last_new_entities", 0)),
             quiet_streak=int(d.get("quiet_streak", 0)),
+            min_steps=int(d.get("min_steps", MIN_RETRIEVALS)),
+            patience=int(d.get("patience", QUIET_PATIENCE)),
         )
 
 

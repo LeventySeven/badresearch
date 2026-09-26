@@ -216,6 +216,41 @@ caveat, or with an unflagged source that corroborates it, or it does not carry t
 "this will likely reach X by 2027" becomes "X reached" one paraphrase later, and every check here
 passes on it.
 
+# Judging a source you do not know — leave it, and grade it apart from its claim
+
+The flags above describe a source you have read. Most of the junk is cheaper to catch before that.
+
+**Leave the page and read about it.** Professional fact-checkers left an unfamiliar site within about
+half a minute and looked it up elsewhere; PhD historians read it closely and were fooled by its
+reference list. "Fact checkers, in short, learned most about a site by leaving it." (Wineburg & McGrew,
+2019; 10 per group — small.) A lateral read asks two things: **who is behind this** (funder, owner, the
+front group behind a friendly name) and **was the signal manufactured** (coordination among the
+accounts pushing it, throwaway accounts, synchronized stars or reviews). Industry-sponsored trials
+reached favourable conclusions more often (RR 1.34) while scoring *better* on standard risk-of-bias
+checks, so the funder is its own axis, invisible to a methods check.
+
+**Grade the source and the claim on separate axes, then watch them merge.** Intelligence doctrine rates
+the source's reliability apart from the information's credibility; measured analysts collapse the two
+onto one scale anyway. Keep them apart in the map: *source* — known good / no track record / known bad;
+*claim* — independently confirmed / single source / contradicted. **No track record is not a negative**
+— the doctrine says so explicitly — and for a small or new source it is the usual case. Then judge the
+work on its own terms: re-run it, check its numbers (a reported mean that is impossible for its n is a
+mechanical flag), check what its bibliography rests on.
+
+**Never decide whether a claim is TRUE by searching its own words.** People encouraged to search a
+false article's claims came to believe them *more* (+19%); 77% of queries built from a false article's
+headline or URL returned an unreliable link in the top ten, against 21% for other queries (Aslett et
+al., Nature 2024 — fresh news). A phrase nobody else uses returns the ecosystem that coined it. Search
+the topic in the field's own words, or find better coverage of the claim from sources that did not
+carry it to you. Searching its exact words to find where it came FROM is a different move, and allowed
+— then judge that origin laterally.
+
+**The unpopular corner is where planted content wins.** A low-traffic query is a data void: whoever
+prepared content for it in advance owns the results. So an obscure source must pass a lateral read
+before it carries weight — and a genuinely neglected one usually does (independent sources outside its
+own ecosystem mention it; its producers show no coordination), while a planted one does not. Neither
+test is measured; say which you ran.
+
 # Weight testimony against interest UP
 
 The flag table above gives eight ways to *discount* a source and no way to *promote* one, so a

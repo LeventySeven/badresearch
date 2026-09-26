@@ -3,24 +3,36 @@
 Read this when a question is big enough that one reader cannot cover it. The rule in SKILL.md is one
 line; this is what it costs, when it inverts, and what a brief must carry.
 
-## The number that decides the shape
+## The number that decides the shape — and how it was misread here
 
-A controlled 180-configuration sweep (4 benchmarks, 3 model families) measured **error amplification**
-— the rate at which one agent's mistake reaches the final result:
+A controlled sweep of 180 configurations (Kim et al., arXiv 2512.08296; 4 agentic benchmarks, 3 model
+families) is the best measurement of multi-agent topology there is. This file used to cite it as
+"17.2× vs 4.4× error amplification, and on strictly sequential work all four multi-agent shapes lost by
+39–70%", and to conclude that frontier-chained research is a do-not-fan-out tier. Read in the primary,
+none of that holds for research:
 
-| topology | amplification | on strictly sequential work |
-|---|---:|---|
-| independent parallel agents that never communicate | **17.2×** | **all four multi-agent shapes lost, by 39–70%** |
-| centralized orchestrator as a validation bottleneck | **4.4×** | — |
-| centralized, on parallelizable work | — | beat single-agent by 80.9% |
+| what the paper measured | what it actually says |
+|---|---|
+| 17.2× (independent) vs 4.4× (centralized) | **trace-level** amplification; "neither the main effect of error amplification (β=0.014, p=0.658) … reaches statistical significance" once other coordination metrics are controlled |
+| −39% to −70% for every multi-agent shape | **PlanCraft** — "sequential constraint satisfaction (planning)", not multi-hop research |
+| its web-research benchmark (BrowseComp-Plus) | independent agents that never exchange **−35%** vs one agent; decentralized agents exchanging their work between rounds **+9.2%** (0.347 vs 0.318, about 3 points on 100 tasks); a central orchestrator **+0.2%**. In its own words: decentralized coordination "benefits tasks requiring parallel exploration of high-entropy search spaces" |
+| its out-of-sample check | the independent-agent loss held on GPT-5.2 and **not** on held-out Gemini models (+11.1%, +5.9%) |
 
-A predictor over tool count and decomposability picks the right topology for 87% of unseen
-configurations (R²=0.513). Anthropic measured the same direction on BrowseComp: unintended-solution
-rate 0.24% single-agent vs 0.87% multi-agent, **3.7×**, and named the mechanism as *sampling* — more
-parallel searchers per round raise the chance one hits leaked material.
+Two more figures from the same paper that this file quoted: a within-domain predictor picks the best
+topology for 87% of held-out configurations, and centralized agents gained +80.8% on a finance task.
+Anthropic measured a separate effect on BrowseComp — unintended-solution rate 0.24% single-agent vs 0.87%
+multi-agent, **3.7×** — and named the mechanism as *sampling*: more parallel searchers per round raise
+the chance one hits leaked material.
 
-**So the frontier-chained tier is a DO-NOT-FAN-OUT tier.** It is sequential by definition, and every
-parallel shape tested lost there by 39–70%. Fan out for breadth; never for depth.
+**So the shape is: depth from sequential rounds, breadth from parallel readers inside a round, and an
+exchange at every boundary.** Readers that never exchange are the losing shape; free, continuous
+sharing is the other one (it herded over 90% of 533 active agents onto one workstream). What crosses is
+gated: one line per finding with its span and its source, the dead ends, the sources already seen —
+read by every reader at dispatch, admitted by the reasoner (`rounds.md`). The evidence is thin and
+mixed, and the honest reading is that it neither forbids fan-out nor proves it; the stronger support
+comes from outside this paper — a shared verified board with shared failures beat isolated attempts on
+code and long-document tasks (DeLM), and forecasting teams that shared information but each gave their
+own number, pooled by an algorithm, beat independents in a randomized trial (Mellers 2014).
 
 ## The union test — the discriminator, sharper than "reading, never judgment"
 
@@ -83,7 +95,10 @@ BrowseComp decomposition is the half that survives.
 A shipped research subagent carries three levels, not one: a **floor** — a minimum of five distinct
 tool calls; a **soft stop** at ~15 calls / ~100 sources; and a **hard kill at 20**, where exceeding the
 limit terminates the subagent. A ceiling enforced by killing the reader is a design choice: it makes
-partial findings the failure mode instead of an unbounded run.
+partial findings the failure mode instead of an unbounded run. Those numbers fit a **lead** (5–20
+calls). A **lane** — a reader that searches a whole kind of source and follows its chains — needs more:
+the lanes of the sweep behind `rounds.md` ran 52–141 tool calls each. Give a lane up to ~50 and let it
+return partial findings past that.
 
 Related and worth copying: retries are free. A turn counter that is not incremented after an empty
 model turn or a denied action spends budget only on productive iterations.

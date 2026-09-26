@@ -88,6 +88,45 @@ typed, including typos. Anything not in a quote block is annotation and carries 
   opinion, and the revamp would ship with no baseline.
 - **Create this file.** Chose: "yes and save my words from this session start."
 
+## 5. 2026-09-26 — the rebuild lost depth; research it again from scratch
+
+Given after the rebuild branch (`feat/research-rebuild-slice-1`) was found unmerged. Pasted by the
+owner, verbatim:
+
+> We had a huge research before on how research actually works best — how to find genuinely quality
+> information on any topic, the alpha, not marketing noise. A source's popularity doesn't always
+> correlate with quality — look for popular and unpopular sources.
+>
+> Intuitively it resembles a graph database. Only intuitively — don't implement one.
+>
+> Do the research again from scratch, because that research seemed very weak to me. With
+> gathering-context and the Twitter API: research how top researchers actually find research — how
+> they get the top 1%, filter junk, get even the rarest information.
+>
+> Why a systematic approach? Because you're looking for interconnections between every piece of
+> knowledge. The more that web grows, the easier it becomes to find new information. Broad-first,
+> then dig deeper using what you already found.
+>
+> Parallel agents can do this, but they must pass their knowledge to each other as
+> interconnections, so they don't find the same information twice.
+>
+> What I'm getting at: after we revamped Bad Research, it became simpler and smaller — but I'm
+> afraid we lost quality. The previous version wasn't aligned to this direction, but it was deeper
+> and broader. Yes, over-engineered, over-complicated somewhere; we lightened it — but I sense we
+> lost quality. The skill we ended up with isn't enough for genuinely multi-step, multi-round
+> research.
+>
+> My direction needs to be tested. On Twitter: only the best practitioners, founders, researchers —
+> from the best research labs or top startups. The end state: aligned to the new direction, super
+> high quality, and at the same time simple.
+
+Annotation (no authority): this adds four things the earlier sections did not say — **popularity is
+not quality, so sample the unpopular on purpose**; **broad FIRST, then deep**, stated as an order;
+**parallel workers must hand each other what they found so nothing is found twice**; and **the
+direction itself is a hypothesis to be tested against the best practitioners**, not a spec to obey.
+It also states the regression the owner perceives: the merged skill is not enough for genuinely
+multi-round research.
+
 ---
 
 ## What this file BINDS — read as constraints, not as suggestions

@@ -67,6 +67,8 @@ def frontier_observe_cmd(
     promise: str = typer.Option("", "--promise", help="Comma-separated cells the answer OWES (set once, up front)."),
     close: str = typer.Option("", "--close", help="Comma-separated promised cells this round filled."),
     abandon: str = typer.Option("", "--abandon", help="cell=reason — give up on a promised cell, with a reason."),
+    floor: int = typer.Option(0, "--floor", help="Minimum observes before a stop (default 5 per retrieval; a round-based run sets its tier's minimum rounds). Persisted."),
+    patience: int = typer.Option(0, "--patience", help="Consecutive quiet observes that signal saturation (default 2 per retrieval; 1 per round). Persisted."),
     json_out: bool = typer.Option(False, "--json", help="Emit the counters as JSON."),
 ) -> None:
     """Record what a retrieval round brought back and compute the stop signal.
@@ -77,6 +79,11 @@ def frontier_observe_cmd(
     absent, a constant someone picked, or a convergence check that could never fire.
     """
     st = FrontierState.load(state)
+    try:
+        st.set_rule(floor=floor or None, patience=patience or None)
+    except ValueError as e:  # typer passes 0 for "not given"; only negatives reach here
+        typer.echo(str(e), err=True)
+        raise typer.Exit(code=2) from None
     st.open_cells |= {x.strip() for x in promise.split(",") if x.strip()}
     for c in (x.strip() for x in close.split(",") if x.strip()):
         st.close_cell(c)
@@ -96,6 +103,8 @@ def frontier_observe_cmd(
         "seen_domains": len(st.seen_domains),
         "residual": st.residual(),
         "abandoned": st.abandoned,
+        "floor": st.min_steps,
+        "patience": st.patience,
     }
     if json_out:
         typer.echo(_json.dumps(payload))

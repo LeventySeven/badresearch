@@ -43,8 +43,8 @@ all.
 
 ## 2. Lenses, chosen so they do not overlap
 
-Run these as separate readers. The value is in the diversity, not the count — three lenses that
-look for different failures beat five that look for the same one.
+Run these as separate readers. The value is in the diversity, not the count — lenses that look
+for different failures beat more lenses that look for the same one.
 
 | Lens | Asks | Why this one |
 |---|---|---|
@@ -52,6 +52,7 @@ look for different failures beat five that look for the same one.
 | **Assumption** | Take the top five causal or quantitative claims. Split each into its sub-assumptions. Verify each **independently**. | This operationalises the one judging arrangement with evidence behind it: a judge over *one decomposed claim with its own evidence* reaches 72% agreement and a 76% win rate at 20× less cost. A judge over a whole report does not. Cap it at five claims — past that it becomes a second draft. |
 | **Dialectic** | Where does the answer ignore, hedge, or straw-man the counter-evidence? | The failure the answer cannot see from inside. |
 | **Width** | What does the evidence in hand support that the answer never says? | Catches the read-and-not-used failure, which is a different failure from not-retrieved. |
+| **Depth** | Which load-bearing claim rests on one source, on a secondary account, or on an origin nobody opened? | The older system's blind-judged win came from a five-critic fan-out that included a depth critic, and the merge dropped it. Citation cascades end at one source surprisingly often, and a "replication" is often the same claim cited again. Each finding here becomes a trace-to-origin or rerun fetch, not a hedge. |
 
 An **absence claim gets its own pass**, because it is the class that shipped: run
 `bad absence-gate --report <draft>`, and treat every UNSCOPED hit as an instruction-lens finding.

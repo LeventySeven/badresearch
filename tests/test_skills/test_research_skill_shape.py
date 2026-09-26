@@ -241,8 +241,16 @@ def test_the_five_refusals_are_stated_with_reasons():
 
     Each is refused by name because each is refutable-sounding-but-wrong in a way that
     reads as rigour: a quota on disagreements manufactures them, a reader forced to
-    conclude returns opinions, mandatory parallelism amplifies error 17.2x, a mandatory
-    ensemble fans out judgment, and a word floor makes padding mandatory.
+    conclude returns opinions, a mandatory ensemble fans out judgment, and a word floor
+    makes padding mandatory.
+
+    The third needle was "17.2" until 2026-09-26. That figure (Kim et al., arXiv
+    2512.08296) turned out, read in the primary, to be trace-level amplification that is
+    not significant after controls, and the refusal built on it had banned parallel depth
+    outright. The refusal now names the two shapes the evidence does refuse -- parallel
+    readers that NEVER EXCHANGE (-35% vs one agent on the paper's web-research benchmark)
+    and free, continuous sharing (it herded >90% of 533 agents onto one workstream) -- so
+    the needle follows the idea, not the number that was misread.
     """
     body = SKILL.read_text(encoding="utf-8")
     _, sep, refusals = body.partition("## What this skill refuses")
@@ -252,5 +260,5 @@ def test_the_five_refusals_are_stated_with_reasons():
     # never about where the wrap fell — a first version failed on "never\n  concludes"
     # and would have been "fixed" by editing the skill to satisfy the test.
     refusals = " ".join(refusals.partition("## The answer")[0].split())
-    for needle in ("quota", "never concludes", "17.2", "ensemble", "Word floors"):
+    for needle in ("quota", "never concludes", "never exchange", "ensemble", "Word floors"):
         assert needle in refusals, f"the refusals section no longer names {needle!r}"
