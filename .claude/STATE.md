@@ -34,3 +34,4 @@ Stop = Goal. Escalate only on: a one-way door (push to a public remote other tha
 - Run `bad install` for the owner before the improved skill is final — do it once, at the end, and say so.
 - Commit research/ answers (repo is PUBLIC; answers may cite private memory).
 - Read KNOWN-findings via agents only — load-bearing primaries get opened by the chair.
+- Take a held-out arm's last message as its answer without checking it: T1O ended its turn with "round 3 running" while its readers lived on; their results come to the chair. Save them into the arm's work/ and SendMessage the arm to continue.

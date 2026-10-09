@@ -51,7 +51,10 @@ _BIB = (r"(?:source|sources|paper|papers|study|studies|published|publication|pub
         r"|literature|measurement|measurements|dataset|datasets|benchmark|benchmarks"
         r"|work|works)")  # not author/authors: "as though they had no authors" is rhetoric
 _BIBVERB = (r"(?:publish(?:es|ed)?|measures|measured|measure|report(?:s|ed)?"
-            r"|quantif(?:y|ies|ied)|sampled|studied|rerun|replicated|split)")
+            r"|quantif(?:y|ies|ied)|sampled|studied|re-?run|re-?ran|replicated|split"
+            # Added 2026-10-10: a critic found "No one has settled it at frontier scale" and
+            # "nobody has re-run that comparison" in a draft the gate had passed with 0 claims.
+            r"|settled|tested|compared|evaluated|shown|demonstrated)")
 
 _ABSENCE = re.compile(
     r"""(?ix)
@@ -79,6 +82,7 @@ _SCOPE = re.compile(
       | (?:i|we) \s+ (?:could \s+ not|did \s+ not|was \s+ not \s+ able|were \s+ not \s+ able|
                         failed \s+ to|have \s+ not) \s+ (?:find|reach|locate|see|obtain)
       | (?:i|we) \s+ (?:reached|read|examined|screened|searched|surveyed|checked)
+      | (?:i|we) \s+ found \s+ no(?:thing)? \b
       | (?:of|among|within) \s+ the \s+ \d[\d,]* \s+ \w+
       | of \s+ the \s+ (?:sources|papers|works|studies|files|notes) \s+ (?:i|we) \s+
       | in \s+ what \s+ (?:i|we) \s+ (?:read|reached|found|searched)

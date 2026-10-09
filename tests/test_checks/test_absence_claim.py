@@ -83,5 +83,19 @@ def test_first_person_reach_counts_as_scope():
         "I could not find any published measurement of the discard-side rate.",
         "Of the 44 sources I read, no paper splits the error by direction.",
         "In the pretraining lane, no study reports what the classifier threw away.",
+        "I found no published noise floor for judged long-form research answers.",
     ):
         assert find_absence_claims(scoped).ok, scoped
+
+
+def test_settled_and_rerun_are_record_verbs():
+    """Missed in a 2026-10-10 held-out draft: the gate reported 0 claims on both."""
+    for missed in (
+        "No one has settled it at frontier scale in public.",
+        "Wen's judge accepts 71% of wrong chains, and nobody has re-run that comparison with a validated judge.",
+        "Nobody has tested the cue at large k.",
+    ):
+        r = find_absence_claims(missed)
+        assert r.claims and not r.ok, missed
+    scoped = "Across the lab reports and arXiv searches in this run, I found no controlled comparison; nobody has compared them that I could reach."
+    assert find_absence_claims(scoped).ok
