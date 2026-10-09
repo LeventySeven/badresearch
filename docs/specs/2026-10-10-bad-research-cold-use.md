@@ -24,10 +24,11 @@ claims per answer against the primary.
 | D4 did "LLM ideas more novel" hold up | 42 min, 13 | 6.5 min, 0 | skill SLIGHT, skill SLIGHT |
 | D5 who does credible long-horizon agent evals | 51 min, 12 | 10 min, 1 | skill CLEAR, skill CLEAR |
 | D2 do instruction files / skills help | 70 min, 15 | 8.5 min, 0 | skill CLEAR, skill CLEAR |
-| D3 agentic search vs RAG | (pending) | | |
+| D3 agentic search vs RAG (not controlled: the skill arm also got 33 AI Engineer transcripts on the owner's steer) | 72 min, 24 | 16 min, 1 | skill CLEAR, skill CLEAR |
 
-The skill wins on coverage, depth, origin-tracing and confounds caught at source; it costs 5–8× the
-wall time. Every judged loss point was one of a few recurring defects — those are what this round fixes.
+**10 of 10 verdicts for the skill (4 SLIGHT, 6 CLEAR)** — on coverage, depth, origin-tracing and
+confounds caught at source; it costs 5–8× the wall time. Judges are the same model family as the
+authors and the questions were chosen by the author; a direction, not a proof. Every judged loss point was one of a few recurring defects — those are what this round fixes.
 
 ## Changes, each with what it rests on
 
