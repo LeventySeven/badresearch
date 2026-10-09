@@ -102,7 +102,8 @@ The five questions, for any field:
   individual-level data where it exists; systematic reviews as maps, then their primaries.
 - **Criticism: replications, retractions, funding, and the unpublished.** Failed replications are cited
   by a small minority of later citers (under 3–12% in most audits; one rose from 13% to 41%), so search
-  the original's "cited by" for them — `bash scripts/cite-chain.sh rerun <doi>`.
+  the original's "cited by" for them — `bash scripts/cite-chain.sh rerun <doi>`, or `s2rerun <doi|arXiv id>`,
+  which reads each citer's citing sentence for replicate / reproduce / fail.
   Only 5.4% of citations made after a retraction mention it — check status at the source.
   Industry-sponsored trials reach favourable conclusions more often (RR 1.34) while scoring *better* on
   standard risk-of-bias tools. Published trials show larger effects than unpublished ones (≈15%).

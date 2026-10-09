@@ -208,7 +208,7 @@ the reader's brief** — it carries the commands and the traps. Not all up front
 | X (API) | `references/lanes/x-live.md` | practitioners' own words, verbatim; the Latest tab and reply threads, where the unpopular half lives |
 
 Two commands do breadth mechanically: `scripts/cite-chain.sh` (from this skill's directory) chains a
-paper's citations both ways over OpenAlex, and on the owner's machine `~/Desktop/compound-v/scripts/alpha.sh
+paper's citations both ways (OpenAlex, with Semantic Scholar modes where OpenAlex is thin), and on the owner's machine `~/Desktop/compound-v/scripts/alpha.sh
 "<topic>"` sweeps talks, arXiv, exemplar repos, blogs and practitioners — spend readers on reading.
 
 **Sample both ends of popularity.** Search engines rank by audience, citation indexes by citations, feeds

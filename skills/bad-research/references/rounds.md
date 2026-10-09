@@ -142,7 +142,7 @@ answer is promoted to an open question (`--promise`) — that is how the structu
 | a finding with one source | trace it to its origin; look for an independent rerun inside the original's "cited by" (`experiment OR replication OR randomized`) — failed reruns are cited by a small minority of later citers, so they will not come to you |
 | a contradiction | resolve it: the window each covers, and which one read the primary |
 | an unchased frontier item | chase it: references back, citing papers forward (sort them by their own citations to surface the pivotal ones), the author's other writing, the same thing under another name or language |
-| a load-bearing paper or source | chase it both ways with `<skill dir>/scripts/cite-chain.sh back|fwd|rerun <doi>` — a standing assignment in every deep round |
+| a load-bearing paper or source | chase it both ways with `<skill dir>/scripts/cite-chain.sh back|fwd|rerun <doi|arXiv id>` — a standing assignment in every deep round. OpenAlex is thin on arXiv-era work (3 citers where Semantic Scholar had 1,123): when `fwd` prints a COVERAGE line, use `s2fwd`/`s2back`, and `s2rerun` to read the citing *sentences* that say replicate, reproduce or fail |
 | several seed papers | `<skill dir>/scripts/cite-chain.sh core <id> <id> …` — references shared across seeds, and authors who recur, mark the field's core |
 | a cluster nobody has chased yet | seed a reader there — a chain never reaches a cluster its seeds did not touch |
 | two findings from different lanes | ask what connects them — hold one facet near and push one far; most pairs connect to nothing, which costs one query |

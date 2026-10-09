@@ -5,6 +5,14 @@
 #   bash scripts/cite-chain.sh fwd   <doi|W-id> [n]        # works citing it, most-cited first (forward)
 #   bash scripts/cite-chain.sh rerun <doi|W-id> [n]        # citing works whose text mentions "replication"
 #   bash scripts/cite-chain.sh core  <id> <id> [<id>...]   # references shared by several seeds = the field's core
+#   bash scripts/cite-chain.sh s2fwd   <doi|arXiv:id> [n]  # Semantic Scholar citers, most-cited first
+#   bash scripts/cite-chain.sh s2back  <doi|arXiv:id>      # Semantic Scholar references
+#   bash scripts/cite-chain.sh s2rerun <doi|arXiv:id>      # citers whose citing SENTENCE says replicate/reproduce/fail
+#
+# <id> may be a DOI, an OpenAlex W-id, or an arXiv id (2504.13837 or arXiv:2504.13837).
+# COVERAGE: OpenAlex indexes arXiv-only and recent work thinly. Measured 2026-10-10: one paper had 3
+# OpenAlex citers and 1,123 on Semantic Scholar; others 1 vs 29, 1 vs 38. `fwd` checks the S2 count
+# and prints a COVERAGE line when OpenAlex sees under half of it — then use the s2* modes.
 #
 # Run it from this skill's directory, or give its full path.
 #
@@ -59,6 +67,63 @@ for w in rows:
 PY
 )
 state() { printf '%s' "$1" | python3 -c "$STATE_PY" "$2" "$3"; }   # body+@@code, label, mode
+S2_PY=$(cat <<'PY'
+import sys, json, re, subprocess
+mode, raw, n = sys.argv[1], sys.argv[2], int(sys.argv[3] or 0)
+x = re.sub(r"^https?://(dx\.)?doi\.org/", "", raw); x = re.sub(r"^(doi|DOI):", "", x)
+if re.match(r"^(arXiv|arxiv):", x): sid = "arXiv:" + x.split(":", 1)[1]
+elif re.match(r"^\d{4}\.\d{4,5}(v\d+)?$", x): sid = "arXiv:" + x
+elif x.startswith("10.48550/arXiv."): sid = "arXiv:" + x.split("arXiv.", 1)[1]
+elif x.startswith("10."): sid = "DOI:" + x
+else:
+    print(f"MISSING | {mode} | {raw}: Semantic Scholar needs a DOI or an arXiv id, not an OpenAlex W-id"); sys.exit(4)
+API = "https://api.semanticscholar.org/graph/v1/paper/"
+def get(url):
+    import time
+    for wait in (0, 4, 10):              # keyless S2 throttles bursts; two short retries, then EXHAUSTED
+        time.sleep(wait)
+        r = subprocess.run(["curl", "-sS", "--max-time", "40", "-w", "\n@@%{http_code}", url], capture_output=True, text=True)
+        body, _, code = r.stdout.rpartition("\n@@")
+        if code.strip() != "429": break
+    return code.strip() or "000", body
+def fail(code, body, label):
+    if code == "429": print(f"EXHAUSTED | {label} | http 429 (Semantic Scholar rate limit) — wait and retry; nothing may be concluded"); sys.exit(3)
+    if code == "404": print(f"MISSING | {label} | http 404 — Semantic Scholar has no {sid}"); sys.exit(4)
+    print(f"BLOCKED | {label} | http {code} ({body.strip()[:100]!r})"); sys.exit(5)
+if mode == "count":
+    code, body = get(API + sid + "?fields=citationCount")
+    if code != "200": print(f"unknown ({code})"); sys.exit(1)
+    print(json.loads(body).get("citationCount", 0)); sys.exit(0)
+edge = "references" if mode == "s2back" else "citations"
+key = "citedPaper" if edge == "references" else "citingPaper"
+rows, off = [], 0
+while True:
+    fields = "title,year,citationCount,externalIds" + (",contexts" if mode == "s2rerun" else "")
+    code, body = get(f"{API}{sid}/{edge}?fields={fields}&limit=1000&offset={off}")
+    if code != "200": fail(code, body, f"{mode} {sid}")
+    try: d = json.loads(body)
+    except Exception: print(f"BLOCKED | {mode} {sid} | http 200 but not JSON"); sys.exit(5)
+    for e in d.get("data") or []:
+        p = e.get(key) or {}
+        if p.get("title"): rows.append((p, e.get("contexts") or []))
+    if d.get("next") is None or len(rows) >= 5000: break
+    off = d["next"]
+if mode == "s2rerun":
+    pat = re.compile(r"replicat|reproduc|re-?ran|rerun|fail(ed|s)? to|did not hold|contrary to|challeng", re.I)
+    rows = [(p, [c for c in cs if pat.search(c)]) for p, cs in rows]
+    rows = [(p, cs) for p, cs in rows if cs]
+rows.sort(key=lambda t: -(t[0].get("citationCount") or 0))
+label = {"s2fwd": f"forward from {sid}", "s2back": f"backward from {sid}", "s2rerun": f"citers of {sid} whose citing sentence says replicate/reproduce/fail"}[mode]
+print(("WORKING" if rows else "EMPTY") + f" | {label} | {len(rows)} total (Semantic Scholar), showing {min(len(rows), n or 15)}")
+for p, cs in rows[: (n or 15)]:
+    ex = p.get("externalIds") or {}
+    pid = ("arXiv:" + ex["ArXiv"]) if ex.get("ArXiv") else (("DOI:" + ex["DOI"]) if ex.get("DOI") else "")
+    print(f"{p.get('citationCount') or 0:>6}  {p.get('year') or ''}  {pid}  {(p.get('title') or '')[:110]}")
+    for c in cs[:2]: print(f"          ↳ \"{c.strip()[:220]}\"")
+PY
+)
+s2() { python3 -c "$S2_PY" "$1" "$2" "${3:-0}"; }
+
 
 # id resolution keeps the reason: a network failure is BLOCKED, only a real 404 is MISSING.
 resolve() {
@@ -68,6 +133,7 @@ resolve() {
     https://openalex.org/W*) echo "${x##*/}"; return 0 ;;
   esac
   x="${x#https://doi.org/}"; x="${x#https://dx.doi.org/}"; x="${x#doi:}"; x="${x#DOI:}"
+  case "$x" in arXiv:*|arxiv:*) x="10.48550/arXiv.${x#*:}" ;; [0-9][0-9][0-9][0-9].[0-9]*) x="10.48550/arXiv.$x" ;; esac
   state "$(get "$API/works/doi:$x?select=id")" "resolve $x" id
 }
 
@@ -78,13 +144,24 @@ need_id() {
   printf '%s' "$r"
 }
 
-case "$mode" in back|fwd|rerun) [ -z "${1:-}" ] && { sed -n '3,6p' "$0"; exit 2; } ;; esac
+case "$mode" in back|fwd|rerun|s2fwd|s2back|s2rerun) [ -z "${1:-}" ] && { sed -n '3,9p' "$0"; exit 2; } ;; esac
 
 case "$mode" in
   back)  id=$(need_id "${1:-}") || exit $?; case "$id" in W*) ;; *) echo "$id"; exit 0 ;; esac
          state "$(get "$API/works/$id?select=referenced_works")" "backward from $id" list ;;
   fwd)   id=$(need_id "${1:-}") || exit $?; case "$id" in W*) ;; *) echo "$id"; exit 0 ;; esac
-         state "$(get "$API/works?filter=cites:$id&sort=cited_by_count:desc&per-page=${2:-15}&select=id,doi,display_name,cited_by_count,publication_year")" "forward from $id" list ;;
+         out=$(state "$(get "$API/works?filter=cites:$id&sort=cited_by_count:desc&per-page=${2:-15}&select=id,doi,display_name,cited_by_count,publication_year")" "forward from $id" list); rc=$?
+         printf '%s\n' "$out"
+         oa=$(printf '%s\n' "$out" | head -1 | sed -n 's/.*| \([0-9][0-9]*\) total.*/\1/p'); oa=${oa:-0}
+         case "${1:-}" in W[0-9]*|https://openalex.org/W*) ;; *)
+           if s2n=$(s2 count "$1" 2>/dev/null); then
+             [ "$s2n" -gt $((2 * oa + 5)) ] && echo "COVERAGE | OpenAlex sees $oa citers, Semantic Scholar $s2n — this index is thin here; run: cite-chain.sh s2fwd $1"
+           else
+             echo "COVERAGE | unchecked (Semantic Scholar: $s2n) — OpenAlex is thin on arXiv-era work; if this list looks short, run: cite-chain.sh s2fwd $1"
+           fi ;;
+         esac
+         exit $rc ;;
+  s2fwd|s2back|s2rerun) s2 "$mode" "$1" "${2:-15}" ;;
   rerun) id=$(need_id "${1:-}") || exit $?; case "$id" in W*) ;; *) echo "$id"; exit 0 ;; esac
          state "$(get "$API/works?filter=cites:$id&search=replication&per-page=${2:-15}&select=id,doi,display_name,cited_by_count,publication_year")" "citers of $id mentioning replication" list ;;
   core)
@@ -115,5 +192,5 @@ print(f"{state} | core across {n} readable seeds | {len(shared)} references shar
 for w, k in shared[:30]: print(f"{k} seeds  {w}")
 PY
     ;;
-  *) sed -n '3,8p' "$0"; exit 2 ;;
+  *) sed -n '3,12p' "$0"; exit 2 ;;
 esac

@@ -52,7 +52,8 @@ held the whole picture. You are the parallel half; the reasoner that briefed you
 - **Before a close read, name the one new thing** the source adds beyond what you were told is already
   known, and predict what it will say. If there is nothing new, note it under SEEN and move on — your
   budget belongs to the sources that add. For a paper: backward and forward citations are one command,
-  `bash <skill dir>/scripts/cite-chain.sh back|fwd|rerun <doi>`.
+  `bash <skill dir>/scripts/cite-chain.sh back|fwd|rerun <doi|arXiv id>` — and `s2fwd`/`s2rerun` when it
+  prints a COVERAGE line (OpenAlex is thin on arXiv-era work).
 - **Browse, not only search**: a venue's recent tables of contents, a project's newest issues, an
   author's whole list of writing. It reaches what nobody knew to search for.
 - **Never check whether a claim is TRUE by searching its own words.** For a false claim that mostly
