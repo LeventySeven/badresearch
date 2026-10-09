@@ -14,14 +14,15 @@ bad-research measurably improved on real questions: a held-out blind head-to-hea
 - doctor reports a stale install; web-live probe fixed — e11bc18; `pytest tests/test_cli/test_doctor_installed_skill.py` 3 passed
 - X tool returned no followers/bio though the X lane requires them — fixed in ~/Desktop/compound-v/research/xh_norm.py (local, gitignored); verified followers=19787 for kellerjordan0
 - G1 saved to sweep raw/; 9 of its spans chair-verified (VERIFIED.md)
-- dev results: skill beat plain 6/6 judges (D1 S,S; D4 S,S; D5 C,C) at 5–8x wall time; D2/D3 pending
+- dev results: skill beat plain 10/10 judges (D1 S,S; D2 C,C; D3 C,C uncontrolled; D4 S,S; D5 C,C) at 5–8x wall time — 7a676de
+- skill changes: 012e2e2, review fixes e670e44, recheck fixes cb67f6a (two reviews, all findings closed); pytest 1769 passed
 - round-5 sweep G1–G5 committed d8a37e0; skill batch 1 (9 changes, docs/specs/2026-10-10-bad-research-cold-use.md) — `pytest` 1768 passed
 - dev skill arms D1–D5 + gap readers G1–G3 (docs/sweeps/2026-10-10-expertise-pruning/BRIEF.md) launched
 
 ## Next
-1. Judge D2 and D3 vs PD2/PD3 (blind, 2 each); fold any new defect into the skill.
-2. Independent recheck of the whole skill diff (compound-v:code-reviewer, artifact mode); fix; then held-out T1–T8 old (c1fa0de) vs new, ≤2 arms at once.
-3. Change the skill (each change cites its defect); recheck; held-out T1–T3 head-to-head; merge.
+1. Held-out T1–T8: old c1fa0de vs new cb67f6a, arms in scratchpad/ho/T#O and T#N (built), ONE pair at a time (concurrency cap ~20 subagents); prompts = the D-arm template with the ho/ paths; questions in scratchpad/ho/questions.json. T1 pair running.
+2. Each pair: blind.py both answers → 2 judges (opposite order, judge-template.txt) → save to research/cold-use-2026-10-10/heldout/.
+3. Then: write the result into the spec + sweep README, update memory, `bad install`, merge run/cold-use-2026-10 → main, push (owner authorized).
 
 ## Open decisions
 - none
