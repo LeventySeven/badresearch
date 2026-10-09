@@ -52,9 +52,8 @@ the lane files under "Where to look" are the kinds — with disjoint boundaries,
 differ, and the path of its lane file in its brief so it reads the recipe first. In every lane, at least one entry point that
 is not ordered by popularity. The plain, obvious search runs first even when you hold a hypothesis.
 **Browse as well as search** — a venue's recent tables of contents, a conference's accepted list, a
-project's newest issues, a person's whole feed. Browsing was scientists' largest route to what they read
-in the latest survey (33.9% in 2005; searching 23.1%), and it reaches what nobody knew to search for. What comes back is
-the representation: the open questions, the field's own words, the clusters of work.
+project's newest issues, a person's whole feed: browsing was scientists' largest route to what they read
+(33.9% vs searching 23.1%). What comes back is the representation: open questions, words, clusters.
 
 **Pool.** Save each return; admit its findings into the map **marked unverified**, and verify — re-open
 the source, find the span — every one that closes an open question or carries a number; grade its
@@ -148,17 +147,20 @@ best forecasters on record "owe their success more to superior skills at tamping
 than to unusually incisive readings of the news". A round that adds sources and moves no claim has made
 you surer, not righter.
 
-## Name the rivals, then delete the evidence that cannot separate them
+## Name the rivals, then set aside the evidence that cannot separate them
 
-**MUST name at least two rival explanations before the first search, and carry them into the answer.
-A rival is dropped only by a finding that bears on it, named in the map** — research agents "dropped
-their most ambitious hypotheses within the first fifteen hours … and never changed course". Use
-them to cut where you can — evidence every rival predicts equally well has no diagnostic value, and
-*"the most probable hypothesis is usually the one with the least evidence against it"* (Heuer, CIA) — but
-the full structured table did not beat a control group when tested; in deep runs, add pooled independent
-judgments on the load-bearing claims (`references/rounds.md`). Keep real mass on "something I have not
-thought of yet", and draw rivals from disjoint evidence — hypotheses from one pool are anchored alike. This is not the disagreement quota refused below: it deletes evidence and
-adds a paragraph; a quota adds rounds and manufactures disagreements.
+**MUST name at least two rival explanations before the first search, and carry them into the answer.**
+Seed them from what you know; after the broad round, add or replace rivals from disjoint lanes —
+hypotheses from one pool are anchored alike. **A rival is dropped only by a finding that bears on it,
+named in the map**: in two AI-scientist runs (n = 2) the agents "dropped their most ambitious hypotheses
+within the first fifteen hours of carrying out the experiment and never changed course". Use them to cut
+where you can — evidence every rival predicts equally well has no diagnostic value (it leaves the
+reasoning and the answer, not the map), and *"the most probable hypothesis is usually the one with the
+least evidence against it"* (Heuer, CIA) — but the full structured table did not beat a control group
+when tested; in deep runs, add pooled independent judgments on the load-bearing claims
+(`references/rounds.md`). Keep real mass on "something I have not thought of yet". This is not the
+disagreement quota refused below: it sets evidence aside and adds a paragraph; a quota adds rounds and
+manufactures disagreements.
 
 **For a question about likelihood, size or outcome, find the base rate first** — how often things of
 this kind happen, before the specifics of this one. In a randomized trial of forecaster training, using
@@ -333,10 +335,8 @@ must never look the same in your report.**
 
 ## Before it ships: one adversarial pass
 
-`references/critique.md`. The draft is read by something that did not write it, in fresh context,
-through lenses chosen not to overlap — instruction, assumption, dialectic, width, depth — and the
-findings come back to you to patch surgically, never to regenerate. A gap gets a fetch, not a hedge.
-Stop at three rounds.
+`references/critique.md`: fresh-context critics through five non-overlapping lenses; you patch
+surgically, never regenerate; a gap gets a fetch, not a hedge; stop at three rounds.
 
 ## What this skill refuses
 

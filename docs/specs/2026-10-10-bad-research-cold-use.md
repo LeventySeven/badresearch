@@ -23,7 +23,8 @@ claims per answer against the primary.
 | D1 is an eval difference real or noise | 27 min, 10 subagents | 5 min, 0 | skill SLIGHT, skill SLIGHT |
 | D4 did "LLM ideas more novel" hold up | 42 min, 13 | 6.5 min, 0 | skill SLIGHT, skill SLIGHT |
 | D5 who does credible long-horizon agent evals | 51 min, 12 | 10 min, 1 | skill CLEAR, skill CLEAR |
-| D2, D3 | (results appended when judged) | | |
+| D2 do instruction files / skills help | 70 min, 15 | 8.5 min, 0 | skill CLEAR, skill CLEAR |
+| D3 agentic search vs RAG | (pending) | | |
 
 The skill wins on coverage, depth, origin-tracing and confounds caught at source; it costs 5–8× the
 wall time. Every judged loss point was one of a few recurring defects — those are what this round fixes.
@@ -36,10 +37,10 @@ wall time. Every judged loss point was one of a few recurring defects — those 
 | 2 | **Rivals before the first search**; a rival is dropped only by a finding that bears on it | SKILL.md frame + rivals; rounds map | RCT, 297 GPs: early alternatives OR 1.31, late OR 1.10 n.s. ✔; agents dropped their most ambitious hypotheses within 15 h and never returned ✔; fixating and vagabonding residents 0 of 28 resolved ✔ |
 | 3 | **Late evidence gets its own challenge** (last round, critique gap-fetches) | SKILL.md stop; critique.md | planted false doc adopted 40.5% at start vs 85.5% before synthesis; verification prompting reduced, did not remove ✔ |
 | 4 | **A debunk becomes a check**; **a refuted finding repairs what rests on it**; map append-only (superseded, never deleted) | SKILL.md pool; rounds map | Jordan: a paper's mistake changes nothing, a shared baseline's is found next record ✔; repair-on-contradiction beat flat replacement (ReTree, mechanism ✔); Karpathy deletes a note "only rarely" ✔; overwrite memories delete corrective feedback (agent-read) |
-| 5 | **Keep pages; re-read them with later knowledge**; a new open question greps `pages/` first | rounds stores + brief; reader agent | fetch-time reading fixes the reading "before the agent knows which fact it will need"; kept-pages agents led at every backbone ✔ |
+| 5 | **Keep pages; re-read them with later knowledge**; a new open question greps `pages/` first | rounds stores + brief; reader agent | fetch-time reading fixes the reading "before the agent knows which fact it will need" ✔; kept-pages agents led on BrowseComp at every backbone, tied on WideSearch (agent-read) |
 | 6 | **Show the derivation; no false precision; attribute facts from the asker's notes; length tracks belief** | SKILL.md answer | judged in D1 (both judges), D4 (both), D2 critic, D5 |
-| 7 | Deep-round moves: **browse the publisher of a load-bearing primary**; **open a pre-registration**; **counterpart through the same entry points**; **attack the settled premise** | rounds move table; domains.md | D5 misses sat in posts beside the one cited (both judges); D4 headline test absent from its registration; D4 missed the one blinded study on the other side; experts' misses sit where they stopped looking (talks, agent-read) |
-| 8 | Video lane: **all titles for the field's core channel**; serial fetch with retry; **ai.engineer talk pages when YouTube walls captions** | lanes/practitioner-video.md | owner steer; measured: 1,268 titles, 35 relevant; −P4 walled 15/35; PO-token wall beat every client; site pages recovered 12/14 |
+| 7 | Deep-round moves: **browse the publisher of a load-bearing primary**; **open a pre-registration**; **counterpart through the same entry points**; **attack the settled premise**; domains.md: tuned baselines and train/test split | rounds move table; domains.md | D5 misses sat in posts beside the one cited (both judges); D4 headline test absent from its registration; D4 missed the one blinded study on the other side; experts' misses sit where they stopped looking (talks, agent-read); optimizer speedups 1.4–2× → 1.1× at 1.2B ✔; Arize "+15%" on the training set (raw/devrun-d2-arize-origin.md, agent-read) |
+| 8 | Video lane: **all titles for the field's core channel**; serial fetch; **ai.engineer talk pages when YouTube walls captions** | lanes/practitioner-video.md | owner steer; measured (raw/devrun-aie-transcript-lane.md): 1,268 titles, 35 relevant, 22 outside a 400 window; −P4 walled 15/35, serial retries recovered 1; PO-token wall beat every client; site pages recovered 12/14 |
 | 9 | Installed-skill drift reported by `bad doctor`; web-live probe matches silver's fenced output | src/…/doctor.py; scripts/lane-probes.sh | the owner's ~/.claude ran the Sep 10 skill for two weeks after the rebuild (11 files differed) |
 
 Dropped with a measurement: a URL-liveness gate — 169 cited URLs across eight answers, 0 fabricated

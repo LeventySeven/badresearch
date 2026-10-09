@@ -61,7 +61,7 @@ because readers cannot write report files), and `research/<slug>/pages/` (the so
 fetched, saved as text by the readers themselves with `curl -o` or `silver read > file`). Keep the
 pages: a page read at fetch time was read against the question as it stood then — "fixing that
 reading before the agent knows which fact it will need" — and agents that kept pages and re-read them
-later beat agents that summarised on fetch. **A new open question first greps `pages/`** before any new
+later beat agents that summarised on fetch (BrowseComp, every backbone tried; a tie on WideSearch). **A new open question first greps `pages/`** before any new
 search. Nothing here is an index, a graph database or a cache across runs:
 it is addressable, re-derivable, and deleted or archived with the run. Individuals keep a list of open
 questions and a log; that is this file — for one run. Their logs span years; the long-lived half of
@@ -87,8 +87,8 @@ A reader gets a **snapshot**, never the map itself:
   boundary, headed *"already known — do not re-find; extend, connect or break it"*; and the unverified
   findings, headed *"leads — re-find or refute"*
 - its budget: a lead 5–20 tool calls, a lane up to ~50. Past it, return what you have.
-- the path of `research/<slug>/pages/`, to save every source it reads as text (named so the source is
-  recognisable) and to grep before fetching again
+- the **absolute** path of `research/<slug>/pages/` (create it with `mkdir -p` at Frame), to save every
+  source it reads as text, file names prefixed with its lane, and to grep before fetching again
 
 It never gets the hypotheses, the rivals, or what the asker will do with the answer. Readers told what
 you are building return opinions instead of facts. A counterpart assignment is phrased as a question —
@@ -207,8 +207,11 @@ After the stop, before writing: spawn two or three fresh `general-purpose` judge
 the **verified** findings and the rivals (no hypotheses, no provisional answer), and the three to five
 claims the answer will rest on. Each returns, independently, a probability for each claim — and where
 claims are rivals, probabilities that sum to one (making judgments coherent before pooling is half of
-what the evidence measured). Take the median per claim. The median informs; the call is yours, and a
-disagreement between your call and the median is stated in the answer. A wide spread on a claim reopens
+what the evidence measured). Take the median per claim. The median informs; the call is yours. The
+numbers stay in the run notes — the answer states, in words, which reading you hold, the strongest rival,
+and where you and the judges disagree. Blind judges marked printed judge probabilities and rival weights
+down in three answers as false precision: they read as a measurement of the world, and they are a poll
+of one model family. A wide spread on a claim reopens
 one deep round on it: call `bad frontier-observe` for that round like any other (the floor is already
 met; one quiet round stops again).
 

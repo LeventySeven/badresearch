@@ -53,6 +53,10 @@ def _installed_skill_status(home: Path | None = None) -> dict:
             p.relative_to(ref / ".claude")
             for p in sorted((ref / ".claude" / "agents").glob("research-*.md"))
         ]
+        if not any(str(r).startswith("skills/") for r in rels):
+            # The installer found no skill source to write, so there is nothing to compare
+            # against -- "current" here would be the vacuous pass this check exists to avoid.
+            return {"status": "unknown", "differs": []}
         differs = [
             str(r) for r in rels
             if not (installed / r).is_file()
@@ -202,6 +206,8 @@ def doctor(
             "this version (e.g. " + ", ".join(sk["differs"][:3]) + "). "
             "`/bad-research` is running an older skill. Run `bad install`."
         )
+    elif sk["status"] == "unknown":
+        console.print("\n[yellow]installed skill: cannot compare[/] — this build ships no skill source.")
     elif sk["status"] == "not-installed":
         console.print("\n[yellow]skill not installed[/] in ~/.claude — run `bad install`.")
     else:

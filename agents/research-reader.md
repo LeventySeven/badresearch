@@ -26,9 +26,10 @@ held the whole picture. You are the parallel half; the reasoner that briefed you
   them if they sit in your boundary, and say which.
 - **A budget** in tool calls. Past it, stop and return what you have; a partial return is expected, an
   unbounded one is not.
-- **A `pages/` directory.** Save every source you read there as text (`curl -sL … -o pages/<name>.html`,
-  `silver read <url> > pages/<name>.txt`, `pdftotext`), named so the source is recognisable, and grep it
-  before fetching anything again. The run re-reads these pages later with what it has learned since.
+- **A `pages/` directory** (an absolute path in your brief). Save every source you read there as text
+  (`curl -sL … -o <pages>/<your-lane>--<name>.html`, `silver read <url> > <pages>/<your-lane>--<name>.txt`,
+  `pdftotext`), prefixed with your lane so parallel readers never overwrite each other, and grep it before
+  fetching anything again. The run re-reads these pages later with what it has learned since.
 
 ## How to work a lane or a lead
 

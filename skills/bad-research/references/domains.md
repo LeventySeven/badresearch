@@ -66,14 +66,15 @@ The five questions, for any field:
 - **Rare places:** non-English labs (read their papers and posts in the original, translated),
   pre-deep-learning literature (attacks "rediscovered over and over"), overlooked early papers (the
   2017 Baidu scaling paper).
-- **Run it:** re-run the eval or the ablation at matched budget before you believe a delta. A
-  published gain shrinks once the baseline is tuned (one optimizer's 2× speedup fell to 1.1× at 1.2B
-  parameters once the AdamW learning rate was tuned); connected researchers know which highly cited
-  papers do not reproduce, and outsiders take them at face value.
-- **Check the split and the registration.** A vendor's "+15% from optimized rules" traced to two charts
-  labelled as the *training* set the rules were tuned on. A study that says pre-registered: open the
-  registration and compare — one widely cited headline test was absent from it, and the planned
-  two-tailed comparison was not significant.
+- **Run it:** re-run the eval or the ablation at matched budget before you believe a delta. Claimed
+  1.4–2× optimizer speedups shrank against a well-tuned AdamW and with scale, to 1.1× at 1.2B parameters;
+  tuning only AdamW's learning rate was itself worth 2× at 130M. Connected researchers know which highly
+  cited papers do not reproduce; outsiders take them at face value.
+- **Check the split and the registration.** A vendor's widely cited "+15% from optimized rules" is charted
+  on the training set the rules were tuned on; its repo holds a held-out score for the optimized rules
+  with no matching no-rules baseline. A study that says pre-registered: open the registration and
+  compare — one widely cited headline test was absent from it, and the planned two-tailed comparison was
+  not significant.
 - **Popularity trap:** paper curators. Being posted by a top curator went with 2–3× the citations of a
   control group; one curator's bio reads "dm for promo". Benchmarks leak into training data and into
   search results — exclude the answer key's domains.

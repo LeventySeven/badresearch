@@ -27,3 +27,16 @@ def test_edited_or_missing_file_is_stale(tmp_path: Path) -> None:
     assert st["status"] == "stale"
     assert "skills/bad-research/SKILL.md" in st["differs"]
     assert "agents/research-reader.md" in st["differs"]
+
+
+def test_no_skill_source_is_unknown_not_current(tmp_path: Path, monkeypatch) -> None:
+    install_global_hooks(home=tmp_path)
+    import bad_research.cli.doctor as doctor_mod
+    import bad_research.core.hooks as hooks_mod
+
+    def no_skill_install(home=None, hpr_path="bad"):
+        (home / ".claude" / "agents").mkdir(parents=True, exist_ok=True)
+        return []
+
+    monkeypatch.setattr(hooks_mod, "install_global_hooks", no_skill_install)
+    assert doctor_mod._installed_skill_status(tmp_path)["status"] == "unknown"

@@ -70,9 +70,10 @@ The decision is cheap and mechanical:
   judge to overturn the claim that shipped.
 - **A gap that stays unfilled after fetching is flagged**, so the answer acknowledges the limit
   instead of writing around it.
-- **What a gap-fetch brings in is late evidence**, admitted with no research left to challenge it —
-  the stage at which a planted false document was adopted 85.5% of the time against 40.5% at the start.
-  Before it carries weight: read its source laterally and find one independent source, as SKILL.md says.
+- **What a gap-fetch brings in is late evidence**, admitted with almost no research left to challenge it.
+  In the planted-document study, adoption rose to 85.5% when the document entered just before synthesis
+  (40.5% at the start), and a post-hoc search-and-refine agent sometimes re-adopted misleading evidence
+  itself. Before a gap-fetch carries weight: read its source laterally and find one independent source.
 
 Cap the re-retrieval. A critique that becomes a second full sweep has stopped being a critique.
 

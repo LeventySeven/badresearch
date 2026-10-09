@@ -50,8 +50,9 @@ the verbatim span on file in `raw/`. This extends `../2026-09-26-how-researchers
 - **Run it, don't read it.** "most biglab people now read almost zero papers" (Jordan); reading has
   "low value of information relative to running your own experiments" (Perez ✔); trust only a shared,
   continually tuned baseline — a paper's mistake changes nothing, a speedrun's is found automatically
-  in the next record (Jordan ✔). Published gains shrink once the baseline is tuned (2× → 1.1× at 1.2B;
-  random rewards nearly matched real ones on one model family).
+  in the next record (Jordan ✔). Published gains shrink against tuned baselines and with scale (claimed 1.4–2× optimizer speedups fell
+  to 1.1× at 1.2B — abstract ✔; tuning only AdamW's learning rate was worth 2× at 130M); random rewards
+  nearly matched real ones on one model family.
 - **The deciding information is in the code, the appendix, an undocumented flag, or the author's
   reply** — not the paper body (Nichol; Jordan on a 12,000-line codebase).
 - **The best work is unpublished** ("If it works well, it's probably not being published" — Bricken ✔);

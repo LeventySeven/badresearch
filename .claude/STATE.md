@@ -6,6 +6,7 @@ bad-research measurably improved on real questions: a held-out blind head-to-hea
 - 2026-10-10 user: "but you don't need hetzner for this task" — dropped D3 (Hetzner CPX) and T2 (Kamal on Hetzner); both replaced by AI-research questions in QUESTIONS.md.
 - 2026-10-10 user: "everything should run locally, and remember that if needed you can relaunch that research workflow with newest direction, if that will boost quality, and add more alpha like now we do not need to skimp" — no cloud/remote sessions; extra research lanes G4 (talks/transcripts) + G5 (how top researchers use AI in their own research) added.
 - 2026-10-10 user (on the agentic-search run): "for this one you can use top source channels from gathering context skill, like all relevant videos(there're a lot of them on this field) SPECIFICALLY ai engineer channel, find every useful/relevant video, transcribe via yt dlp and use it for this agent's work" — 35 AIE talks picked from 1,268 titles; transcripts handed to D3 (Q3 is therefore no longer a controlled skill-vs-plain pair).
+- 2026-10-10 user: "after you finish everything commit push everything to main" — authorizes the final merge of run/cold-use-2026-10 into main and `git push origin main`.
 - 2026-10-10 user: "proceed till the end autonomosly, no need to stop or ask me anything… top priority is quality of skill and research, till the end, no stopping"
 
 ## Done
