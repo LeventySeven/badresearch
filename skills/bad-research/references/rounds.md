@@ -21,8 +21,9 @@ Tier: standard | deep — because …
 - Q1 … [open | closed by F3,F7 | abandoned: <reason>]
 
 ## Findings  (one line each; the span is verbatim)
-- F1 [Q1] [verified | unverified] <claim> — "<span>" — <URL + fetch date | path:line>
+- F1 [Q1] [R2] [verified | unverified | superseded by F9: why] <claim> — "<span>" — <URL + fetch date | path:line>
        — reached by <query | link from F? | lane> — source: <author/publisher, date, who pays / sells>
+       — read: <whole | results+tables+limitations | abstract only> — rests on: <F? | none>
        — grade: source <known good | no track record | known bad> / claim <confirmed | single | contradicted>
 
 ## Clusters and the field's words  (what the broad round found the question is made of)
@@ -40,19 +41,28 @@ Tier: standard | deep — because …
 ## Dead ends  (so no reader repeats them)
 - <query or route> in <lane> — <EMPTY | BLOCKED | MISSING | EXHAUSTED | IRRELEVANT-BY-DESIGN> — <what was tried>
 
-## Seen sources
-- <URL/path>, …
+## Seen sources  (with how much was read; fetched copies live in pages/)
+- <URL/path> — <whole | sections | abstract>, …
+
+## Checks learned from this run  (a debunk becomes a check — re-screen every finding of its kind)
+- <failure mode a source exposed, e.g. "training-set number sold as a result"> — from F? — re-screened: F?, F? → <what moved>
 
 ## Hypotheses and rivals                                   ← never shown to readers
 - The answer I would give now (three sentences, rewritten after each round): …
 - What would change my mind (written before the counterpart round): …
 - Base rate of the reference class, if the question is about likelihood, size or outcome: …
-- Rivals, each with the evidence that separates it: …
+- Rivals (written before the first search), each with the evidence that separates it; a rival leaves
+  only as "dropped by F?: <how that finding bears on it>": …
 ```
 
-Two other stores exist and are named, not hidden: `research/<slug>/s.json` (the stop counters —
-numbers, not knowledge) and `research/<slug>/raw/` (each reader's return, saved verbatim by you,
-because readers cannot write files). Nothing here is an index, a graph database or a cache across runs:
+Three other stores exist and are named, not hidden: `research/<slug>/s.json` (the stop counters —
+numbers, not knowledge), `research/<slug>/raw/` (each reader's return, saved verbatim by you,
+because readers cannot write report files), and `research/<slug>/pages/` (the sources readers
+fetched, saved as text by the readers themselves with `curl -o` or `silver read > file`). Keep the
+pages: a page read at fetch time was read against the question as it stood then — "fixing that
+reading before the agent knows which fact it will need" — and agents that kept pages and re-read them
+later beat agents that summarised on fetch. **A new open question first greps `pages/`** before any new
+search. Nothing here is an index, a graph database or a cache across runs:
 it is addressable, re-derivable, and deleted or archived with the run. Individuals keep a list of open
 questions and a log; that is this file — for one run. Their logs span years; the long-lived half of
 that practice is the owner's corpus on disk (`references/lanes/local-corpus.md`), never a findings memo
@@ -77,6 +87,8 @@ A reader gets a **snapshot**, never the map itself:
   boundary, headed *"already known — do not re-find; extend, connect or break it"*; and the unverified
   findings, headed *"leads — re-find or refute"*
 - its budget: a lead 5–20 tool calls, a lane up to ~50. Past it, return what you have.
+- the path of `research/<slug>/pages/`, to save every source it reads as text (named so the source is
+  recognisable) and to grep before fetching again
 
 It never gets the hypotheses, the rivals, or what the asker will do with the answer. Readers told what
 you are building return opinions instead of facts. A counterpart assignment is phrased as a question —
@@ -134,7 +146,10 @@ answer is promoted to an open question (`--promise`) — that is how the structu
 | several seed papers | `<skill dir>/scripts/cite-chain.sh core <id> <id> …` — references shared across seeds, and authors who recur, mark the field's core |
 | a cluster nobody has chased yet | seed a reader there — a chain never reaches a cluster its seeds did not touch |
 | two findings from different lanes | ask what connects them — hold one facet near and push one far; most pairs connect to nothing, which costs one query |
-| the leading claim | its counterpart: criticism, failed reruns, and the record that would have to exist if it were true |
+| the leading claim | its counterpart: criticism, failed reruns, and the record that would have to exist if it were true — searched through the same entry points that found its support (a judged miss: the one blinded study on the other side, reachable by the same citation filter that found the rest) |
+| the premise the map treats as settled | one assignment against it, not only against the leading claim — experts' misses sit where they stopped looking |
+| a load-bearing primary from a stream (a lab's blog, an institute's research page, a researcher's feed) | browse that publisher's index for the window and follow the primary's own outbound links — judged misses sat in the posts beside the one cited |
+| a study that says it was pre-registered | open the registration and compare the planned analyses with the reported ones; say which one the headline is |
 | residue | one query a round, exempt from the frontier gate (log it `residue:` in the map); promote the item to an open question only if the query shows it bears on the answer |
 | a BLOCKED or MISSING lane | another route (`silver`, an archive, a mirror) — never a verdict |
 | a dead end | never retried the same way |

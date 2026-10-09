@@ -42,6 +42,9 @@ writes outside the formal channel, and what you can run yourself. Start the
 span, its source and how it was reached), the frontier, connections and contradictions, dead ends, the
 sources already seen, and your hypotheses. Template and rules: `references/rounds.md`. Register the
 open questions with `--promise` on the first `bad frontier-observe`, so the counter knows what is owed.
+**Before the first search, write two or more rival answers and "something I have not thought of"**, and
+pick lanes that reach each rival's predicted record — alternatives shown to 297 GPs before gathering
+raised accuracy (OR 1.31); the same list after a first diagnosis did nothing (OR 1.10).
 
 **Broad round — find the structure, not the answer.** Three to six readers in parallel (the
 `research-reader` agent, `agents/research-reader.md`), each on a lane of a different *kind* of source —
@@ -59,6 +62,10 @@ sources; add frontier items that bear on an open question, and put the rest on t
 never discarded, because unexplained leftovers are where new links come from; record its dead ends; rank the open
 questions (how much the answer depends on each × how uncertain or contested it is); and call
 `bad frontier-observe` once for the round, with that round's closes and abandonments on the same call.
+What the run learns changes what it trusts: **a debunk becomes a check** — a source exposing a failure
+of its field (untuned baseline, training-set number sold as a result, post-hoc test sold as
+pre-registered) re-screens every admitted finding of that kind; **a refuted finding repairs what rests on
+it** — re-open what was built on it, mark it superseded, never delete it.
 Then **re-read the whole map, not just the new lines**: connections and your own contradictions show up
 when a log is re-read — Schulman fills "a missing piece in a puzzle" on his weekly journal review.
 
@@ -81,7 +88,10 @@ plans. The move table and the brief: `references/rounds.md`.
 open question closed or abandoned with a reason — then one last search in different words or a
 different lane. Past six rounds, stop anyway and report what is still open: that is a budget, not a
 finding. **Write** from the map, verifying every finding the answer leans on. **Critique** in fresh
-context, **patch** surgically, **answer**.
+context, **patch** surgically, **answer**. **Late evidence gets its own challenge.** A planted false document reached the report 40.5% of the
+time when it entered at the start and 85.5% just before synthesis; telling the agent to verify reduced
+that without removing it. So a finding from the last round or a critique gap-fetch that the answer
+leans on gets a lateral read and one independent source first; the map records each finding's round.
 
 ## Choose the tier, and say it in one line at the top of the answer
 
@@ -140,7 +150,9 @@ you surer, not righter.
 
 ## Name the rivals, then delete the evidence that cannot separate them
 
-**MUST name at least two rival explanations before committing, and carry them into the answer.** Use
+**MUST name at least two rival explanations before the first search, and carry them into the answer.
+A rival is dropped only by a finding that bears on it, named in the map** — research agents "dropped
+their most ambitious hypotheses within the first fifteen hours … and never changed course". Use
 them to cut where you can — evidence every rival predicts equally well has no diagnostic value, and
 *"the most probable hypothesis is usually the one with the least evidence against it"* (Heuer, CIA) — but
 the full structured table did not beat a control group when tested; in deep runs, add pooled independent
@@ -238,6 +250,10 @@ not an index: it is per-run, addressable and re-derivable. Past the window: `ref
   reconstruct grounding for a paragraph already written.
 - **A citation claims the span SUPPORTS the sentence** — supports, contradicts, or your sentence goes
   beyond it. Say where you extrapolated, or cut it.
+- **Read what you cite.** Blind judges' commonest catch was a fact inside a source the answer already
+  cited — a results table, a recommendations section, §5 of a post. Read the results, tables, limitations
+  and conclusions of every source the answer leans on, record how much you read, and check "the paper
+  did not compare X" in its tables: it is an absence claim.
 - **Verify a retrieved object by its properties, not its name** — date, unit, scale (50% → 90%).
 - **Count distinct actors, not URLs**, collapsed by person, company and orbit. Sources reached by
   chaining are not independent corroboration, and repetition is not corroboration: trace to the origin.
@@ -324,25 +340,14 @@ Stop at three rounds.
 
 ## What this skill refuses
 
-Five rules from the larger predecessor this skill absorbed. Each was a MUST there and is refused here by
-name, because a rule dropped silently comes back wearing the words *thorough* and *rigorous*.
-
-- **A quota on disagreements** — *"at least one dialectical locus"*. A run required to produce a
-  contradiction will produce one. Hunting the counterpart is a move; a quota is a manufacturing order.
-- **A delegated reader that must commit to a position.** `agents/research-reader.md` never concludes:
-  readers told what is being built return opinions instead of facts. Judgment stays with you.
-- **Parallel readers that never exchange — and free, continuous, ungated sharing.** The predecessor made
-  parallelism mandatory; its successor then forbade parallel depth on a misread "17.2×" (trace-level, not
-  significant after controls). Both are refused. Readers run in parallel inside a round and exchange
-  through the map at its boundary, gated by you.
-- **A mandatory multi-draft ensemble and a mandatory synthesizer** — judgment fanned out twice at double
-  the cost, for a gain measured once, by the seller, on one benchmark without long-horizon tasks. (The
-  deep tier's pooled judgments are not this: a few verdicts on named claims, advisory, and you decide.)
-- **Word floors** — *"argumentative: 5,000–10,000 words"*. Length is not thoroughness, and a floor makes
-  padding mandatory.
-
-**And no step numbers.** The predecessor was a chain of 19 step skills; most never fired. Rounds are a
-loop with named moves, not a form — and each lane and reference is read at the moment it is used.
+Rules from the larger predecessor, each refused by name because a rule dropped silently comes back
+wearing the words *thorough* and *rigorous*: **a quota on disagreements** (a run required to produce a
+contradiction will produce one); **a reader that must commit to a position** (`agents/research-reader.md` never concludes:
+readers told what is being built return opinions); **parallel readers that never exchange, and free ungated sharing** (exchange
+through the map at round boundaries, gated by you); **a mandatory multi-draft ensemble or synthesizer**
+(gain measured once, by the seller — the deep tier's pooled judgments are advisory verdicts on named
+claims, not this); **Word floors** (a floor makes padding mandatory); and **step numbers** (the
+predecessor's 19 step skills mostly never fired — rounds are a loop with named moves).
 
 ## The answer
 
@@ -351,7 +356,11 @@ the question needed it, never the effort (rounds, readers, critics, sources open
 do**: if they will act on it, end with the steps they can run — the commands, queries and settings —
 each tied to the finding it rests on. Give the number with its
 assumption, the recommendation with what would change it, and the disagreement with both sides. Put what
-you could not establish in its own section — often the most useful thing on the page.
+you could not establish in its own section — often the most useful thing on the page. Blind judges
+marked these down in otherwise winning answers: a computed number without its inputs and
+formula beside it; printed probabilities or weights on rivals (they stay in the run notes — give the
+order and the reasons); a fact about the asker taken from their own notes without saying so; and lists
+of names with no result attached. Length tracks what changes the reader's belief.
 
 **The map, the lane inventory and the check results are RUN NOTES, not the answer.** The reader is owed
 only what changes what they should believe: an absence that bounds the claim, a blocked lane that

@@ -51,7 +51,7 @@ for different failures beat more lenses that look for the same one.
 | **Instruction** | Did the answer cover every atomic thing the question named, in the order and format asked? | The only recall instrument over the prompt. `checks.md` admits recall is what nothing else here measures, and prompt adherence is the dimension with the widest variance. Do not skip this one. |
 | **Assumption** | Take the top five causal or quantitative claims. Split each into its sub-assumptions. Verify each **independently**. | This operationalises the one judging arrangement with evidence behind it: a judge over *one decomposed claim with its own evidence* reaches 72% agreement and a 76% win rate at 20× less cost. A judge over a whole report does not. Cap it at five claims — past that it becomes a second draft. |
 | **Dialectic** | Where does the answer ignore, hedge, or straw-man the counter-evidence? | The failure the answer cannot see from inside. |
-| **Width** | What does the evidence in hand support that the answer never says? | Catches the read-and-not-used failure, which is a different failure from not-retrieved. |
+| **Width** | What does the evidence in hand support that the answer never says? Give this critic the run's `raw/` and `pages/` and the answer's top cited sources, and have it open them — not only the draft. | Catches the read-and-not-used failure, which is a different failure from not-retrieved. In blind judging this was the commonest miss: the decisive fact sat in a table or later section of a source the answer already cited. |
 | **Depth** | Which load-bearing claim rests on one source, on a secondary account, or on an origin nobody opened? | The older system's blind-judged win came from a five-critic fan-out that included a depth critic, and the merge dropped it. Citation cascades end at one source surprisingly often, and a "replication" is often the same claim cited again. Each finding here becomes a trace-to-origin or rerun fetch, not a hedge. |
 
 An **absence claim gets its own pass**, because it is the class that shipped: run
@@ -70,6 +70,9 @@ The decision is cheap and mechanical:
   judge to overturn the claim that shipped.
 - **A gap that stays unfilled after fetching is flagged**, so the answer acknowledges the limit
   instead of writing around it.
+- **What a gap-fetch brings in is late evidence**, admitted with no research left to challenge it —
+  the stage at which a planted false document was adopted 85.5% of the time against 40.5% at the start.
+  Before it carries weight: read its source laterally and find one independent source, as SKILL.md says.
 
 Cap the re-retrieval. A critique that becomes a second full sweep has stopped being a critique.
 
