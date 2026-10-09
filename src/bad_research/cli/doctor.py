@@ -27,6 +27,40 @@ from bad_research.providers import (
 _SEARXNG_DEFAULT_ENDPOINT = "http://localhost:8080"
 
 
+def _installed_skill_status(home: Path | None = None) -> dict:
+    """Is the installed /bad-research skill what `bad install` would write today?
+
+    The source tree moved for two weeks while ~/.claude kept the older skill: every
+    `/bad-research` ran a version nobody was editing, and nothing said so. The reference
+    is built by the real installer into a temp home, so this check cannot drift from it.
+    """
+    import tempfile
+
+    from bad_research.core.hooks import install_global_hooks
+
+    home = home or Path.home()
+    installed = home / ".claude"
+    if not (installed / "skills" / "bad-research" / "SKILL.md").is_file():
+        return {"status": "not-installed", "differs": []}
+    with tempfile.TemporaryDirectory() as tmp:
+        ref = Path(tmp)
+        install_global_hooks(home=ref)
+        rels = [
+            p.relative_to(ref / ".claude")
+            for p in sorted((ref / ".claude" / "skills" / "bad-research").rglob("*"))
+            if p.is_file() and "__pycache__" not in p.parts
+        ] + [
+            p.relative_to(ref / ".claude")
+            for p in sorted((ref / ".claude" / "agents").glob("research-*.md"))
+        ]
+        differs = [
+            str(r) for r in rels
+            if not (installed / r).is_file()
+            or (installed / r).read_bytes() != (ref / ".claude" / r).read_bytes()
+        ]
+    return {"status": "stale" if differs else "current", "differs": differs}
+
+
 def _local_installed() -> bool:
     """True iff the [local] neural stack (sentence-transformers) is importable."""
     try:
@@ -110,6 +144,7 @@ def doctor(
         "local_installed": local_installed,
         "active_count": sum(1 for s in visible if s.active),
         "headless_capable": headless_capable,
+        "installed_skill": _installed_skill_status(),
     }
 
     if json_output:
@@ -160,6 +195,17 @@ def doctor(
 
     lane = ("ddgs + crawl4ai + BM25" if headless_capable
             else "[yellow]no general web-search lane available here[/]")
+    sk = data["installed_skill"]
+    if sk["status"] == "stale":
+        console.print(
+            f"\n[bold red]installed skill is STALE[/] — {len(sk['differs'])} file(s) differ from "
+            "this version (e.g. " + ", ".join(sk["differs"][:3]) + "). "
+            "`/bad-research` is running an older skill. Run `bad install`."
+        )
+    elif sk["status"] == "not-installed":
+        console.print("\n[yellow]skill not installed[/] in ~/.claude — run `bad install`.")
+    else:
+        console.print("\n[green]installed skill matches this version[/]")
     console.print(f"\n[bold]{data['active_count']}[/] provider(s) active here. "
                   f"[dim]Keyless pipeline ({lane}) runs with zero keys; host WebSearch + "
                   f"host-model rerank additionally light up in-agent.[/]")

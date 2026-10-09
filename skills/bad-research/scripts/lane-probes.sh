@@ -83,13 +83,15 @@ else say terms-and-pricing EMPTY "code=$1 chars=$2 but no dateline — weaker ci
 # removes the failure mode rather than asserting the bug. A dedicated session keeps the probe off
 # whatever state `default` is in.
 o=$(timeout 90 silver read https://example.com/ --session lane-probe 2>&1 | head -3)
-case "$o" in *"Example Domain"*) : ;; *)
+# silver now prints only the main text inside an untrusted-content fence (no <title>), so the
+# rendered page is recognised by its body sentence as well as by its old title.
+case "$o" in *"Example Domain"*|*"for use in documentation examples"*) : ;; *)
   sleep 2
   o=$(timeout 90 silver read https://example.com/ --session lane-probe 2>&1 | head -3) ;;
 esac
 silver close --session lane-probe >/dev/null 2>&1 || true
 case "$o" in
-  *"Example Domain"*)                                     say web-live WORKING "example.com rendered" ;;
+  *"Example Domain"*|*"for use in documentation examples"*) say web-live WORKING "example.com rendered" ;;
   *"CAPTCHA"*|*"denied by policy"*|*"HTTP error status"*) say web-live BLOCKED "${o%%$'\n'*}" ;;
   *"could not"*|*"timed out"*|*"ECONN"*|*"respawn"*)      say web-live EXHAUSTED "transient after 1 retry: ${o%%$'\n'*}" ;;
   error:*)                                                say web-live MISSING "${o%%$'\n'*}" ;;
