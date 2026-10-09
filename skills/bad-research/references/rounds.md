@@ -208,10 +208,11 @@ the **verified** findings and the rivals (no hypotheses, no provisional answer),
 claims the answer will rest on. Each returns, independently, a probability for each claim — and where
 claims are rivals, probabilities that sum to one (making judgments coherent before pooling is half of
 what the evidence measured). Take the median per claim. The median informs; the call is yours. The
-numbers stay in the run notes — the answer states, in words, which reading you hold, the strongest rival,
-and where you and the judges disagree. Blind judges marked printed judge probabilities and rival weights
-down in three answers as false precision: they read as a measurement of the world, and they are a poll
-of one model family. A wide spread on a claim reopens
+numbers and the poll itself stay in the run notes — the answer states, in words, which reading you
+hold, the strongest rival and what separates them; it does not report that judges were asked. Blind
+judges marked printed judge probabilities and rival weights down as false precision in two dev answers
+(both judges each time): they read as a measurement of the world, and they are a poll of one model
+family. A wide spread on a claim reopens
 one deep round on it: call `bad frontier-observe` for that round like any other (the floor is already
 met; one quiet round stops again).
 

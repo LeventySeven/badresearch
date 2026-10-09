@@ -53,7 +53,7 @@ differ, and the path of its lane file in its brief so it reads the recipe first.
 is not ordered by popularity. The plain, obvious search runs first even when you hold a hypothesis.
 **Browse as well as search** — a venue's recent tables of contents, a conference's accepted list, a
 project's newest issues, a person's whole feed: browsing was scientists' largest route to what they read
-(33.9% vs searching 23.1%). What comes back is the representation: open questions, words, clusters.
+(33.9% vs searching 23.1%, 2005 survey). What comes back is the representation: open questions, words, clusters.
 
 **Pool.** Save each return; admit its findings into the map **marked unverified**, and verify — re-open
 the source, find the span — every one that closes an open question or carries a number; grade its
@@ -150,8 +150,8 @@ you surer, not righter.
 ## Name the rivals, then set aside the evidence that cannot separate them
 
 **MUST name at least two rival explanations before the first search, and carry them into the answer.**
-Seed them from what you know; after the broad round, add or replace rivals from disjoint lanes —
-hypotheses from one pool are anchored alike. **A rival is dropped only by a finding that bears on it,
+Seed them from what you know; after the broad round, add rivals from disjoint lanes — hypotheses from
+one pool are anchored alike — and a seeded rival still leaves only by a finding. **A rival is dropped only by a finding that bears on it,
 named in the map**: in two AI-scientist runs (n = 2) the agents "dropped their most ambitious hypotheses
 within the first fifteen hours of carrying out the experiment and never changed course". Use them to cut
 where you can — evidence every rival predicts equally well has no diagnostic value (it leaves the
