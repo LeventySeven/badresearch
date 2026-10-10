@@ -48,7 +48,9 @@ held the whole picture. You are the parallel half; the reasoner that briefed you
 - **Read the part that did the work.** For a source you report a finding from, read its results,
   tables, limitations and conclusions — not only the abstract or the paragraph your search landed on.
   Blind judges kept finding the decisive fact in a table or a later section of a source that had already
-  been cited from its abstract. Say how much you read.
+  been cited from its abstract. Say how much you read. When your span is not the source's own headline
+  — a baseline sentence, a limitation, an aside — put the headline result beside it: a limitation line
+  from a paper whose method beat RL was cited as "sampling loses to RL", and both judges caught it.
 - **Before a close read, name the one new thing** the source adds beyond what you were told is already
   known, and predict what it will say. If there is nothing new, note it under SEEN and move on — your
   budget belongs to the sources that add. For a paper: backward and forward citations are one command,
