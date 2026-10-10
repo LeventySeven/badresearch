@@ -9,6 +9,8 @@ bad-research measurably improved on real questions: a held-out blind head-to-hea
 - 2026-10-10 user: "after you finish everything commit push everything to main" — authorizes the final merge of run/cold-use-2026-10 into main and `git push origin main`.
 - 2026-10-10 user: "proceed till the end autonomosly, no need to stop or ask me anything… top priority is quality of skill and research, till the end, no stopping"
 
+- 2026-10-10 owner: "do that right now and stop that work for now, we will proceed sooner" — "that" = the wrap-up (spec results, memory, bad install + doctor, merge to main, push); held-out runs paused after T3 (T4 arms stopped mid-run).
+
 ## Done
 - held-out T1: new SLIGHT, new SLIGHT (judges in research/cold-use-2026-10-10/judges/t1-*); T2 answers saved, judges running; T3 pair running
 - absence-gate verbs widened 98dc8ad; cite-the-headline-direction rule 8bf896d (both AFTER the held-out arm snapshot — untested by held-out)
@@ -22,9 +24,8 @@ bad-research measurably improved on real questions: a held-out blind head-to-hea
 - dev skill arms D1–D5 + gap readers G1–G3 (docs/sweeps/2026-10-10-expertise-pruning/BRIEF.md) launched
 
 ## Next
-1. Held-out T1–T8: old c1fa0de vs new cb67f6a, arms in scratchpad/ho/T#O and T#N (built), ONE pair at a time (concurrency cap ~20 subagents); prompts = the D-arm template with the ho/ paths; questions in scratchpad/ho/questions.json. T1 done; T2 judging; T3 pair running.
-2. Each pair: blind.py both answers → 2 judges (opposite order, judge-template.txt) → save to research/cold-use-2026-10-10/heldout/.
-3. Then: write the result into the spec + sweep README, update memory, `bad install`, merge run/cold-use-2026-10 → main, push (owner authorized).
+1. Resume held-out T4–T8 (questions in research/cold-use-2026-10-10/QUESTIONS.md): old c1fa0de vs new 0c1d963; rebuild arms with `git archive <sha> skills/bad-research agents | tar -x -C <arm>` (scratchpad arms are session-local); arm prompt = spec "How it is judged" + FOREGROUND subagents; one pair at a time; 2 blind judges each (opposite order), tools (blind.py, extract.py, judge-template.txt, questions.json) are in research/cold-use-2026-10-10/tools/; blind.py strips Tier/RUN NOTE/paths but NOT a prose tier sentence — strip that by hand.
+2. Add rows to docs/specs/2026-10-10-bad-research-cold-use.md "Held-out results so far"; then delete this file in the final commit.
 
 ## Open decisions
 - none

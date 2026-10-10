@@ -50,7 +50,46 @@ Dropped with a measurement: a URL-liveness gate — 169 cited URLs across eight 
 ## How it is judged
 
 A held-out set (T1–T8 in the private questions file, fixed before any change): the old skill (c1fa0de)
-against this one, isolated copies, two blind judges per question in opposite order, at most two arms
-running at once so neither loses subagent slots. Eight questions can show only a large effect: a
+against this one (0c1d963), isolated copies, two blind judges per question in opposite order, one pair
+running at a time so neither arm loses subagent slots. Eight questions can show only a large effect: a
 two-sided sign test at p < .05 needs 8 of 8 (7 of 8 gives p = .07), and the two judges of one question
-are not independent. The result will be reported with that limit, as a direction, not a proof.
+are not independent.
+
+## Held-out results so far (paused after T3, 2026-10-10)
+
+The owner paused the set after three questions. T4–T8 have not run.
+
+| Q | old | new | verdicts (2 judges) |
+|---|---|---|---|
+| T1 RLVR: sharpening vs new abilities | 116 min, 24 subagents | not recorded, 21 | new SLIGHT, new SLIGHT |
+| T2 why multi-agent systems fail | 47 min, 20 | 59 min, 22 | new SLIGHT, new SLIGHT |
+| T3 retainers vs fixed price for a studio | 53 min, 17 | not comparable (8 h gap in wall clock), 14 | new SLIGHT, old SLIGHT |
+
+**5 of 6 verdicts for the new skill, all SLIGHT.** By question that is 2 wins and 1 split — a
+direction, not a result; it says nothing yet at p < .05. Where the judges separated the two:
+
+- **Fixed by this round, and seen to work.** The old answers printed rival probabilities from pooled
+  model judgments (T2: both judges called it pseudo-quantification); the new ones did not. The old T1
+  answer added a "within chance" argument during its final patch that both judges found overstated —
+  the late-evidence failure change 3 targets. The new answers caught more confounds at source (a base
+  model already at ~99% pass@128, an 8-shot vs 0-shot prompt split, a dataset's label-join rebuild).
+- **Still missed by the new skill, fixed after the arms were built (not covered by these results):**
+  - a limitation sentence from a paper whose method beat RL, cited as "sampling loses to RL" (T1,
+    both judges) → cite a source for the direction its own results take (8bf896d);
+  - arXiv v3 cited when the journal version had changed which effect held (T2, both judges) →
+    check a load-bearing preprint's latest and published versions (a90d687, de6e8fa);
+  - a real quote pooled under a batch file, then linked to the author's other post (T3) → each span
+    keeps its own URL (889bdf8);
+  - the absence gate passed "no one has settled it" and "nobody has re-run" with 0 claims (found by a
+    T1 critic) → wider record verbs, "I found no" counts as scope (98dc8ad).
+- **Coverage still varies run to run.** Each side found a decisive source the other missed (T3: open
+  books vs the SPI margin benchmark; T1: Guru vs the coverage-preserving objectives). Two runs of one
+  skill would likely differ as much.
+
+**Harness finding for whoever resumes.** A background subagent's own background subagents report to
+the top-level session, not to it: three arms sat "waiting for readers" that had already returned. Arm
+prompts from T3 on say to spawn subagents in the foreground; T1 and T2 arms were resumed by hand with
+the returns saved into their work folders.
+
+**To resume:** run T4–T8 one pair at a time from the same two commits (rebuild arms with
+`git archive <sha> skills/bad-research agents | tar -x -C <arm>`), judge as above, then add the rows.
