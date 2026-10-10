@@ -191,4 +191,4 @@ N6. **The log becomes context.** Schulman pastes his lab notebook into an LLM fo
 - https://www.youtube.com/watch?v=MfMq4sVJSFc — CAPTION-PARAPHRASE
 - https://www.youtube.com/watch?v=YMT81cpP6zc — BLOCKED
 
-Caption positions are approximate, worked out from where a passage falls in the transcript, because yt.sh output carries no timestamps. Fetched copies are in /private/tmp/claude-501/-Users-seventyleven-Desktop/2748e90d-68b2-4b87-8ff4-e3a382ec991b/scratchpad/{dw,yt}/.
+Caption positions are approximate, worked out from where a passage falls in the transcript, because yt.sh output carries no timestamps. Fetched copies were kept in the session scratchpad (not retained)
