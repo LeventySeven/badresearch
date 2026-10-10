@@ -10,6 +10,8 @@ bad-research measurably improved on real questions: a held-out blind head-to-hea
 - 2026-10-10 user: "proceed till the end autonomosly, no need to stop or ask me anything… top priority is quality of skill and research, till the end, no stopping"
 
 ## Done
+- held-out T1: new SLIGHT, new SLIGHT (judges in research/cold-use-2026-10-10/judges/t1-*); T2 answers saved, judges running; T3 pair running
+- absence-gate verbs widened 98dc8ad; cite-the-headline-direction rule 8bf896d (both AFTER the held-out arm snapshot — untested by held-out)
 - questions fixed before runs: research/cold-use-2026-10-10/QUESTIONS.md (gitignored)
 - doctor reports a stale install; web-live probe fixed — e11bc18; `pytest tests/test_cli/test_doctor_installed_skill.py` 3 passed
 - X tool returned no followers/bio though the X lane requires them — fixed in ~/Desktop/compound-v/research/xh_norm.py (local, gitignored); verified followers=19787 for kellerjordan0
@@ -20,7 +22,7 @@ bad-research measurably improved on real questions: a held-out blind head-to-hea
 - dev skill arms D1–D5 + gap readers G1–G3 (docs/sweeps/2026-10-10-expertise-pruning/BRIEF.md) launched
 
 ## Next
-1. Held-out T1–T8: old c1fa0de vs new cb67f6a, arms in scratchpad/ho/T#O and T#N (built), ONE pair at a time (concurrency cap ~20 subagents); prompts = the D-arm template with the ho/ paths; questions in scratchpad/ho/questions.json. T1 pair running.
+1. Held-out T1–T8: old c1fa0de vs new cb67f6a, arms in scratchpad/ho/T#O and T#N (built), ONE pair at a time (concurrency cap ~20 subagents); prompts = the D-arm template with the ho/ paths; questions in scratchpad/ho/questions.json. T1 done; T2 judging; T3 pair running.
 2. Each pair: blind.py both answers → 2 judges (opposite order, judge-template.txt) → save to research/cold-use-2026-10-10/heldout/.
 3. Then: write the result into the spec + sweep README, update memory, `bad install`, merge run/cold-use-2026-10 → main, push (owner authorized).
 
@@ -34,4 +36,4 @@ Stop = Goal. Escalate only on: a one-way door (push to a public remote other tha
 - Run `bad install` for the owner before the improved skill is final — do it once, at the end, and say so.
 - Commit research/ answers (repo is PUBLIC; answers may cite private memory).
 - Read KNOWN-findings via agents only — load-bearing primaries get opened by the chair.
-- Take a held-out arm's last message as its answer without checking it: T1O ended its turn with "round 3 running" while its readers lived on; their results come to the chair. Save them into the arm's work/ and SendMessage the arm to continue.
+- Take a held-out arm's last message as its answer without checking it: T1O ended its turn with "round 3 running" while its readers lived on; their results come to the chair. Save them into the arm's work/ and SendMessage the arm to continue. T3+ arm prompts carry the harness note in SETUP: run subagents in the FOREGROUND (several per message), never end the turn to wait for background ones.
