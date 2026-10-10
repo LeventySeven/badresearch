@@ -252,12 +252,12 @@ not an index: it is per-run, addressable and re-derivable. Past the window: `ref
   reconstruct grounding for a paragraph already written.
 - **A citation claims the span SUPPORTS the sentence** — supports, contradicts, or your sentence goes
   beyond it. Say where you extrapolated, or cut it.
-- **Read what you cite.** Blind judges' commonest catch was a fact inside a source the answer already
-  cited — a results table, a recommendations section, §5 of a post. Read the results, tables, limitations
-  and conclusions of every source the answer leans on, record how much you read, and check "the paper
-  did not compare X" in its tables: it is an absence claim. Cite a source for the direction its own
-  results take — a baseline or limitation sentence quoted against the paper's headline misled 3 answers.
-- **Verify a retrieved object by its properties, not its name** — date, unit, scale (50% → 90%).
+- **Read what you cite** — results, tables, limitations and conclusions of every source the answer leans
+  on (judges' commonest catch was a fact in a source already cited); record how much you read; "the paper
+  did not compare X" is an absence claim, checked in its tables. Cite a source for the direction its own
+  results take — a baseline or limitation line quoted against its headline misled 3 answers.
+- **Verify a retrieved object by its properties, not its name** — date, unit, scale (50% → 90%), and
+  version: check a load-bearing preprint's latest arXiv and its journal version — one reversed a p-value.
 - **Count distinct actors, not URLs**, collapsed by person, company and orbit. Sources reached by
   chaining are not independent corroboration, and repetition is not corroboration: trace to the origin.
 - **Grade the source apart from the claim**, and for a source you do not know, leave it and read about it
