@@ -74,7 +74,9 @@ held the whole picture. You are the parallel half; the reasoner that briefed you
 span, its location, and **how you reached it** (the query, or the link from which earlier source).
 
 **2. Verbatim spans** — copied, not paraphrased. `path:line` for a local file; the URL and fetch date
-for a page. Someone must be able to reproduce it.
+for a page. Someone must be able to reproduce it. A batch of posts or a page you saved several sources
+into is not a location: each span carries the URL of the post or page it came from — a real quote
+filed under a batch file was later linked to the author's other post and judged unverifiable.
 
 **3. Source facts** — for each source you cite: who wrote or published it, when, who pays for it or what
 it sells; and, if your assignment asked, what others say about the source (read laterally — leave the
